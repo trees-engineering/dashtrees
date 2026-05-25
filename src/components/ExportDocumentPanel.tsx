@@ -118,9 +118,9 @@ export function ExportDocumentPanel({ talentId, roleId, talentName, onClose }: E
                     type="button"
                     onClick={() => setFormat(f)}
                     disabled={appendCv}
-                    className={`flex-1 py-2 rounded-lg text-sm font-medium border transition-colors disabled:opacity-60 ${
+                    className={`flex-1 py-2 rounded-lg text-sm font-semibold border transition-colors disabled:opacity-60 ${
                       active
-                        ? 'bg-primary text-white border-primary'
+                        ? 'bg-primary text-treeBg border-primary'
                         : 'bg-treeSurface text-treeText border-treeBorder'
                     }`}
                   >
@@ -186,7 +186,7 @@ export function ExportDocumentPanel({ talentId, roleId, talentName, onClose }: E
           <button
             onClick={handleGenerate}
             disabled={busy || missingTranscript}
-            className="w-full flex items-center justify-center gap-2 py-2.5 rounded-lg bg-primary text-white text-sm font-semibold active:bg-primaryDark transition-colors disabled:opacity-50"
+            className="w-full flex items-center justify-center gap-2 py-2.5 rounded-lg bg-primary text-treeBg text-sm font-semibold active:bg-primaryDark transition-colors disabled:opacity-50"
           >
             {busy ? <Loader2 size={16} className="animate-spin" /> : <FileDown size={16} />}
             {busy ? 'Generating…' : `Generate ${effectiveFormat.toUpperCase()}`}

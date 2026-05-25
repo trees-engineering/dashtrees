@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import { ChevronDown, ChevronUp, Users } from 'lucide-react'
 import { useRoles } from '../hooks/useRoles'
-import { formatDate, formatBudget } from '../lib/utils'
+import { formatDate, formatBudget, roleStatusBadgeClass } from '../lib/utils'
 import { UploadJDButton } from './UploadJDButton'
 import { RerunMatchesButton } from './RerunMatchesButton'
 import type { RoleWithCounts } from '../types'
@@ -33,13 +33,7 @@ function RoleAccordion({
           <div className="flex items-center gap-2 flex-wrap">
             <span className="font-semibold text-treeText text-sm leading-snug">{role.title}</span>
             <span
-              className={`text-xs px-2 py-0.5 rounded-full font-medium border ${
-                role.status === 'open'
-                  ? 'bg-green-100 text-green-800 border-green-200'
-                  : role.status === 'closed'
-                  ? 'bg-red-100 text-red-800 border-red-200'
-                  : 'bg-gray-100 text-gray-700 border-gray-200'
-              }`}
+              className={`text-xs px-2 py-0.5 rounded-full font-medium border ${roleStatusBadgeClass(role.status)}`}
             >
               {role.status}
             </span>
@@ -115,7 +109,7 @@ function RoleAccordion({
             <RerunMatchesButton roleId={role.id} variant="full" />
             <button
               onClick={() => onViewMatches(role.id)}
-              className="flex-1 py-2.5 rounded-lg bg-primary text-white text-sm font-medium active:bg-primaryDark transition-colors"
+              className="flex-1 py-2.5 rounded-lg bg-primary text-treeBg text-sm font-semibold active:bg-primaryDark transition-colors"
             >
               View Matches ({role.counts.total})
             </button>
@@ -164,7 +158,7 @@ export function RolesTab({ onViewMatches, recruiterFilter }: RolesTabProps) {
             onClick={() => setStatusFilter(s)}
             className={`flex-1 py-2 rounded-lg text-sm font-medium border transition-colors ${
               statusFilter === s
-                ? 'bg-primary text-white border-primary'
+                ? 'bg-primary text-treeBg border-primary'
                 : 'bg-treeSurface text-treeText border-treeBorder'
             }`}
           >

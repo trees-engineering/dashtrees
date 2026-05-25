@@ -60,31 +60,29 @@ function App() {
   return (
     <div className="flex flex-col h-[100dvh] bg-treeBg">
       {/* Header */}
-      <header className="flex-shrink-0 bg-primary text-white px-4 py-3 flex items-center gap-3 shadow-md z-10 safe-top">
-        {/* Logo */}
-        <div className="w-9 h-9 rounded-xl bg-white/20 flex items-center justify-center flex-shrink-0">
-          <svg viewBox="0 0 24 24" width="20" height="20" fill="white">
-            <path d="M12 2 L4 14 L20 14 Z" />
-            <path d="M12 7 L6 16 L18 16 Z" opacity="0.7" />
-            <rect x="10" y="16" width="4" height="5" rx="1" />
-          </svg>
-        </div>
+      <header className="flex-shrink-0 bg-treeSurface border-b border-treeBorder px-4 py-3 flex items-center gap-3 z-10 safe-top">
+        {/* Brand mark — the official Trees Engineering wordmark (tree + "TREES ENGINEERING") */}
+        <img
+          src="/icons/Trees_logo.jpeg"
+          alt="Trees Engineering"
+          className="h-8 w-auto flex-shrink-0"
+        />
+        <span className="hidden sm:inline-flex flex-shrink-0 text-[10px] font-semibold uppercase tracking-wider text-primary bg-primary/10 border border-primary/30 rounded-full px-2.5 py-1">
+          Recruiter Workspace
+        </span>
 
-        <div className="flex-1 min-w-0">
-          <h1 className="text-lg font-bold leading-none">Trees</h1>
-          <p className="text-white/60 text-xs leading-none mt-0.5">Recruitment Dashboard</p>
-        </div>
+        <div className="flex-1" />
 
         {/* Recruiter filter */}
         <div className="flex-shrink-0">
           <select
             value={selectedRecruiter}
             onChange={(e) => handleRecruiterChange(e.target.value)}
-            className="text-xs bg-white/15 text-white border border-white/20 rounded-lg px-2 py-1.5 max-w-[130px] focus:outline-none focus:ring-1 focus:ring-white/40 appearance-none"
+            className="text-xs bg-treeBg border border-treeBorder text-treeText rounded-lg px-2 py-1.5 max-w-[130px] focus:outline-none focus:ring-1 focus:ring-primary/40 appearance-none"
           >
             <option value="">All recruiters</option>
             {(recruiters ?? []).map((r) => (
-              <option key={r.id} value={r.email} className="text-treeText bg-white">
+              <option key={r.id} value={r.email} className="bg-treeSurface text-treeText">
                 {r.name ?? r.email}
               </option>
             ))}

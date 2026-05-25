@@ -48,7 +48,7 @@ export function UploadJDButton() {
       <button
         onClick={() => inputRef.current?.click()}
         disabled={busy}
-        className="flex items-center gap-1.5 text-xs font-semibold bg-primary text-white px-3 py-1.5 rounded-lg active:bg-primaryDark transition-colors disabled:opacity-50"
+        className="flex items-center gap-1.5 text-xs font-semibold bg-primary text-treeBg px-3 py-1.5 rounded-lg active:bg-primaryDark transition-colors disabled:opacity-50"
       >
         {busy ? <Loader2 size={14} className="animate-spin" /> : <Upload size={14} />}
         Upload JD

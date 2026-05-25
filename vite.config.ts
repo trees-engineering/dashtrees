@@ -16,21 +16,23 @@ export default defineConfig({
     react(),
     VitePWA({
       registerType: 'autoUpdate',
-      includeAssets: ['icons/icon.svg'],
+      includeAssets: ['icons/Trees_logo.jpeg'],
       manifest: {
-        name: 'Treelance Trees',
+        name: 'Trees Engineering — Recruiter Workspace',
         short_name: 'Trees',
-        description: 'Recruitment dashboard for Trees',
-        theme_color: '#7c5e4a',
-        background_color: '#faf7f5',
+        description: 'Recruiter workspace for Trees Engineering',
+        theme_color: '#0a1628',
+        background_color: '#0a1628',
         display: 'standalone',
         start_url: '/',
         icons: [
           {
-            src: '/icons/icon.svg',
+            src: '/icons/Trees_logo.jpeg',
             sizes: 'any',
-            type: 'image/svg+xml',
-            purpose: 'any maskable',
+            type: 'image/jpeg',
+            // Horizontal wordmark — OS will letterbox at square sizes.
+            // A square crop of just the tree symbol would be ideal as a follow-up.
+            purpose: 'any',
           },
         ],
       },

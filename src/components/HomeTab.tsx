@@ -2,7 +2,7 @@ import { ChevronRight } from 'lucide-react'
 import { StatCard } from './StatCard'
 import { UploadJDButton } from './UploadJDButton'
 import { useRoles } from '../hooks/useRoles'
-import { formatDate } from '../lib/utils'
+import { formatDate, roleStatusBadgeClass } from '../lib/utils'
 
 interface HomeTabProps {
   onNavigate: (tab: string) => void
@@ -124,13 +124,7 @@ export function HomeTab({ onNavigate, recruiterFilter }: HomeTabProps) {
                   </div>
                   <div className="ml-3 flex items-center gap-2 flex-shrink-0">
                     <span
-                      className={`text-xs px-2 py-0.5 rounded-full font-medium border ${
-                        role.status === 'open'
-                          ? 'bg-green-100 text-green-800 border-green-200'
-                          : role.status === 'closed'
-                          ? 'bg-red-100 text-red-800 border-red-200'
-                          : 'bg-gray-100 text-gray-700 border-gray-200'
-                      }`}
+                      className={`text-xs px-2 py-0.5 rounded-full font-medium border ${roleStatusBadgeClass(role.status)}`}
                     >
                       {role.status}
                     </span>

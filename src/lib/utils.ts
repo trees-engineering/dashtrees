@@ -1,13 +1,14 @@
+// Score colours — bright on the dark surface; backgrounds use low-alpha tints.
 export function scoreColor(score: number): string {
-  if (score >= 70) return '#155724'
-  if (score >= 40) return '#856404'
-  return '#721c24'
+  if (score >= 70) return '#4ade80' // green
+  if (score >= 40) return '#fbbf24' // yellow
+  return '#f87171'                  // red
 }
 
 export function scoreBg(score: number): string {
-  if (score >= 70) return '#d4edda'
-  if (score >= 40) return '#fff3cd'
-  return '#f8d7da'
+  if (score >= 70) return 'rgba(74,222,128,0.18)'
+  if (score >= 40) return 'rgba(251,191,36,0.18)'
+  return 'rgba(248,113,113,0.18)'
 }
 
 export function scoreLabel(score: number): string {
@@ -16,37 +17,73 @@ export function scoreLabel(score: number): string {
   return 'Low'
 }
 
+// All badge styles below are for the dark navy theme — translucent fills,
+// matching coloured text + soft border. Mirrors the .st classes in template.html.
 export function availBadgeClass(status: string): string {
   switch (status) {
     case 'yes':
-      return 'bg-green-100 text-green-800 border-green-200'
+      return 'bg-green-500/15 text-green-300 border-green-500/30'
     case 'maybe':
-      return 'bg-yellow-100 text-yellow-800 border-yellow-200'
+      return 'bg-yellow-500/15 text-yellow-300 border-yellow-500/30'
     case 'no':
-      return 'bg-red-100 text-red-800 border-red-200'
+      return 'bg-red-500/15 text-red-300 border-red-500/30'
     default:
-      return 'bg-gray-100 text-gray-700 border-gray-200'
+      return 'bg-slate-500/15 text-slate-300 border-slate-500/30'
   }
 }
 
 export function statusBadgeClass(status: string): string {
   switch (status) {
     case 'hired':
-      return 'bg-green-100 text-green-800 border-green-200'
+    case 'started':
+      return 'bg-green-500/20 text-green-300 border-green-500/30'
     case 'accepted':
-      return 'bg-emerald-100 text-emerald-800 border-emerald-200'
+    case 'offer_accepted':
+      return 'bg-violet-500/20 text-violet-300 border-violet-500/30'
+    case 'contract_signed':
+      return 'bg-primary/20 text-primary border-primary/40'
     case 'introduced':
-      return 'bg-blue-100 text-blue-800 border-blue-200'
+    case 'cv_sent':
+      return 'bg-blue-500/20 text-blue-300 border-blue-500/30'
     case 'shortlisted':
-      return 'bg-purple-100 text-purple-800 border-purple-200'
+      return 'bg-purple-500/20 text-purple-300 border-purple-500/30'
     case 'suggested':
-      return 'bg-gray-100 text-gray-700 border-gray-200'
+    case 'sourced':
+      return 'bg-slate-500/20 text-slate-300 border-slate-500/30'
+    case 'screening':
+      return 'bg-blue-500/10 text-blue-300 border-blue-500/20'
+    case 'client_iv_scheduled':
+    case 'iv_scheduled':
+      return 'bg-orange-500/15 text-orange-300 border-orange-500/30'
+    case 'client_iv_done':
+    case 'iv_done':
+      return 'bg-orange-500/25 text-orange-300 border-orange-500/40'
+    case 'offer':
+      return 'bg-pink-500/15 text-pink-300 border-pink-500/30'
     case 'rejected':
-      return 'bg-red-100 text-red-800 border-red-200'
+      return 'bg-red-500/15 text-red-300 border-red-500/30'
+    case 'withdrawn':
     case 'closed':
-      return 'bg-gray-100 text-gray-500 border-gray-200'
+    case 'screened_out':
+      return 'bg-slate-500/15 text-slate-400 border-slate-500/25'
+    case 'on_hold':
+      return 'bg-yellow-500/15 text-yellow-300 border-yellow-500/30'
     default:
-      return 'bg-gray-100 text-gray-700 border-gray-200'
+      return 'bg-slate-500/15 text-slate-300 border-slate-500/25'
+  }
+}
+
+/** Tailwind classes for the open/closed/draft pill used on role cards. */
+export function roleStatusBadgeClass(status: string): string {
+  switch (status) {
+    case 'open':
+      return 'bg-green-500/15 text-green-300 border-green-500/30'
+    case 'closed':
+      return 'bg-slate-500/15 text-slate-400 border-slate-500/25'
+    case 'draft':
+      return 'bg-yellow-500/15 text-yellow-300 border-yellow-500/30'
+    default:
+      return 'bg-slate-500/15 text-slate-300 border-slate-500/25'
   }
 }
 
