@@ -1,0 +1,21 @@
+# ── Secrets ──
+.env
+.env.local
+.env.*.local
+
+# ── Dependencies ──
+node_modules/
+
+# ── Build output ──
+dist/
+dist-server/
+*.tsbuildinfo
+
+# ── Logs / OS / editor ──
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/

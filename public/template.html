@@ -1,0 +1,1772 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Trees Engineering — Recruiter Workspace</title>
+<style>
+  :root {
+    --bg: #0a1628;
+    --bg2: #0f1e35;
+    --surface: #16263f;
+    --surface2: #1d3050;
+    --border: #243a5c;
+    --border2: #2e4566;
+    --text: #e8edf5;
+    --muted: #8a9bb8;
+    --muted2: #6b7d9a;
+    --accent: #c8a35a;
+    --accent2: #d9b878;
+    --green: #4ade80;
+    --blue: #60a5fa;
+    --orange: #fb923c;
+    --pink: #f472b6;
+    --red: #f87171;
+    --purple: #a78bfa;
+    --yellow: #fbbf24;
+  }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; padding: 0; background: var(--bg); color: var(--text);
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Inter, system-ui, sans-serif;
+    -webkit-font-smoothing: antialiased; }
+  body { min-height: 100vh; background: radial-gradient(1200px 800px at 80% -10%, #1a2f55 0%, var(--bg) 60%) fixed; }
+  button { font: inherit; cursor: pointer; }
+  a { color: var(--accent2); text-decoration: none; }
+  a:hover { text-decoration: underline; }
+
+  /* ===== LOGIN ===== */
+  .login-wrap { min-height: 100vh; display: grid; place-items: center; padding: 24px; }
+  .login-card { width: 100%; max-width: 420px; background: linear-gradient(180deg, var(--surface) 0%, var(--surface2) 100%);
+    border: 1px solid var(--border); border-radius: 18px; padding: 36px 32px; box-shadow: 0 30px 60px rgba(0,0,0,.45); }
+  .brand { display: flex; align-items: center; gap: 12px; margin-bottom: 28px; }
+  .brand-mark { width: 38px; height: 38px; border-radius: 10px;
+    background: linear-gradient(135deg, var(--accent), #8c6f33);
+    display: grid; place-items: center; font-weight: 700; color: #0a1628; font-size: 18px; }
+  .brand-title { font-size: 17px; letter-spacing: .3px; }
+  .brand-sub { font-size: 12px; color: var(--muted); letter-spacing: .8px; text-transform: uppercase; }
+  .login-card h1 { font-size: 22px; margin: 0 0 6px; font-weight: 600; }
+  .login-card p.sub { color: var(--muted); margin: 0 0 24px; font-size: 14px; }
+  label { display: block; font-size: 12px; color: var(--muted); text-transform: uppercase; letter-spacing: .8px; margin-bottom: 8px; }
+  select, input[type=password], input[type=text], input[type=number], input[type=date], input[type=email], input[type=url], textarea {
+    width: 100%; background: #0c1a30; border: 1px solid var(--border); color: var(--text);
+    padding: 12px 14px; border-radius: 10px; font-size: 15px; outline: none; transition: border .15s; font-family: inherit; }
+  textarea { resize: vertical; min-height: 70px; line-height: 1.45; }
+  select:focus, input:focus, textarea:focus { border-color: var(--accent); }
+  .field { margin-bottom: 16px; }
+  .field .hint { font-size: 11.5px; color: var(--muted2); margin-top: 5px; }
+  .btn { background: linear-gradient(135deg, var(--accent) 0%, #a8843f 100%); color: #0a1628;
+    border: none; font-weight: 600; padding: 12px 18px; border-radius: 10px; font-size: 14px;
+    letter-spacing: .3px; transition: transform .08s; display: inline-flex; align-items: center; gap: 8px; }
+  .btn:hover { transform: translateY(-1px); }
+  .btn:active { transform: translateY(0); }
+  .btn.block { width: 100%; padding: 13px; justify-content: center; }
+  .btn.ghost { background: transparent; color: var(--muted); border: 1px solid var(--border); font-weight: 500; }
+  .btn.ghost:hover { color: var(--text); border-color: var(--accent); }
+  .btn.danger { background: rgba(248,113,113,.15); color: var(--red); border: 1px solid rgba(248,113,113,.3); }
+  .btn.danger:hover { background: rgba(248,113,113,.25); }
+  .btn.sm { padding: 7px 12px; font-size: 13px; }
+  .err { background: rgba(239,68,68,.1); border: 1px solid rgba(239,68,68,.3); color: #fca5a5;
+    padding: 10px 12px; border-radius: 8px; font-size: 13px; margin-bottom: 14px; display: none; }
+  .err.show { display: block; }
+
+  /* ===== APP SHELL ===== */
+  .app { display: none; }
+  .app.show { display: block; }
+  .topbar { background: var(--surface); border-bottom: 1px solid var(--border);
+    padding: 14px 28px; display: flex; align-items: center; justify-content: space-between;
+    position: sticky; top: 0; z-index: 50; backdrop-filter: blur(8px); }
+  .topbar .left { display: flex; align-items: center; gap: 14px; }
+  .topbar .right { display: flex; align-items: center; gap: 14px; }
+  .pill { background: rgba(200,163,90,.12); color: var(--accent2); border: 1px solid rgba(200,163,90,.25);
+    padding: 6px 12px; border-radius: 999px; font-size: 12px; font-weight: 500; letter-spacing: .4px; }
+  .who { font-size: 14px; color: var(--muted); }
+  .who b { color: var(--text); font-weight: 600; }
+  .logout { background: transparent; border: 1px solid var(--border); color: var(--muted);
+    padding: 7px 14px; border-radius: 8px; font-size: 13px; }
+  .logout:hover { color: var(--text); border-color: var(--accent); }
+
+  .container { max-width: 1180px; margin: 0 auto; padding: 28px; }
+  .breadcrumbs { font-size: 13px; color: var(--muted); margin-bottom: 16px; }
+  .breadcrumbs a { color: var(--muted); cursor: pointer; }
+  .breadcrumbs a:hover { color: var(--accent2); text-decoration: underline; }
+  .breadcrumbs .sep { margin: 0 8px; color: var(--muted2); }
+
+  /* ===== VIEW HEADER ===== */
+  .view-head { display: flex; justify-content: space-between; align-items: flex-end; margin-bottom: 24px; flex-wrap: wrap; gap: 14px; }
+  .view-head h1 { font-size: 28px; margin: 0 0 4px; font-weight: 700; letter-spacing: -.4px; }
+  .view-head .sub { color: var(--muted); font-size: 14px; }
+  .view-head .actions { display: flex; gap: 10px; flex-wrap: wrap; }
+
+  /* ===== STATS STRIP ===== */
+  .stats { display: grid; grid-template-columns: repeat(5, 1fr); gap: 12px; margin-bottom: 24px; }
+  .stat { background: var(--surface); border: 1px solid var(--border); border-radius: 12px; padding: 14px 16px; }
+  .stat .lbl { font-size: 11px; color: var(--muted); text-transform: uppercase; letter-spacing: .8px; }
+  .stat .val { font-size: 22px; font-weight: 700; margin-top: 4px; }
+  .stat.cv .val { color: var(--blue); }
+  .stat.iv .val { color: var(--orange); }
+  .stat.of .val { color: var(--pink); }
+  .stat.pl .val { color: var(--green); }
+
+  /* ===== JOB LIST ===== */
+  .toolbar { display: flex; gap: 10px; flex-wrap: wrap; margin-bottom: 16px; }
+  .toolbar input[type=text] { max-width: 320px; }
+  .toolbar select { max-width: 220px; }
+
+  .job-grid { display: grid; grid-template-columns: 1fr; gap: 10px; }
+  .job-row { background: var(--surface); border: 1px solid var(--border); border-radius: 12px;
+    padding: 16px 20px; cursor: pointer; transition: border .15s, transform .08s; display: grid;
+    grid-template-columns: 1fr auto auto auto auto auto; gap: 18px; align-items: center; }
+  .job-row:hover { border-color: var(--accent); }
+  .job-row:active { transform: scale(.998); }
+  .job-row .title { font-weight: 600; font-size: 15.5px; }
+  .job-row .meta { color: var(--muted); font-size: 13px; margin-top: 3px; display: flex; gap: 12px; flex-wrap: wrap; }
+  .job-row .meta .client { color: var(--accent2); font-weight: 500; }
+  .job-row .count { text-align: center; min-width: 50px; }
+  .job-row .count .n { font-size: 18px; font-weight: 700; font-variant-numeric: tabular-nums; }
+  .job-row .count .l { font-size: 10px; color: var(--muted); text-transform: uppercase; letter-spacing: .6px; margin-top: 2px; }
+  .job-row .count.cv .n { color: var(--blue); }
+  .job-row .count.iv .n { color: var(--orange); }
+  .job-row .count.of .n { color: var(--pink); }
+  .job-row .count.pl .n { color: var(--green); }
+  .job-row .count.zero .n { color: var(--muted2); }
+  .job-row .status-tag { padding: 4px 10px; border-radius: 999px; font-size: 11.5px; font-weight: 600; letter-spacing: .3px; text-transform: uppercase; }
+  .status-open { background: rgba(74,222,128,.12); color: var(--green); border: 1px solid rgba(74,222,128,.25); }
+  .status-on_hold { background: rgba(251,191,36,.12); color: var(--yellow); border: 1px solid rgba(251,191,36,.25); }
+  .status-closed { background: rgba(138,155,184,.12); color: var(--muted); border: 1px solid rgba(138,155,184,.25); }
+
+  .empty-state { text-align: center; padding: 60px 20px; color: var(--muted); background: var(--surface);
+    border: 1px dashed var(--border2); border-radius: 14px; }
+  .empty-state h3 { color: var(--text); margin: 0 0 8px; font-weight: 600; }
+
+  /* Integration badges + linked fields */
+  label .integ { display: inline-flex; align-items: center; gap: 5px; font-size: 10px; font-weight: 700;
+    text-transform: uppercase; letter-spacing: .5px; padding: 3px 8px; border-radius: 999px;
+    margin-left: 8px; vertical-align: middle; }
+  label .integ.hubspot { background: rgba(255,122,89,.12); color: #ff7a59; border: 1px solid rgba(255,122,89,.3); }
+  label .integ.market  { background: rgba(74,222,128,.12); color: var(--green); border: 1px solid rgba(74,222,128,.3); }
+  label .integ::before { content: ''; width: 5px; height: 5px; border-radius: 999px; background: currentColor; }
+  .integ-not-connected { display: inline-block; margin-left: 6px; font-size: 10.5px; font-weight: 600;
+    color: var(--yellow); text-transform: uppercase; letter-spacing: .4px; }
+  .field-linked { background: linear-gradient(180deg, rgba(255,122,89,.04) 0%, transparent 100%);
+    border-left: 2px solid rgba(255,122,89,.25); padding: 12px 14px 4px; margin: 0 -14px 16px;
+    border-radius: 0 8px 8px 0; }
+  .field-linked.market { background: linear-gradient(180deg, rgba(74,222,128,.04) 0%, transparent 100%);
+    border-left-color: rgba(74,222,128,.3); }
+  .field-linked .field { margin-bottom: 4px; }
+  .field-linked .hint { color: var(--muted); }
+
+  /* ===== JOB DETAIL ===== */
+  .detail-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-bottom: 24px; }
+  .card { background: linear-gradient(180deg, var(--surface) 0%, var(--surface2) 100%);
+    border: 1px solid var(--border); border-radius: 14px; padding: 22px; }
+  .card h3 { margin: 0 0 16px; font-size: 14px; font-weight: 600; color: var(--muted); text-transform: uppercase; letter-spacing: .8px; }
+  .info-row { display: flex; justify-content: space-between; gap: 16px; padding: 8px 0; border-bottom: 1px solid var(--border); font-size: 14px; }
+  .info-row:last-child { border-bottom: none; }
+  .info-row .k { color: var(--muted); }
+  .info-row .v { color: var(--text); font-weight: 500; text-align: right; max-width: 60%; }
+
+  /* ===== CANDIDATE LIST ===== */
+  .cand-toolbar { display: flex; justify-content: space-between; align-items: center; margin-bottom: 14px; gap: 12px; flex-wrap: wrap; }
+  .cand-list { background: var(--surface); border: 1px solid var(--border); border-radius: 14px; overflow: hidden; }
+  .cand-row { display: grid; grid-template-columns: 1.4fr 1fr 1.6fr auto; gap: 16px; align-items: center;
+    padding: 14px 18px; border-bottom: 1px solid var(--border); cursor: pointer; transition: background .12s; }
+  .cand-row:last-child { border-bottom: none; }
+  .cand-row:hover { background: rgba(200,163,90,.04); }
+  .cand-row .name { font-weight: 600; }
+  .cand-row .sub { color: var(--muted); font-size: 12.5px; margin-top: 2px; }
+  .cand-row .notes { color: var(--muted); font-size: 13px; max-width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .cand-row .when { color: var(--muted2); font-size: 12px; white-space: nowrap; }
+
+  /* Status pills */
+  .st { display: inline-flex; align-items: center; gap: 6px; padding: 4px 10px; border-radius: 999px; font-size: 12px; font-weight: 600; }
+  .st::before { content: ''; width: 6px; height: 6px; border-radius: 999px; background: currentColor; }
+  .st.sourced              { background: rgba(138,155,184,.15); color: var(--muted); }
+  .st.screening            { background: rgba(96,165,250,.10); color: #93c5fd; }
+  .st.cv_sent              { background: rgba(96,165,250,.22); color: var(--blue); }
+  .st.iv_scheduled,
+  .st.client_iv_scheduled  { background: rgba(251,146,60,.15); color: var(--orange); }
+  .st.iv_done,
+  .st.client_iv_done       { background: rgba(251,146,60,.25); color: var(--orange); }
+  .st.offer                { background: rgba(244,114,182,.15); color: var(--pink); }
+  .st.offer_accepted       { background: rgba(167,139,250,.18); color: var(--purple); }
+  .st.contract_signed      { background: rgba(200,163,90,.20); color: var(--accent); border: 1px solid rgba(200,163,90,.4); }
+  .st.started              { background: rgba(74,222,128,.20); color: var(--green); }
+  .st.rejected             { background: rgba(248,113,113,.12); color: var(--red); }
+  .st.withdrawn            { background: rgba(138,155,184,.12); color: var(--muted2); }
+  .st.on_hold              { background: rgba(251,191,36,.15); color: var(--yellow); }
+
+  /* Negotiation owner banner */
+  .neg-banner { display: flex; align-items: center; gap: 10px; background: rgba(200,163,90,.10);
+    border: 1px solid rgba(200,163,90,.3); border-radius: 10px; padding: 10px 14px;
+    font-size: 13px; color: var(--accent2); margin-bottom: 16px; }
+  .neg-banner b { color: var(--text); }
+
+  /* ===== MODAL ===== */
+  .modal-bg { display: none; position: fixed; inset: 0; background: rgba(5, 10, 20, .7); z-index: 100;
+    align-items: flex-start; justify-content: center; padding: 40px 20px; overflow-y: auto; backdrop-filter: blur(4px); }
+  .modal-bg.show { display: flex; }
+  .modal { width: 100%; max-width: 540px; background: var(--surface);
+    border: 1px solid var(--border2); border-radius: 16px; padding: 28px; box-shadow: 0 30px 60px rgba(0,0,0,.5); }
+  .modal h2 { margin: 0 0 6px; font-size: 20px; font-weight: 600; }
+  .modal .sub { color: var(--muted); font-size: 13.5px; margin-bottom: 22px; }
+  .modal .row2 { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+  .modal .footer { display: flex; justify-content: space-between; align-items: center; margin-top: 22px; gap: 10px; flex-wrap: wrap; }
+  .modal .footer .right { display: flex; gap: 10px; }
+
+  .timeline { margin-top: 10px; border-left: 2px solid var(--border); padding-left: 16px; }
+  .tl-item { padding: 6px 0; font-size: 13px; }
+  .tl-item .tl-when { color: var(--muted2); font-size: 11.5px; margin-right: 6px; }
+
+  /* ===== Toast ===== */
+  .toast { position: fixed; bottom: 24px; right: 24px; background: var(--surface);
+    border: 1px solid var(--green); color: var(--text); padding: 12px 18px; border-radius: 10px;
+    font-size: 13.5px; z-index: 200; opacity: 0; transform: translateY(10px); transition: all .25s; pointer-events: none; }
+  .toast.show { opacity: 1; transform: translateY(0); }
+
+  /* ===== GAMIFICATION ===== */
+  .wallet-pill { display: inline-flex; align-items: center; gap: 8px; background: linear-gradient(135deg, #1a2a44 0%, #213355 100%);
+    border: 1px solid var(--border2); padding: 6px 10px 6px 6px; border-radius: 999px; cursor: pointer;
+    font-size: 13px; font-weight: 600; transition: transform .08s, border-color .15s; }
+  .wallet-pill:hover { transform: translateY(-1px); border-color: var(--accent); }
+  .wallet-pill .currency { display: inline-flex; align-items: center; gap: 4px; }
+  .wallet-pill .streak { color: var(--orange); margin-left: 4px; }
+
+  .tok, .coin { display: inline-grid; place-items: center; width: 18px; height: 18px; border-radius: 999px;
+    font-size: 10px; font-weight: 800; flex-shrink: 0; }
+  .tok  { background: radial-gradient(circle at 30% 30%, #f4d27a 0%, #c8a35a 60%, #8c6f33 100%);
+    color: #4a3a14; box-shadow: 0 1px 3px rgba(0,0,0,.3), inset 0 1px 1px rgba(255,255,255,.4); }
+  .coin { background: radial-gradient(circle at 30% 30%, #a8e6ff 0%, #38bdf8 50%, #0c7da3 100%);
+    color: #0a2a3a; box-shadow: 0 1px 3px rgba(0,0,0,.3), inset 0 1px 1px rgba(255,255,255,.4); border-radius: 4px; transform: rotate(45deg); }
+  .coin::before { content: 'C'; transform: rotate(-45deg); }
+  .tok::before  { content: 'T'; }
+  .tok.lg, .coin.lg { width: 32px; height: 32px; font-size: 16px; }
+
+  /* Reward toast */
+  .reward { position: fixed; bottom: 80px; right: 24px; min-width: 240px; background: linear-gradient(135deg, #1a2a44 0%, #243a5c 100%);
+    border: 1px solid var(--accent); border-radius: 14px; padding: 14px 18px; z-index: 200;
+    box-shadow: 0 20px 40px rgba(0,0,0,.5), 0 0 30px rgba(200,163,90,.15);
+    opacity: 0; transform: translate(20px, 20px) scale(.95); transition: all .3s cubic-bezier(.4,1.5,.6,1); pointer-events: none; }
+  .reward.show { opacity: 1; transform: translate(0,0) scale(1); }
+  .reward.coin { border-color: #38bdf8; box-shadow: 0 20px 40px rgba(0,0,0,.5), 0 0 40px rgba(56,189,248,.25); }
+  .reward .head { display: flex; align-items: center; gap: 10px; font-weight: 700; font-size: 16px; }
+  .reward .why  { color: var(--muted); font-size: 12.5px; margin-top: 4px; }
+
+  /* Wallet modal */
+  .wallet-stats { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 20px; }
+  .wallet-stat { background: #0c1a30; border: 1px solid var(--border); border-radius: 12px; padding: 16px; text-align: center; }
+  .wallet-stat .icon-row { display: flex; justify-content: center; margin-bottom: 8px; }
+  .wallet-stat .val { font-size: 28px; font-weight: 700; }
+  .wallet-stat .lbl { font-size: 11px; color: var(--muted); text-transform: uppercase; letter-spacing: .8px; margin-top: 2px; }
+  .wallet-history { max-height: 240px; overflow-y: auto; border-top: 1px solid var(--border); padding-top: 14px; }
+  .wallet-history .item { display: flex; align-items: center; gap: 10px; padding: 8px 0; font-size: 13px; border-bottom: 1px solid var(--border); }
+  .wallet-history .item:last-child { border-bottom: none; }
+  .wallet-history .reason { flex: 1; color: var(--text); }
+  .wallet-history .when { color: var(--muted2); font-size: 11.5px; }
+  .wallet-history .amount { color: var(--accent2); font-weight: 600; min-width: 32px; text-align: right; }
+  .wallet-history .amount.coin-amt { color: #38bdf8; }
+
+  /* Streak flame */
+  .streak-flame { display:inline-block; }
+  .streak-flame::before { content: '🔥'; }
+
+  /* Confetti / emoji rain */
+  #confetti { position: fixed; inset: 0; pointer-events: none; z-index: 300; overflow: hidden; }
+  #confetti span.emoji-particle { position: absolute; top: -40px;
+    animation: emoji-fall 2.4s cubic-bezier(.2,.7,.4,1) forwards;
+    user-select: none; text-shadow: 0 2px 6px rgba(0,0,0,.4); }
+  @keyframes emoji-fall {
+    0%   { transform: translateY(0)    rotate(0deg);    opacity: 1; }
+    100% { transform: translateY(110vh) rotate(720deg); opacity: 0; }
+  }
+
+  /* Big celebration text — bouncy, brand-gradient, "HOURRÁ!" */
+  .big-celebration {
+    position: fixed; top: 38%; left: 50%; z-index: 400; pointer-events: none;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+    font-size: clamp(56px, 11vw, 140px); font-weight: 900; letter-spacing: 3px;
+  }
+  .big-celebration.soft {
+    font-size: clamp(36px, 7vw, 80px); top: 32%; letter-spacing: 2px;
+    background: linear-gradient(135deg, #c8a35a 0%, #f472b6 35%, #38bdf8 70%, #4ade80 100%);
+    -webkit-background-clip: text; background-clip: text; color: transparent;
+    text-shadow: 0 0 40px rgba(200,163,90,.25);
+    transform: translate(-50%, -50%) scale(0) rotate(-12deg);
+    animation: hourra 2.2s cubic-bezier(.34, 1.56, .64, 1) forwards;
+    white-space: nowrap;
+  }
+  @keyframes hourra {
+    0%   { transform: translate(-50%, -50%) scale(0)    rotate(-15deg); opacity: 0; }
+    30%  { transform: translate(-50%, -50%) scale(1.2)  rotate(6deg);   opacity: 1; }
+    55%  { transform: translate(-50%, -50%) scale(.95)  rotate(-3deg);  opacity: 1; }
+    75%  { transform: translate(-50%, -50%) scale(1.05) rotate(1deg);   opacity: 1; }
+    100% { transform: translate(-50%, -50%) scale(.85)  rotate(0deg);   opacity: 0; }
+  }
+
+  @media (max-width: 800px) {
+    .stats { grid-template-columns: repeat(2, 1fr); }
+    .detail-grid { grid-template-columns: 1fr; }
+    .job-row { grid-template-columns: 1fr; gap: 8px; }
+    .job-row .count { text-align: left; display: inline-block; margin-right: 18px; }
+    .cand-row { grid-template-columns: 1fr; gap: 8px; }
+    .container { padding: 18px; }
+    .topbar { padding: 12px 16px; }
+    .view-head h1 { font-size: 22px; }
+  }
+</style>
+</head>
+<body>
+
+<!-- ================ LOGIN ================ -->
+<div id="login" class="login-wrap">
+  <div class="login-card">
+    <div class="brand">
+      <div class="brand-mark">T</div>
+      <div>
+        <div class="brand-title">Trees Engineering</div>
+        <div class="brand-sub">Recruiter Workspace</div>
+      </div>
+    </div>
+    <h1>Sign in</h1>
+    <p class="sub">Pick your name and enter your PIN.</p>
+    <div id="loginErr" class="err">Wrong PIN — try again.</div>
+    <div class="field">
+      <label for="who">Recruiter</label>
+      <select id="who">
+        <option value="">Choose…</option>
+        <option value="Adrianna">Adrianna</option>
+        <option value="AlyaKL">Alya (KL)</option>
+        <option value="AlyaNS">Alya (NS)</option>
+        <option value="Puti">Puti</option>
+        <option value="Rina">Rina</option>
+        <option value="Siti">Siti</option>
+        <option value="Admin">— Admin (Quentin) —</option>
+      </select>
+    </div>
+    <div class="field">
+      <label for="pin">PIN</label>
+      <input id="pin" type="password" inputmode="numeric" autocomplete="off" placeholder="••••" />
+    </div>
+    <button id="loginBtn" class="btn block">Enter workspace →</button>
+  </div>
+</div>
+
+<!-- ================ APP ================ -->
+<div id="app" class="app">
+
+  <div class="topbar">
+    <div class="left">
+      <div class="brand-mark" style="width:32px;height:32px;font-size:15px;">T</div>
+      <div>
+        <div class="brand-title" style="font-size:14px;">Trees Engineering</div>
+        <div class="brand-sub" style="font-size:10px;">Recruiter Workspace</div>
+      </div>
+    </div>
+    <div class="right">
+      <div id="walletPill" class="wallet-pill" onclick="openWallet()" style="display:none;">
+        <span class="currency"><span class="tok"></span><span id="wTokens">0</span></span>
+        <span class="currency"><span class="coin"></span><span id="wCoins">0</span></span>
+        <span class="streak" id="wStreak" style="display:none;"><span class="streak-flame"></span> <span id="wStreakN">0</span></span>
+      </div>
+      <span class="pill" id="viewPill">Recruiter</span>
+      <span class="who">Signed in as <b id="whoLabel">—</b></span>
+      <button class="logout" onclick="logout()">Sign out</button>
+    </div>
+  </div>
+
+  <div class="container">
+    <div id="screen-jobs"></div>
+    <div id="screen-detail" style="display:none;"></div>
+  </div>
+
+</div>
+
+<!-- Wallet modal -->
+<div id="modal-wallet" class="modal-bg">
+  <div class="modal" style="max-width:520px;">
+    <h2>Your wallet</h2>
+    <p class="sub" id="walletSub">Tokens for interviews · Coins for placements · Streak for daily activity.</p>
+
+    <div class="wallet-stats">
+      <div class="wallet-stat">
+        <div class="icon-row"><span class="tok lg"></span></div>
+        <div class="val" id="walletTokens" style="color: var(--accent);">0</div>
+        <div class="lbl">Tokens</div>
+      </div>
+      <div class="wallet-stat">
+        <div class="icon-row"><span class="coin lg"></span></div>
+        <div class="val" id="walletCoins" style="color: #38bdf8;">0</div>
+        <div class="lbl">Coins</div>
+      </div>
+      <div class="wallet-stat">
+        <div class="val" id="walletStreak" style="color: var(--orange);"><span class="streak-flame"></span> 0</div>
+        <div class="lbl">Day streak</div>
+      </div>
+      <div class="wallet-stat">
+        <div class="val" id="walletXP" style="color: var(--green);">Lv 1</div>
+        <div class="lbl">Level</div>
+      </div>
+    </div>
+
+    <h3 style="margin: 8px 0 6px; font-size: 13px; font-weight: 600; color: var(--muted); text-transform: uppercase; letter-spacing: .8px;">Recent activity</h3>
+    <div class="wallet-history" id="walletHistory"></div>
+
+    <div class="footer">
+      <div class="hint" style="color: var(--muted2); font-size: 12px;">
+        Earn rules: +1 tok per IV scheduled/done · +2 tok offer · +5 tok offer accepted · +1 coin + 10 tok placement.
+      </div>
+      <div class="right" style="margin-left:auto;">
+        <button class="btn ghost" onclick="closeWallet()">Close</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div id="confetti"></div>
+<div id="reward" class="reward">
+  <div class="head" id="rewardHead">+1 Token</div>
+  <div class="why" id="rewardWhy">—</div>
+</div>
+
+<!-- ================ MODALS ================ -->
+<div id="modal-job" class="modal-bg">
+  <div class="modal">
+    <h2 id="jobModalTitle">New job</h2>
+    <p class="sub" id="jobModalSub">Create a new role to start tracking candidates.</p>
+
+    <div class="field-linked">
+      <div class="field">
+        <label>
+          Client
+          <span class="integ hubspot">HubSpot · synced</span>
+        </label>
+        <select id="j_client">
+          <option value="">Pick a client from HubSpot…</option>
+        </select>
+        <div class="hint">Companies pulled from HubSpot CRM.<span class="integ-not-connected">⚠ Not connected yet — mock list.</span></div>
+      </div>
+    </div>
+
+    <div class="field-linked market">
+      <div class="field">
+        <label>
+          Marketplace job link
+          <span class="integ market">Trees Marketplace</span>
+        </label>
+        <input type="url" id="j_marketplace_url" placeholder="https://marketplace.trees-engineering.com/jobs/…" />
+        <div class="hint">Paste the marketplace listing link.<span class="integ-not-connected">⚠ Auto-fill from link coming soon — type the title below for now.</span></div>
+      </div>
+    </div>
+
+    <div class="row2">
+      <div class="field"><label>Job title</label>
+        <input id="j_title" placeholder="e.g. Senior Piping Engineer" />
+      </div>
+      <div class="field"><label>Status</label>
+        <select id="j_status">
+          <option value="open">Open</option>
+          <option value="on_hold">On hold</option>
+          <option value="closed">Closed</option>
+        </select>
+      </div>
+    </div>
+    <div id="j_recruiter_field" class="field" style="display:none;"><label>Assigned recruiter</label>
+      <select id="j_recruiter"></select>
+    </div>
+
+    <div class="row2">
+      <div class="field"><label>Negotiation owner</label>
+        <select id="j_neg_owner" onchange="toggleCommercialName()">
+          <option value="recruiter">Recruiter handles it</option>
+          <option value="commercial">Commercial team</option>
+        </select>
+      </div>
+      <div class="field" id="j_commercial_field" style="display:none;"><label>Commercial lead</label>
+        <input id="j_commercial_name" placeholder="e.g. Quentin" />
+      </div>
+    </div>
+
+    <div class="field"><label>Description / brief (optional)</label>
+      <textarea id="j_desc" placeholder="Key requirements, salary range, deadline, etc."></textarea>
+    </div>
+    <div class="footer">
+      <button class="btn ghost" id="j_delete" style="display:none;" onclick="deleteJob()">Delete job</button>
+      <div class="right" style="margin-left:auto;">
+        <button class="btn ghost" onclick="closeJobModal()">Cancel</button>
+        <button class="btn" onclick="saveJob()">Save job</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div id="modal-cand" class="modal-bg">
+  <div class="modal">
+    <h2 id="candModalTitle">New candidate</h2>
+    <p class="sub" id="candModalSub">—</p>
+    <div class="field-linked">
+      <div class="field">
+        <label>
+          Candidate
+          <span class="integ hubspot">HubSpot · contacts</span>
+          <span id="c_match" style="margin-left:8px; font-size:11px; font-weight:600;"></span>
+        </label>
+        <input id="c_name" list="hubspot_contacts" placeholder="Start typing — pick from HubSpot Contacts…" autocomplete="off" />
+        <datalist id="hubspot_contacts"></datalist>
+        <div class="hint">Names pulled from HubSpot CRM contacts.<span class="integ-not-connected">⚠ Not connected yet — mock list.</span></div>
+      </div>
+    </div>
+
+    <div id="c_neg_banner" class="neg-banner" style="display:none;"></div>
+
+    <div class="row2">
+      <div class="field"><label>Stage</label>
+        <select id="c_status">
+          <optgroup label="Sourcing">
+            <option value="sourced">Sourced</option>
+            <option value="screening">Pre-screen call (recruiter)</option>
+          </optgroup>
+          <optgroup label="With client">
+            <option value="cv_sent">CV sent to client</option>
+            <option value="client_iv_scheduled">Client IV scheduled</option>
+            <option value="client_iv_done">Client IV done</option>
+          </optgroup>
+          <optgroup label="Closing">
+            <option value="offer">Offer / negotiating</option>
+            <option value="offer_accepted">Offer accepted</option>
+            <option value="contract_signed">Contract signed</option>
+            <option value="started">Started</option>
+          </optgroup>
+          <optgroup label="Out">
+            <option value="rejected">Rejected</option>
+            <option value="withdrawn">Withdrew</option>
+            <option value="on_hold">On hold</option>
+          </optgroup>
+        </select>
+      </div>
+      <div class="field"><label>Status date</label>
+        <input type="date" id="c_date" />
+      </div>
+    </div>
+    <div class="row2">
+      <div class="field"><label>Email <span style="color:var(--muted2); font-size:10px; font-weight:500;">· auto-filled from HubSpot</span></label>
+        <input type="email" id="c_email" placeholder="name@example.com" />
+      </div>
+      <div class="field"><label>Phone <span style="color:var(--muted2); font-size:10px; font-weight:500;">· auto-filled from HubSpot</span></label>
+        <input id="c_phone" placeholder="+60…" />
+      </div>
+    </div>
+    <div class="field"><label>CV link (optional)</label>
+      <input type="url" id="c_cv" placeholder="https://drive.google.com/…" />
+    </div>
+    <div class="field"><label>Notes</label>
+      <textarea id="c_notes" placeholder="Last interaction, salary expectation, blockers…"></textarea>
+      <div class="hint">Tip: Each save appends a timeline entry — keep it short and dated mentally.</div>
+    </div>
+    <div class="field">
+      <label>Interview prep notes
+        <span style="color:var(--muted2); font-size:10px; font-weight:500;">— used to coach the candidate before the client IV</span>
+      </label>
+      <textarea id="c_prep" placeholder="Client style, likely questions, salary anchor, what NOT to say…"></textarea>
+      <div class="hint">Visible only to you. Will plug into the LLM for auto-prep generation later.</div>
+    </div>
+    <div id="c_timeline_wrap" style="display:none;">
+      <label>Timeline</label>
+      <div class="timeline" id="c_timeline"></div>
+    </div>
+    <div class="footer">
+      <button class="btn danger sm" id="c_delete" style="display:none;" onclick="deleteCandidate()">Delete</button>
+      <div class="right" style="margin-left:auto;">
+        <button class="btn ghost" id="c_contact" style="display:none;" onclick="openContactModal()">✉ Contact candidate</button>
+        <button class="btn ghost" onclick="closeCandModal()">Cancel</button>
+        <button class="btn" onclick="saveCandidate()">Save candidate</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Contact candidate modal -->
+<div id="modal-contact" class="modal-bg">
+  <div class="modal" style="max-width:620px;">
+    <h2>✉ Contact candidate</h2>
+    <p class="sub" id="contactSub">Write what you want to say — AI rewrites it as a polished email, and the bot sends it.</p>
+
+    <div class="field"><label>To</label>
+      <input id="m_to" readonly style="background:#0a1628; color:var(--muted);" />
+    </div>
+
+    <div class="field"><label>Subject</label>
+      <input id="m_subject" placeholder="e.g. Senior Piping Engineer — exploration call" />
+    </div>
+
+    <div class="field">
+      <label>Your draft <span style="color:var(--muted2); font-size:10px; font-weight:500;">— rough notes are fine, AI will polish</span></label>
+      <textarea id="m_draft" placeholder="hey, saw your CV, would love to chat tuesday afternoon. role is senior piping at APL, day rate 1.2k MYR ok? — Rina" style="min-height:90px;"></textarea>
+    </div>
+
+    <div class="field-linked" style="border-left-color: rgba(167,139,250,.4); background: linear-gradient(180deg, rgba(167,139,250,.04) 0%, transparent 100%);">
+      <div class="field" style="margin-bottom:8px;">
+        <label>
+          AI-rewritten email
+          <span class="integ" style="background:rgba(167,139,250,.12); color:var(--purple); border-color:rgba(167,139,250,.3);">AI · polished</span>
+        </label>
+        <textarea id="m_rewritten" placeholder="Click ‘Rewrite with AI’ to generate a polished version from your draft…" style="min-height:160px; background:#0d1d33;"></textarea>
+        <div class="hint">You can edit the rewritten version before sending.<span class="integ-not-connected">⚠ Mock AI for now — real LLM next.</span></div>
+      </div>
+      <button class="btn ghost sm" onclick="aiRewrite()">↻ Rewrite with AI</button>
+    </div>
+
+    <div class="footer">
+      <button class="btn ghost" onclick="closeContactModal()">Cancel</button>
+      <div class="right" style="margin-left:auto;">
+        <button class="btn" onclick="sendEmail()">
+          ✈ Send via bot
+          <span style="font-size:9px; opacity:.7; margin-left:4px;">(mock)</span>
+        </button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div id="toast" class="toast">Saved</div>
+
+<script>
+/* ============================================================
+   CONFIG
+   ============================================================ */
+const PINS = {
+  'Adrianna': '1111',
+  'AlyaKL':   '2222',
+  'AlyaNS':   '3333',
+  'Puti':     '4444',
+  'Rina':     '5555',
+  'Siti':     '6666',
+  'Admin':    '9999'
+};
+const RECRUITERS = ['Adrianna','AlyaKL','AlyaNS','Puti','Rina','Siti'];
+const DISPLAY = { 'AlyaKL': 'Alya (KL)', 'AlyaNS': 'Alya (NS)', 'Admin': 'Quentin (Admin)' };
+const STATUS_LABEL = {
+  sourced:              'Sourced',
+  screening:            'Pre-screen call',
+  cv_sent:              'CV sent to client',
+  client_iv_scheduled:  'Client IV scheduled',
+  client_iv_done:       'Client IV done',
+  offer:                'Offer / negotiating',
+  offer_accepted:       'Offer accepted',
+  contract_signed:      'Contract signed',
+  started:              'Started',
+  rejected:             'Rejected',
+  withdrawn:            'Withdrew',
+  on_hold:              'On hold'
+};
+const STATUS_ORDER = ['sourced','screening','cv_sent','client_iv_scheduled','client_iv_done','offer','offer_accepted','contract_signed','started','rejected','withdrawn','on_hold'];
+const JOB_STATUS_LABEL = { open: 'Open', on_hold: 'On hold', closed: 'Closed' };
+
+const STORE_KEY = 'treesWorkspace_v1';
+
+/* ============================================================
+   DB — localStorage today, Supabase tomorrow (swap functions only)
+   ============================================================ */
+const DB = {
+  data: { jobs: [], candidates: [] },
+  load() {
+    try {
+      const raw = localStorage.getItem(STORE_KEY);
+      if (raw) { this.data = JSON.parse(raw); this.migrate(); this.save(); return; }
+    } catch(e){}
+    this.data = { jobs: this._seedJobs(), candidates: [] };
+    this.save();
+  },
+  save() { try { localStorage.setItem(STORE_KEY, JSON.stringify(this.data)); } catch(e){} },
+  _seedJobs() {
+    // Pre-populated from Q1 CSV so recruiters see jobs from day 1.
+    const seed = [
+      ['Adrianna','APL','Structural Engineer','open'],
+      ['Adrianna','APL','Piping Engineer','open'],
+      ['Adrianna','APL','E&I Designer','open'],
+      ['Adrianna','APL','E&I Drafter','open'],
+      ['Adrianna','CIMC Raffles','Senior Piping Engineer','closed'],
+      ['Adrianna','Longitude','Commissioning Engineer (EIT)','open'],
+      ['Adrianna','NOV','Mechanical Static Engineer','open'],
+      ['Adrianna','NOV','Mechanical Rotating Engineer','open'],
+      ['Adrianna','NOV','Material Handling Engineer','open'],
+      ['Adrianna','NOV','Pipe Stress Engineer','open'],
+      ['Adrianna','NOV','Structural Engineer','open'],
+      ['Adrianna','NOV','Senior Structural Engineer','closed'],
+      ['Adrianna','NOV','Senior E&I Designer','open'],
+      ['Adrianna','NOV','Senior Commissioning Engineer','open'],
+      ['Adrianna','NOV','Senior Rotating Static Engineer','open'],
+      ['Adrianna','NOV','Piping Designer','open'],
+      ['Adrianna','reNIKOLA','Project Director','open'],
+      ['Adrianna','ISS','Mechanical Rotating Package Engineer','open'],
+      ['Adrianna','ISS','DCS Instrument Engineer','open'],
+      ['Adrianna','Technip Energies','Material Handling Engineer','open'],
+      ['Adrianna','PT Layar Nusantara Gas','Fabrication Supervisor E/I','open'],
+      ['Adrianna','Agile/KBR','Interface Engineering Manager','open'],
+      ['AlyaKL','APL','Pipe Stress Engineer','open'],
+      ['AlyaKL','APL','Piping Engineer','open'],
+      ['AlyaKL','APL','Piping Designer','open'],
+      ['AlyaKL','APL','Structural Engineer','open'],
+      ['AlyaKL','APL','Structural Designer','open'],
+      ['AlyaKL','APL','Technical Safety Engineer','open'],
+      ['AlyaKL','APL','E&I Designer','open'],
+      ['AlyaKL','APL','E&I Drafter','open'],
+      ['AlyaKL','Genting Energy','Process Safety Engineer','open'],
+      ['AlyaKL','PT Layar Nusantara Gas','Fabrication Supervisor E/I','open'],
+      ['AlyaKL','PT Layar Nusantara Gas','QC Inspector (E/I/T)','open'],
+      ['AlyaKL','PT Layar Nusantara Gas','Process Safety Engineer','closed'],
+      ['AlyaKL','T7 Global','Legal Associate','open'],
+      ['AlyaKL','NOV','Senior Pipe Stress Engineer','open'],
+      ['AlyaKL','NOV','Senior Structural Engineer','open'],
+      ['AlyaKL','NOV','Piping Designer','closed'],
+      ['AlyaKL','TAQA','Field Engineer','open'],
+      ['AlyaKL','Dialog','Piping Manager','open'],
+      ['AlyaKL','IFP Engineering','Senior Mechanical Engineer, Rotating Package','open'],
+      ['AlyaNS','Genting Energy','Senior Hull & Marine Engineer','open'],
+      ['AlyaNS','Genting Energy','Senior Structural Engineer','open'],
+      ['AlyaNS','SK Earthon','Cost Accountant','open'],
+      ['AlyaNS','EnQuest','Lead Geophysicist','open'],
+      ['AlyaNS','PT Layar Nusantara Gas','Senior Process Safety Engineer','open'],
+      ['AlyaNS','PT Layar Nusantara Gas','Senior Government Relations Officer','closed'],
+      ['AlyaNS','PT Layar Nusantara Gas','Senior T&I Engineer (FLNG Nantong)','open'],
+      ['AlyaNS','PT Layar Nusantara Gas','Maintenance Supervisor (Papua)','on_hold'],
+      ['AlyaNS','Saipem Indonesia','Marine Installation Engineer','open'],
+      ['AlyaNS','T7 Global','Legal Associate','open'],
+      ['AlyaNS','IFP Engineering','Senior Process Engineer','open'],
+      ['AlyaNS','IFP Engineering','Lead Pipeline Engineer','open'],
+      ['AlyaNS','IFP Engineering','Senior Civil & Structural Engineer','open'],
+      ['AlyaNS','INPEX','Procurement Executive','open'],
+      ['AlyaNS','Dialog','Head of Engineering & Construction','open'],
+      ['Puti','PT Layar Nusantara Gas','Project Engineer','open'],
+      ['Puti','PT Layar Nusantara Gas','Lead Community Relations Officer','open'],
+      ['Puti','PT Layar Nusantara Gas','Senior Government Relations Officer','open'],
+      ['Puti','PT Layar Nusantara Gas','Senior Project Engineer (FLNG)','open'],
+      ['Puti','PT Layar Nusantara Gas','Senior Process Safety Engineer','open'],
+      ['Puti','PT Layar Nusantara Gas','Fabrication Supervisor E/I','open'],
+      ['Puti','PT Layar Nusantara Gas','Senior Permitting Officer','open'],
+      ['Puti','PT Layar Nusantara Gas','Senior Risk Analyst','open'],
+      ['Puti','Genting Energy','Expeditor','closed'],
+      ['Puti','NOV','Senior Pipe Stress Engineer','open'],
+      ['Puti','Ping Petroleum','Engineering Manager','open'],
+      ['Puti','IFP Engineering','Senior Instrument Engineer','open'],
+      ['Rina','Genting Energy','Senior E&I Engineer','closed'],
+      ['Rina','Genting Energy','Senior Project Engineer (FLNG)','open'],
+      ['Rina','Genting Energy','Material Co-ordinator','closed'],
+      ['Rina','Genting Energy','Commissioning Engineer (EIT)','open'],
+      ['Rina','Genting Energy','Senior Process Safety Engineer','open'],
+      ['Rina','PT Layar Nusantara Gas','Project Engineer','open'],
+      ['Rina','PT Layar Nusantara Gas','Expeditor','open'],
+      ['Rina','PT Layar Nusantara Gas','QC Inspector (E/I/T)','open'],
+      ['Rina','PT Layar Nusantara Gas','Regulatory Officer','open'],
+      ['Rina','INPEX','Procurement Executive','open'],
+      ['Rina','T7 Global','Legal Associate','open'],
+      ['Rina','Bluewater','Project Engineer','open'],
+      ['Rina','Dialog','Head of Engineering & Construction','open'],
+      ['Rina','Dialog','Piping Manager','open'],
+      ['Rina','IFP Engineering','Senior Electrical Engineer','open'],
+      ['Siti','Genting Energy','Senior Commissioning Engineer','closed'],
+      ['Siti','Genting Energy','Integration Engineer','open'],
+      ['Siti','MMC','TSE (Technical Service Engineer)','open'],
+      ['Siti','MMC','Construction Engineer','open'],
+      ['Siti','INPEX','Senior Drilling Engineer','open'],
+      ['Siti','Bluewater','Business Development Manager','open'],
+      ['Siti','Vantris','Engineering Manager (E&I/Process)','open'],
+      ['Siti','Dialog','Head of Engineering & Construction','open']
+    ];
+    const now = Date.now();
+    return seed.map((r, i) => ({
+      id: 'j_'+(i+1).toString().padStart(3,'0'),
+      recruiter: r[0], client: r[1], title: r[2], status: r[3], description: '',
+      created_at: now, updated_at: now
+    }));
+  },
+  uid(p) { return p+'_'+Date.now().toString(36)+'_'+Math.random().toString(36).slice(2,7); },
+
+  /* ----- Jobs ----- */
+  listJobs(recruiter) {
+    const all = this.data.jobs.slice().sort((a,b)=> (b.updated_at||0)-(a.updated_at||0));
+    return recruiter ? all.filter(j => j.recruiter === recruiter) : all;
+  },
+  getJob(id) { return this.data.jobs.find(j => j.id === id); },
+  createJob({ recruiter, client, title, status, description, marketplace_url, negotiation_owner, commercial_name }) {
+    const job = { id: this.uid('j'), recruiter, client, title, status: status||'open',
+      description: description||'', marketplace_url: marketplace_url||'',
+      negotiation_owner: negotiation_owner || 'recruiter',
+      commercial_name: commercial_name || '',
+      created_at: Date.now(), updated_at: Date.now() };
+    this.data.jobs.unshift(job); this.save(); return job;
+  },
+  updateJob(id, patch) {
+    const j = this.getJob(id); if (!j) return null;
+    Object.assign(j, patch, { updated_at: Date.now() }); this.save(); return j;
+  },
+  removeJob(id) {
+    this.data.jobs = this.data.jobs.filter(j => j.id !== id);
+    this.data.candidates = this.data.candidates.filter(c => c.job_id !== id);
+    this.save();
+  },
+
+  /* ----- Candidates ----- */
+  listCandidates(job_id) {
+    return this.data.candidates.filter(c => c.job_id === job_id)
+      .sort((a,b)=> (b.updated_at||0)-(a.updated_at||0));
+  },
+  getCandidate(id) { return this.data.candidates.find(c => c.id === id); },
+  createCandidate(c) {
+    const cand = { id: this.uid('c'), timeline: [], ...c, created_at: Date.now(), updated_at: Date.now() };
+    if (c.notes) cand.timeline = [{ at: Date.now(), status: c.status, note: c.notes }];
+    this.data.candidates.unshift(cand); this.save(); return cand;
+  },
+  updateCandidate(id, patch) {
+    const c = this.getCandidate(id); if (!c) return null;
+    const statusChanged = patch.status && patch.status !== c.status;
+    const noteAdded     = patch.notes && patch.notes !== c.notes;
+    if (statusChanged || noteAdded) {
+      c.timeline = c.timeline || [];
+      c.timeline.unshift({ at: Date.now(), status: patch.status || c.status, note: patch.notes || '' });
+    }
+    Object.assign(c, patch, { updated_at: Date.now() }); this.save(); return c;
+  },
+  removeCandidate(id) {
+    this.data.candidates = this.data.candidates.filter(c => c.id !== id); this.save();
+  },
+
+  /* ----- Counters derived from candidates for the job tiles ----- */
+  jobStats(job_id) {
+    const cands = this.listCandidates(job_id);
+    const s = { total: cands.length, cv:0, iv:0, of:0, pl:0 };
+    const cvOrLater = ['cv_sent','client_iv_scheduled','client_iv_done','offer','offer_accepted','contract_signed','started'];
+    const ivOrLater = ['client_iv_scheduled','client_iv_done','offer','offer_accepted','contract_signed','started'];
+    const offerOrLater = ['offer','offer_accepted','contract_signed','started'];
+    const placed   = ['contract_signed','started'];
+    cands.forEach(c => {
+      if (cvOrLater.includes(c.status)) s.cv++;
+      if (ivOrLater.includes(c.status)) s.iv++;
+      if (offerOrLater.includes(c.status)) s.of++;
+      if (placed.includes(c.status))    s.pl++;
+    });
+    return s;
+  },
+
+  /* Migrate v1 statuses (iv_scheduled / iv_done) to v2 (client_iv_*) once. */
+  migrate() {
+    const map = { iv_scheduled: 'client_iv_scheduled', iv_done: 'client_iv_done' };
+    (this.data.candidates || []).forEach(c => { if (map[c.status]) c.status = map[c.status]; });
+  }
+};
+
+/* ============================================================
+   STATE + LOGIN
+   ============================================================ */
+let CURRENT = null;     // who's signed in
+let CURRENT_JOB = null; // open job id when in detail view
+let EDITING_CAND = null;
+
+function $(id) { return document.getElementById(id); }
+function disp(name) { return DISPLAY[name] || name; }
+function safeStore(k,v){ try{ sessionStorage.setItem(k,v);}catch(e){} }
+function safeRead(k){ try{ return sessionStorage.getItem(k);}catch(e){return null;} }
+function safeWipe(k){ try{ sessionStorage.removeItem(k);}catch(e){} }
+
+/* ============================================================
+   GAMIFICATION — sounds, wallet, awards
+   ============================================================ */
+const SFX = {
+  ctx: null, muted: false,
+  init() {
+    if (this.ctx || this.muted) return;
+    try { this.ctx = new (window.AudioContext || window.webkitAudioContext)(); } catch(e){ this.muted = true; }
+  },
+  // Single tone with envelope + optional pitch sweep (for slide whistle vibes).
+  tone({ freq, dur, type='sine', vol=0.15, delay=0, sweepTo=null, attack=0.005 }) {
+    this.init(); if (!this.ctx) return;
+    const t0 = this.ctx.currentTime + delay;
+    const o = this.ctx.createOscillator();
+    const g = this.ctx.createGain();
+    o.type = type;
+    o.frequency.setValueAtTime(freq, t0);
+    if (sweepTo) o.frequency.exponentialRampToValueAtTime(sweepTo, t0 + dur);
+    o.connect(g); g.connect(this.ctx.destination);
+    g.gain.setValueAtTime(0, t0);
+    g.gain.linearRampToValueAtTime(vol, t0 + attack);
+    g.gain.exponentialRampToValueAtTime(0.0001, t0 + dur);
+    o.start(t0); o.stop(t0 + dur + 0.02);
+  },
+  // Filtered white noise — for crowd cheers, drum hits.
+  noise({ dur, vol=0.12, delay=0, bandpass=null }) {
+    this.init(); if (!this.ctx) return;
+    const t0 = this.ctx.currentTime + delay;
+    const buf = this.ctx.createBuffer(1, Math.max(1, this.ctx.sampleRate * dur), this.ctx.sampleRate);
+    const data = buf.getChannelData(0);
+    for (let i = 0; i < data.length; i++) data[i] = Math.random() * 2 - 1;
+    const src = this.ctx.createBufferSource(); src.buffer = buf;
+    const g = this.ctx.createGain();
+    let last = src;
+    if (bandpass) {
+      const bp = this.ctx.createBiquadFilter();
+      bp.type = 'bandpass'; bp.frequency.value = bandpass; bp.Q.value = 4;
+      src.connect(bp); last = bp;
+    }
+    last.connect(g); g.connect(this.ctx.destination);
+    g.gain.setValueAtTime(vol, t0);
+    g.gain.exponentialRampToValueAtTime(0.0001, t0 + dur);
+    src.start(t0); src.stop(t0 + dur);
+  },
+
+  // === The actual sound effects ===
+
+  // Mario-coin style ping for small wins.
+  token() {
+    this.tone({ freq: 988,  dur: 0.07, type: 'square', vol: 0.12 });
+    this.tone({ freq: 1318, dur: 0.22, type: 'square', vol: 0.12, delay: 0.07 });
+  },
+
+  // Slide-whistle UP + cartoon "bdoo doo" — small fun moment.
+  whoosh() {
+    this.tone({ freq: 400, dur: 0.35, type: 'sine', vol: 0.18, sweepTo: 1800 });
+  },
+
+  // Boing — for offers / pivot moments.
+  boing() {
+    this.tone({ freq: 900, dur: 0.4, type: 'sine', vol: 0.18, sweepTo: 220 });
+    this.tone({ freq: 1100, dur: 0.4, type: 'triangle', vol: 0.08, sweepTo: 280, delay: 0.02 });
+  },
+
+  // BIG WIN: airhorn + slide whistle + fanfare + crowd cheer. The Hourrá!
+  coin() {
+    // Airhorn (1.5 hits)
+    this.tone({ freq: 466, dur: 0.30, type: 'sawtooth', vol: 0.12 });
+    this.tone({ freq: 587, dur: 0.30, type: 'sawtooth', vol: 0.12 });
+    this.tone({ freq: 466, dur: 0.30, type: 'sawtooth', vol: 0.12, delay: 0.35 });
+    this.tone({ freq: 587, dur: 0.30, type: 'sawtooth', vol: 0.12, delay: 0.35 });
+    // Slide whistle up
+    this.tone({ freq: 350, dur: 0.55, type: 'sine', vol: 0.14, delay: 0.75, sweepTo: 2200 });
+    // Victory fanfare arpeggio
+    [659, 784, 988, 1319, 1568].forEach((f, i) => {
+      this.tone({ freq: f, dur: 0.14, type: 'triangle', vol: 0.16, delay: 1.35 + i*0.09 });
+    });
+    // Final stab
+    this.tone({ freq: 1568, dur: 0.55, type: 'square',   vol: 0.10, delay: 1.85 });
+    this.tone({ freq: 1976, dur: 0.55, type: 'triangle', vol: 0.10, delay: 1.85 });
+    this.tone({ freq: 2349, dur: 0.55, type: 'sine',     vol: 0.08, delay: 1.85 });
+    // Crowd cheer (filtered noise burst)
+    this.noise({ dur: 1.6, vol: 0.08, delay: 1.0, bandpass: 1700 });
+    this.noise({ dur: 0.05, vol: 0.18, delay: 0.0, bandpass: 200 }); // kick
+  },
+
+  // Power-up jingle for level up.
+  level() {
+    [523, 659, 784, 1047, 1319, 1568, 1976].forEach((f, i) => {
+      this.tone({ freq: f, dur: 0.12, type: 'square', vol: 0.08, delay: i*0.06 });
+    });
+    this.tone({ freq: 2349, dur: 0.55, type: 'triangle', vol: 0.12, delay: 0.5 });
+  }
+};
+
+// === Celebration phrases — random pick for "big moment" reward.
+const HOURRA_PHRASES = ['HOURRÁ!','BOOOM!','YESSS!','LET\'S GOOO!','CHA-CHING!','BAMM!','EUREKA!','MASSIVE!','ON FIRE!','LEGENDARY!','PLACED IT!','KA-BOOM!','CRUSHED IT!','BIG WIN!','NAILED IT!','HUSTLE PAYS!'];
+const LEVEL_PHRASES  = ['LEVEL UP!','HOTTER!','BEAST MODE!','RISING!','POWERED UP!'];
+const NEW_JOB_PHRASES = ['LET\'S GO!','GAME ON!','NEW BRIEF!','FRESH HUNT!','HUNT MODE!','BRING IT!','TIME TO COOK!','LOCKED IN!'];
+const FRIEND_GREETINGS = [
+  (r,j) => `New brief in 🎯 ${j.title} at ${j.client}. Let's place it, ${r}!`,
+  (r,j) => `Game on for ${j.client} · ${j.title}. You got this 💪`,
+  (r,j) => `${j.title} just landed. I'm rooting for you ${r} 🙌`,
+  (r,j) => `Fresh hunt opened — ${j.client} · ${j.title}. Money on the table 💰`,
+  (r,j) => `${j.client} is on the board. Time to do your thing ${r} ✨`,
+  (r,j) => `${j.title}? Easy. Go get 'em ${r} 🔥`,
+  (r,j) => `Another one for the pile, ${r}. ${j.client} won't know what hit them 🚀`,
+  (r,j) => `Brief locked: ${j.title}. Take your time on the screening — I'll wait here 😎`,
+  (r,j) => `Welcome ${j.client} to your hunt list. Let's cook ${r} 🍳`
+];
+function pickPhrase(arr) { return arr[Math.floor(Math.random() * arr.length)]; }
+
+// === Visual celebration: big bouncing text + emoji rain.
+// (Tenor / GIPHY GIFs will plug in here once an API key is configured.)
+const CELEBRATION_EMOJIS = ['🎉','🎊','🥳','🎈','⭐','💫','🏆','✨','💎','👏','🚀','🔥','💰','🍾','🥂','🎯','💪','😎','🤩'];
+function bigText(text, kind) {
+  const el = document.createElement('div');
+  el.className = 'big-celebration ' + (kind || '');
+  el.textContent = text;
+  document.body.appendChild(el);
+  setTimeout(() => el.remove(), 2200);
+}
+function fireCelebration(text) {
+  bigText(text || pickPhrase(HOURRA_PHRASES));
+  const c = $('confetti');
+  for (let i = 0; i < 70; i++) {
+    const s = document.createElement('span');
+    s.className = 'emoji-particle';
+    s.textContent = CELEBRATION_EMOJIS[Math.floor(Math.random()*CELEBRATION_EMOJIS.length)];
+    s.style.left = (Math.random()*100)+'%';
+    s.style.animationDelay = (Math.random()*0.6)+'s';
+    s.style.animationDuration = (1.8 + Math.random()*1.6)+'s';
+    s.style.fontSize = (22 + Math.random()*28)+'px';
+    c.appendChild(s);
+    setTimeout(() => s.remove(), 3500);
+  }
+}
+// Backwards-compat name used elsewhere in the file
+function fireConfetti() { fireCelebration(); }
+
+// Lighter celebration for new-job creation — friendly, not overwhelming.
+function celebrateNewJob(job) {
+  if (CURRENT === 'Admin') { toast(`Brief added: ${job.title}`); return; }
+  const greet = FRIEND_GREETINGS[Math.floor(Math.random()*FRIEND_GREETINGS.length)](disp(CURRENT), job);
+  // Award + REPLACE the auto-reward toast with the friendly blurb on the next tick.
+  awardTokens(2, `New brief opened · ${job.client} · ${job.title}`);
+  setTimeout(() => showReward(pickPhrase(NEW_JOB_PHRASES), greet, 'token'), 120);
+  // Smaller emoji burst (~24 instead of 70)
+  const c = $('confetti');
+  for (let i = 0; i < 24; i++) {
+    const s = document.createElement('span');
+    s.className = 'emoji-particle';
+    s.textContent = CELEBRATION_EMOJIS[Math.floor(Math.random()*CELEBRATION_EMOJIS.length)];
+    s.style.left = (Math.random()*100)+'%';
+    s.style.animationDelay = (Math.random()*0.5)+'s';
+    s.style.animationDuration = (1.5 + Math.random()*1.2)+'s';
+    s.style.fontSize = (18 + Math.random()*22)+'px';
+    c.appendChild(s);
+    setTimeout(() => s.remove(), 3000);
+  }
+  // Softer big text (smaller scale)
+  bigText(pickPhrase(NEW_JOB_PHRASES), 'soft');
+  // Friendly sounds — whoosh + a little coin ping
+  SFX.whoosh();
+  setTimeout(() => SFX.token(), 220);
+}
+
+function getWallet(recruiter) {
+  DB.data.wallets = DB.data.wallets || {};
+  if (!DB.data.wallets[recruiter]) {
+    DB.data.wallets[recruiter] = { tokens:0, coins:0, streak:0, lastActiveISO:null, history:[] };
+  }
+  return DB.data.wallets[recruiter];
+}
+function xpFromWallet(w) { return w.tokens * 1 + w.coins * 50; }
+function levelFromXP(xp) { return Math.floor(Math.sqrt(xp / 25)) + 1; } // L1 at 0, L2 at 25xp, L3 at 100xp, L4 at 225xp…
+
+function todayISO() { return new Date().toISOString().slice(0,10); }
+function dayDiff(a, b) {
+  const da = new Date(a+'T00:00:00'), db = new Date(b+'T00:00:00');
+  return Math.round((db - da) / 86400000);
+}
+function bumpStreak() {
+  if (CURRENT === 'Admin') return;
+  const w = getWallet(CURRENT);
+  const today = todayISO();
+  if (w.lastActiveISO === today) return;
+  if (w.lastActiveISO && dayDiff(w.lastActiveISO, today) === 1) w.streak += 1;
+  else w.streak = 1;
+  w.lastActiveISO = today;
+  DB.save();
+  renderWalletPill();
+}
+
+function showReward(headHTML, why, kind) {
+  const el = $('reward'); $('rewardHead').innerHTML = headHTML; $('rewardWhy').textContent = why;
+  el.classList.toggle('coin', kind === 'coin');
+  el.classList.add('show');
+  clearTimeout(showReward._t);
+  showReward._t = setTimeout(()=> el.classList.remove('show'), 2400);
+}
+function fireConfetti() {
+  const c = $('confetti');
+  const colors = ['#c8a35a','#d9b878','#38bdf8','#4ade80','#f472b6','#fbbf24'];
+  for (let i = 0; i < 90; i++) {
+    const s = document.createElement('span');
+    s.style.left = (Math.random()*100)+'%';
+    s.style.background = colors[i % colors.length];
+    s.style.animationDelay = (Math.random()*0.4)+'s';
+    s.style.animationDuration = (1.8 + Math.random()*1.4)+'s';
+    s.style.width = (6 + Math.random()*8)+'px';
+    s.style.height = (10 + Math.random()*10)+'px';
+    c.appendChild(s);
+    setTimeout(()=> s.remove(), 3200);
+  }
+}
+
+function awardTokens(n, reason) {
+  if (CURRENT === 'Admin' || n <= 0) return;
+  const w = getWallet(CURRENT);
+  const oldLvl = levelFromXP(xpFromWallet(w));
+  w.tokens += n;
+  w.history.unshift({ at: Date.now(), kind:'token', n, reason });
+  const newLvl = levelFromXP(xpFromWallet(w));
+  DB.save();
+  showReward(`+${n} <span class="tok"></span> Token${n>1?'s':''}`, reason, 'token');
+  SFX.token();
+  if (newLvl > oldLvl) setTimeout(()=> {
+    showReward(`Level up — Lv ${newLvl}!`, 'Your hustle is paying off.', 'token'); SFX.level();
+  }, 1400);
+  renderWalletPill();
+}
+function awardCoin(reason) {
+  if (CURRENT === 'Admin') return;
+  const w = getWallet(CURRENT);
+  const oldLvl = levelFromXP(xpFromWallet(w));
+  w.coins += 1;
+  w.history.unshift({ at: Date.now(), kind:'coin', n: 1, reason });
+  const newLvl = levelFromXP(xpFromWallet(w));
+  DB.save();
+  showReward(`+1 <span class="coin"></span> Coin — Placement!`, reason, 'coin');
+  SFX.coin();
+  fireCelebration(pickPhrase(HOURRA_PHRASES));
+  if (newLvl > oldLvl) setTimeout(()=> {
+    showReward(`Level up — Lv ${newLvl}!`, 'Top recruiter energy.', 'coin');
+    bigText(pickPhrase(LEVEL_PHRASES), 'level');
+    SFX.level();
+  }, 2400);
+  renderWalletPill();
+}
+
+// Awards based on a candidate status change. Awards apply only on the transition itself.
+const AWARDS_BY_STATUS = {
+  screening:           { tokens: 1, label: 'Pre-screen call' },
+  cv_sent:             { tokens: 1, label: 'CV sent to client' },
+  client_iv_scheduled: { tokens: 2, label: 'Client IV scheduled' },
+  client_iv_done:      { tokens: 2, label: 'Client IV completed' },
+  offer:               { tokens: 3, label: 'Offer / negotiating' },
+  offer_accepted:      { tokens: 5, label: 'Offer accepted' },
+  contract_signed:     { tokens: 10, coin: true, label: 'Contract signed — placement!' },
+  started:             { tokens: 5, label: 'Candidate started on the job' }
+};
+function maybeAward(candidate, oldStatus, newStatus) {
+  if (CURRENT === 'Admin') return;
+  if (!newStatus || newStatus === oldStatus) return;
+  const a = AWARDS_BY_STATUS[newStatus]; if (!a) return;
+  const reason = `${a.label} · ${candidate.name}`;
+  if (a.tokens) awardTokens(a.tokens, reason);
+  if (a.coin)   setTimeout(()=> awardCoin(reason), a.tokens ? 800 : 0);
+}
+
+function renderWalletPill() {
+  if (CURRENT === 'Admin' || !CURRENT) { $('walletPill').style.display = 'none'; return; }
+  const w = getWallet(CURRENT);
+  $('walletPill').style.display = 'inline-flex';
+  $('wTokens').textContent = w.tokens;
+  $('wCoins').textContent  = w.coins;
+  if (w.streak > 0) { $('wStreak').style.display = 'inline-flex'; $('wStreakN').textContent = w.streak; }
+  else $('wStreak').style.display = 'none';
+}
+function openWallet() {
+  if (CURRENT === 'Admin') return;
+  const w = getWallet(CURRENT);
+  const xp = xpFromWallet(w); const lvl = levelFromXP(xp);
+  $('walletTokens').textContent = w.tokens;
+  $('walletCoins').textContent  = w.coins;
+  $('walletStreak').innerHTML   = `<span class="streak-flame"></span> ${w.streak}`;
+  $('walletXP').textContent     = `Lv ${lvl}`;
+  $('walletSub').textContent = `Level ${lvl} · ${xp} XP · keep shipping interviews and placements.`;
+  const hist = (w.history || []).slice(0, 40);
+  $('walletHistory').innerHTML = hist.length === 0
+    ? `<div style="color:var(--muted); text-align:center; padding:24px;">No activity yet. Move a candidate to an interview or placement to earn.</div>`
+    : hist.map(h => `
+        <div class="item">
+          <span class="${h.kind === 'coin' ? 'coin' : 'tok'}"></span>
+          <span class="reason">${esc(h.reason)}</span>
+          <span class="when">${fmtDate(h.at)}</span>
+          <span class="amount ${h.kind === 'coin' ? 'coin-amt' : ''}">+${h.n}</span>
+        </div>`).join('');
+  $('modal-wallet').classList.add('show');
+}
+function closeWallet(){ $('modal-wallet').classList.remove('show'); }
+
+function toast(msg) {
+  const t = $('toast'); t.textContent = msg; t.classList.add('show');
+  clearTimeout(toast._t); toast._t = setTimeout(()=> t.classList.remove('show'), 1800);
+}
+
+function doLogin() {
+  const who = $('who').value, pin = $('pin').value.trim();
+  if (!who || !pin) { showErr('Pick a name and enter your PIN.'); return; }
+  if (PINS[who] && PINS[who] === pin) {
+    CURRENT = who; safeStore('treesUser', who); enterApp();
+  } else { showErr('Wrong PIN — try again.'); }
+}
+function showErr(msg){ const e=$('loginErr'); e.textContent=msg; e.classList.add('show'); }
+function logout() {
+  safeWipe('treesUser'); CURRENT=null; CURRENT_JOB=null;
+  $('app').classList.remove('show');
+  $('login').style.display = 'grid';
+  $('pin').value=''; $('who').value=''; $('loginErr').classList.remove('show');
+}
+
+function enterApp() {
+  DB.load();
+  $('login').style.display = 'none';
+  $('app').classList.add('show');
+  $('whoLabel').textContent = disp(CURRENT);
+  $('viewPill').textContent = CURRENT === 'Admin' ? 'Admin view' : 'Recruiter';
+  renderWalletPill();
+  bumpStreak();
+  renderJobsScreen();
+}
+
+/* ============================================================
+   SCREEN: JOB LIST
+   ============================================================ */
+function renderJobsScreen() {
+  CURRENT_JOB = null;
+  $('screen-jobs').style.display = 'block';
+  $('screen-detail').style.display = 'none';
+
+  const isAdmin = CURRENT === 'Admin';
+  const recruiter = isAdmin ? null : CURRENT;
+  const allJobs = DB.listJobs(recruiter);
+
+  // Aggregate stats across visible jobs
+  let cv=0, iv=0, of=0, pl=0, openCount=0;
+  allJobs.forEach(j => {
+    const s = DB.jobStats(j.id);
+    cv+=s.cv; iv+=s.iv; of+=s.of; pl+=s.pl;
+    if (j.status === 'open') openCount++;
+  });
+
+  const clients = [...new Set(DB.data.jobs.map(j=>j.client))].sort();
+
+  $('screen-jobs').innerHTML = `
+    <div class="view-head">
+      <div>
+        <h1>${isAdmin ? 'All jobs' : 'Your jobs'}</h1>
+        <div class="sub">${isAdmin ? 'Across the whole team — pick a recruiter filter below.' : 'Click a job to manage candidates.'}</div>
+      </div>
+      <div class="actions">
+        <button class="btn" onclick="openNewJob()">+ New job</button>
+      </div>
+    </div>
+
+    <div class="stats">
+      <div class="stat"><div class="lbl">Open jobs</div><div class="val">${openCount}</div></div>
+      <div class="stat cv"><div class="lbl">CVs sent</div><div class="val">${cv}</div></div>
+      <div class="stat iv"><div class="lbl">Interviews</div><div class="val">${iv}</div></div>
+      <div class="stat of"><div class="lbl">Offers</div><div class="val">${of}</div></div>
+      <div class="stat pl"><div class="lbl">Placements</div><div class="val">${pl}</div></div>
+    </div>
+
+    <div class="toolbar">
+      <input type="text" id="search" placeholder="Search client or title…" oninput="renderJobList()" />
+      <select id="filterStatus" onchange="renderJobList()">
+        <option value="">All statuses</option>
+        <option value="open">Open</option>
+        <option value="on_hold">On hold</option>
+        <option value="closed">Closed</option>
+      </select>
+      <select id="filterClient" onchange="renderJobList()">
+        <option value="">All clients</option>
+        ${clients.map(c=>`<option>${esc(c)}</option>`).join('')}
+      </select>
+      ${isAdmin ? `
+      <select id="filterRecruiter" onchange="renderJobList()">
+        <option value="">All recruiters</option>
+        ${RECRUITERS.map(r=>`<option value="${r}">${disp(r)}</option>`).join('')}
+      </select>` : ''}
+    </div>
+
+    <div id="jobList"></div>
+  `;
+  renderJobList();
+}
+
+function renderJobList() {
+  const isAdmin = CURRENT === 'Admin';
+  const recruiter = isAdmin ? null : CURRENT;
+  const q = ($('search')?.value || '').trim().toLowerCase();
+  const fs = $('filterStatus')?.value || '';
+  const fc = $('filterClient')?.value || '';
+  const fr = $('filterRecruiter')?.value || '';
+
+  let jobs = DB.listJobs(recruiter);
+  if (fr) jobs = jobs.filter(j => j.recruiter === fr);
+  if (fs) jobs = jobs.filter(j => j.status === fs);
+  if (fc) jobs = jobs.filter(j => j.client === fc);
+  if (q)  jobs = jobs.filter(j => (j.client+' '+j.title).toLowerCase().includes(q));
+
+  const host = $('jobList');
+  if (jobs.length === 0) {
+    host.innerHTML = `
+      <div class="empty-state">
+        <h3>No jobs yet</h3>
+        <p>${isAdmin ? 'No jobs match the current filters.' : "Click <b>+ New job</b> above to add the first one."}</p>
+      </div>`;
+    return;
+  }
+
+  host.innerHTML = `<div class="job-grid">${jobs.map(j => {
+    const s = DB.jobStats(j.id);
+    return `
+    <div class="job-row" onclick="openJob('${j.id}')">
+      <div>
+        <div class="title">${esc(j.title)}</div>
+        <div class="meta">
+          <span class="client">${esc(j.client)}</span>
+          ${isAdmin ? `<span>· ${disp(j.recruiter)}</span>` : ''}
+          <span>· ${s.total} candidate${s.total===1?'':'s'}</span>
+        </div>
+      </div>
+      <div class="count ${s.cv?'cv':'zero'}"><div class="n">${s.cv}</div><div class="l">CV</div></div>
+      <div class="count ${s.iv?'iv':'zero'}"><div class="n">${s.iv}</div><div class="l">IV</div></div>
+      <div class="count ${s.of?'of':'zero'}"><div class="n">${s.of}</div><div class="l">Off</div></div>
+      <div class="count ${s.pl?'pl':'zero'}"><div class="n">${s.pl}</div><div class="l">Placed</div></div>
+      <div><span class="status-tag status-${j.status}">${JOB_STATUS_LABEL[j.status]}</span></div>
+    </div>`;
+  }).join('')}</div>`;
+}
+
+/* ============================================================
+   SCREEN: JOB DETAIL (candidates)
+   ============================================================ */
+function openJob(id) {
+  const j = DB.getJob(id); if (!j) return;
+  CURRENT_JOB = id;
+  $('screen-jobs').style.display = 'none';
+  $('screen-detail').style.display = 'block';
+  renderJobDetail();
+}
+
+function renderJobDetail() {
+  const j = DB.getJob(CURRENT_JOB); if (!j) { renderJobsScreen(); return; }
+  const cands = DB.listCandidates(j.id);
+  const s = DB.jobStats(j.id);
+
+  $('screen-detail').innerHTML = `
+    <div class="breadcrumbs">
+      <a onclick="renderJobsScreen()">${CURRENT === 'Admin' ? 'All jobs' : 'Your jobs'}</a>
+      <span class="sep">›</span>
+      <span>${esc(j.client)} · ${esc(j.title)}</span>
+    </div>
+
+    <div class="view-head">
+      <div>
+        <h1>${esc(j.title)}</h1>
+        <div class="sub">
+          <span class="integ hubspot" title="Synced from HubSpot CRM">HubSpot</span>
+          ${esc(j.client)} · ${disp(j.recruiter)} ·
+          <span class="status-tag status-${j.status}">${JOB_STATUS_LABEL[j.status]}</span>
+          · <span title="Who closes the deal" style="color:var(--muted);">Negotiation:
+            <b style="color:${j.negotiation_owner === 'commercial' ? 'var(--pink)' : 'var(--accent2)'};">
+              ${j.negotiation_owner === 'commercial' ? esc(j.commercial_name || 'Commercial team') : 'Recruiter'}
+            </b>
+          </span>
+          ${j.marketplace_url ? `· <a href="${esc(j.marketplace_url)}" target="_blank" rel="noopener"><span class="integ market">Marketplace</span>View listing ↗</a>` : ''}
+        </div>
+      </div>
+      <div class="actions">
+        <button class="btn ghost" onclick="openEditJob('${j.id}')">Edit job</button>
+        <button class="btn" onclick="openNewCandidate()">+ Add candidate</button>
+      </div>
+    </div>
+
+    <div class="stats">
+      <div class="stat"><div class="lbl">Candidates</div><div class="val">${s.total}</div></div>
+      <div class="stat cv"><div class="lbl">CVs sent</div><div class="val">${s.cv}</div></div>
+      <div class="stat iv"><div class="lbl">Interviews</div><div class="val">${s.iv}</div></div>
+      <div class="stat of"><div class="lbl">Offers</div><div class="val">${s.of}</div></div>
+      <div class="stat pl"><div class="lbl">Placements</div><div class="val">${s.pl}</div></div>
+    </div>
+
+    ${j.description ? `<div class="card" style="margin-bottom:24px;">
+      <h3>Brief</h3>
+      <div style="white-space:pre-wrap; font-size:14px; color:var(--text);">${esc(j.description)}</div>
+    </div>` : ''}
+
+    <h3 style="font-size:14px; color:var(--muted); text-transform:uppercase; letter-spacing:.8px; margin:0 0 12px;">Candidates</h3>
+
+    ${cands.length === 0 ? `
+      <div class="empty-state">
+        <h3>No candidates yet</h3>
+        <p>Click <b>+ Add candidate</b> to log the first submission for this role.</p>
+      </div>` : `
+      <div class="cand-list">
+        ${cands.map(c => `
+          <div class="cand-row" onclick="openEditCandidate('${c.id}')">
+            <div>
+              <div class="name">${esc(c.name)}</div>
+              <div class="sub">${c.email ? esc(c.email)+' · ' : ''}${c.phone ? esc(c.phone) : ''}</div>
+            </div>
+            <div><span class="st ${c.status}">${STATUS_LABEL[c.status]}</span></div>
+            <div class="notes">${esc(c.notes || '—')}</div>
+            <div class="when">${fmtDate(c.updated_at)}</div>
+          </div>
+        `).join('')}
+      </div>`
+    }
+  `;
+}
+
+/* ============================================================
+   JOB MODAL
+   ============================================================ */
+let EDITING_JOB = null;
+// ============= HUBSPOT MOCKS =============
+// Mock HubSpot CONTACTS — replace with live HubSpot Contacts API when connected.
+const HUBSPOT_CONTACTS_MOCK = [
+  { name: 'Ahmad Najib',           email: 'ahmad.najib@example.com',     phone: '+60 12-345 6701' },
+  { name: 'Aishahruddin Yusoff',   email: 'aisha.r@example.com',         phone: '+60 12-345 6702' },
+  { name: 'Alvin Tan',             email: 'alvin.tan@example.com',       phone: '+60 12-345 6703' },
+  { name: 'Aziz Rahman',           email: 'aziz.rahman@example.com',     phone: '+60 12-345 6704' },
+  { name: 'Danial Hakim',          email: 'danial.h@example.com',        phone: '+60 12-345 6705' },
+  { name: 'Fairuz Ismail',         email: 'fairuz.i@example.com',        phone: '+60 12-345 6706' },
+  { name: 'Faish Othman',          email: 'faish.o@example.com',         phone: '+60 12-345 6707' },
+  { name: 'Gabrielle Lim',         email: 'gabrielle.lim@example.com',   phone: '+60 12-345 6708' },
+  { name: 'Galvin Wong',           email: 'galvin.w@example.com',        phone: '+60 12-345 6709' },
+  { name: 'Goh Wei Ming',          email: 'goh.wm@example.com',          phone: '+60 12-345 6710' },
+  { name: 'Hafez Aziz',            email: 'hafez.a@example.com',         phone: '+60 12-345 6711' },
+  { name: 'Hajar Salleh',          email: 'hajar.s@example.com',         phone: '+60 12-345 6712' },
+  { name: 'Ilhami Ridhwan',        email: 'ilhami.r@example.com',        phone: '+60 12-345 6713' },
+  { name: 'JC Yeo',                email: 'jc.yeo@example.com',          phone: '+65 9123 4567'   },
+  { name: 'Kamil Hasan',           email: 'kamil.h@example.com',         phone: '+60 12-345 6714' },
+  { name: 'Kelvin Lau',            email: 'kelvin.lau@example.com',      phone: '+60 12-345 6715' },
+  { name: 'Lee Seng Wai',          email: 'lee.sw@example.com',          phone: '+60 12-345 6716' },
+  { name: 'Mark Anderson',         email: 'mark.a@example.com',          phone: '+60 12-345 6717' },
+  { name: 'Muhammad Abdul Mu\'min',email: 'abdul.mumin@example.com',     phone: '+60 12-345 6718' },
+  { name: 'Nemo Ridzuan',          email: 'nemo.r@example.com',          phone: '+60 12-345 6719' },
+  { name: 'Nizam Halim',           email: 'nizam.h@example.com',         phone: '+60 12-345 6720' },
+  { name: 'Pramu Fadlianto',       email: 'pramu.f@example.com',         phone: '+62 812-3456-789' },
+  { name: 'Rahadian Joko Mubagyo', email: 'rahadian.j@example.com',      phone: '+62 812-3456-790' },
+  { name: 'Rizman Hashim',         email: 'rizman.h@example.com',        phone: '+60 12-345 6721' },
+  { name: 'Roslee Selamat',        email: 'roslee.s@example.com',        phone: '+60 12-345 6722' },
+  { name: 'Ruzaini Bakar',         email: 'ruzaini.b@example.com',       phone: '+60 12-345 6723' },
+  { name: 'Saiful Anwar',          email: 'saiful.a@example.com',        phone: '+60 12-345 6724' },
+  { name: 'Sean Philip',           email: 'sean.philip@example.com',     phone: '+62 812-3456-791' },
+  { name: 'Shahafis Mokhtar',      email: 'shahafis.m@example.com',      phone: '+60 12-345 6725' },
+  { name: 'Sina Pourkermani',      email: 'sina.p@example.com',          phone: '+60 12-345 6726' },
+  { name: 'Surianshah Hamid',      email: 'surianshah.h@example.com',    phone: '+60 12-345 6727' },
+  { name: 'Syukri Yahya',          email: 'syukri.y@example.com',        phone: '+60 12-345 6728' },
+  { name: 'Wang Ziwen',            email: 'wang.zw@example.com',         phone: '+86 138-0013-8000' },
+  { name: 'Zamani Ibrahim',        email: 'zamani.i@example.com',        phone: '+60 12-345 6729' },
+  { name: 'Zhu Zhiguo',            email: 'zhu.zg@example.com',          phone: '+86 138-0013-8001' }
+];
+function hubspotLookup(name) {
+  if (!name) return null;
+  const lo = name.trim().toLowerCase();
+  return HUBSPOT_CONTACTS_MOCK.find(c => c.name.toLowerCase() === lo) || null;
+}
+function populateContactsDatalist() {
+  $('hubspot_contacts').innerHTML = HUBSPOT_CONTACTS_MOCK
+    .map(c => `<option value="${esc(c.name)}">${esc(c.email)}</option>`).join('');
+}
+
+// Mock HubSpot company list — replace with live HubSpot CRM fetch when connected.
+const HUBSPOT_CLIENTS_MOCK = [
+  'Agile/KBR','APL','Bluewater','CIMC Raffles','Dialog','EnQuest','Genting Energy',
+  'IFP Engineering','INPEX','ISS','Longitude','MMC','NOV','Ping Petroleum',
+  'PT Layar Nusantara Gas','reNIKOLA','Saipem Indonesia','SK Earthon','T7 Global',
+  'TAQA','Technip Energies','Vantris'
+];
+function populateClientSelect(selected) {
+  $('j_client').innerHTML = '<option value="">Pick a client from HubSpot…</option>' +
+    HUBSPOT_CLIENTS_MOCK.map(c => `<option value="${esc(c)}" ${c===selected?'selected':''}>${esc(c)}</option>`).join('');
+}
+
+function toggleCommercialName() {
+  $('j_commercial_field').style.display = $('j_neg_owner').value === 'commercial' ? 'block' : 'none';
+}
+function openNewJob() {
+  EDITING_JOB = null;
+  $('jobModalTitle').textContent = 'New job';
+  $('jobModalSub').textContent = 'Create a new role to start tracking candidates.';
+  populateClientSelect('');
+  $('j_marketplace_url').value=''; $('j_title').value=''; $('j_desc').value=''; $('j_status').value='open';
+  $('j_neg_owner').value = 'recruiter'; $('j_commercial_name').value = ''; toggleCommercialName();
+  $('j_delete').style.display = 'none';
+
+  const isAdmin = CURRENT === 'Admin';
+  $('j_recruiter_field').style.display = isAdmin ? 'block' : 'none';
+  if (isAdmin) {
+    $('j_recruiter').innerHTML = RECRUITERS.map(r=>`<option value="${r}">${disp(r)}</option>`).join('');
+  }
+  $('modal-job').classList.add('show');
+  setTimeout(()=>$('j_client').focus(), 50);
+}
+function openEditJob(id) {
+  const j = DB.getJob(id); if (!j) return;
+  EDITING_JOB = id;
+  $('jobModalTitle').textContent = 'Edit job';
+  $('jobModalSub').textContent = 'Update details or change status. Deleting a job removes its candidates.';
+  populateClientSelect(j.client);
+  $('j_marketplace_url').value = j.marketplace_url || '';
+  $('j_title').value = j.title;
+  $('j_desc').value = j.description || '';
+  $('j_status').value = j.status;
+  $('j_neg_owner').value = j.negotiation_owner || 'recruiter';
+  $('j_commercial_name').value = j.commercial_name || '';
+  toggleCommercialName();
+  $('j_delete').style.display = 'inline-flex';
+
+  const isAdmin = CURRENT === 'Admin';
+  $('j_recruiter_field').style.display = isAdmin ? 'block' : 'none';
+  if (isAdmin) {
+    $('j_recruiter').innerHTML = RECRUITERS.map(r=>`<option value="${r}" ${r===j.recruiter?'selected':''}>${disp(r)}</option>`).join('');
+  }
+  $('modal-job').classList.add('show');
+}
+function closeJobModal(){ $('modal-job').classList.remove('show'); }
+function saveJob() {
+  const client = $('j_client').value.trim();
+  const title  = $('j_title').value.trim();
+  if (!client || !title) { alert('Client and Job title are required.'); return; }
+  const payload = {
+    client, title,
+    description: $('j_desc').value.trim(),
+    marketplace_url: $('j_marketplace_url').value.trim(),
+    status: $('j_status').value,
+    negotiation_owner: $('j_neg_owner').value,
+    commercial_name: $('j_commercial_name').value.trim(),
+    recruiter: CURRENT === 'Admin' ? $('j_recruiter').value : CURRENT
+  };
+  const isNew = !EDITING_JOB;
+  let nj = null;
+  if (isNew) { nj = DB.createJob(payload); CURRENT_JOB = nj.id; }
+  else DB.updateJob(EDITING_JOB, payload);
+  closeJobModal();
+  if (isNew) celebrateNewJob(nj);
+  else toast('Job updated');
+  if (CURRENT_JOB && DB.getJob(CURRENT_JOB)) renderJobDetail();
+  else renderJobsScreen();
+}
+function deleteJob() {
+  if (!EDITING_JOB) return;
+  if (!confirm('Delete this job and all its candidates? This cannot be undone.')) return;
+  DB.removeJob(EDITING_JOB);
+  closeJobModal(); toast('Job deleted');
+  CURRENT_JOB = null; renderJobsScreen();
+}
+
+/* ============================================================
+   CANDIDATE MODAL
+   ============================================================ */
+function updateContactMatchIndicator() {
+  const match = hubspotLookup($('c_name').value);
+  const el = $('c_match');
+  if (!$('c_name').value) { el.innerHTML = ''; return; }
+  if (match) { el.innerHTML = '<span style="color:var(--green);">✓ matched in HubSpot</span>'; }
+  else       { el.innerHTML = '<span style="color:var(--yellow);">⚠ not in HubSpot — add them there first</span>'; }
+}
+function autoFillFromHubSpot() {
+  const m = hubspotLookup($('c_name').value);
+  if (!m) return;
+  if (!$('c_email').value) $('c_email').value = m.email;
+  if (!$('c_phone').value) $('c_phone').value = m.phone;
+}
+
+function refreshNegBanner() {
+  const closing = ['offer','offer_accepted','contract_signed'];
+  const j = DB.getJob(CURRENT_JOB);
+  const banner = $('c_neg_banner');
+  if (!j || !closing.includes($('c_status').value)) { banner.style.display = 'none'; return; }
+  const owner = j.negotiation_owner || 'recruiter';
+  banner.style.display = 'flex';
+  banner.innerHTML = owner === 'commercial'
+    ? `<span class="tok" style="background:rgba(244,114,182,.2); color:var(--pink); border-radius:999px;">!</span>
+       <div>Negotiation owned by <b>${esc(j.commercial_name || '(commercial team)')}</b>. <span style="color:var(--muted);">Coordinate before responding to the client.</span></div>`
+    : `<span class="tok"></span>
+       <div>You own the negotiation with the client directly.</div>`;
+}
+
+function openNewCandidate() {
+  EDITING_CAND = null;
+  populateContactsDatalist();
+  $('candModalTitle').textContent = 'New candidate';
+  const j = DB.getJob(CURRENT_JOB);
+  $('candModalSub').textContent = `For ${j.client} · ${j.title}`;
+  $('c_name').value=''; $('c_email').value=''; $('c_phone').value=''; $('c_cv').value=''; $('c_notes').value=''; $('c_prep').value='';
+  $('c_status').value='sourced';
+  $('c_date').value = new Date().toISOString().slice(0,10);
+  $('c_match').innerHTML = '';
+  $('c_timeline_wrap').style.display = 'none';
+  $('c_delete').style.display = 'none';
+  $('c_contact').style.display = 'none';
+  refreshNegBanner();
+  $('modal-cand').classList.add('show');
+  setTimeout(()=>$('c_name').focus(), 50);
+}
+function openEditCandidate(id) {
+  const c = DB.getCandidate(id); if (!c) return;
+  EDITING_CAND = id;
+  populateContactsDatalist();
+  $('candModalTitle').textContent = 'Edit candidate';
+  const j = DB.getJob(CURRENT_JOB);
+  $('candModalSub').textContent = `For ${j.client} · ${j.title}`;
+  $('c_name').value = c.name || '';
+  $('c_email').value = c.email || '';
+  $('c_phone').value = c.phone || '';
+  $('c_cv').value = c.cv_link || '';
+  $('c_notes').value = c.notes || '';
+  $('c_prep').value = c.prep_notes || '';
+  $('c_status').value = c.status;
+  $('c_date').value = c.status_date || new Date(c.updated_at).toISOString().slice(0,10);
+  $('c_delete').style.display = 'inline-flex';
+  $('c_contact').style.display = c.email ? 'inline-flex' : 'none';
+  updateContactMatchIndicator();
+  refreshNegBanner();
+
+  // Timeline (status changes + emails sent)
+  const tl = c.timeline || [];
+  if (tl.length) {
+    $('c_timeline_wrap').style.display = 'block';
+    $('c_timeline').innerHTML = tl.map(t => {
+      if (t.type === 'email') return `
+        <div class="tl-item">
+          <span class="tl-when">${fmtDate(t.at)}</span>
+          <span class="st" style="background:rgba(167,139,250,.18); color:var(--purple);">✉ Email sent</span>
+          — <span style="color:var(--muted);">${esc(t.subject)}</span>
+        </div>`;
+      return `
+        <div class="tl-item">
+          <span class="tl-when">${fmtDate(t.at)}</span>
+          <span class="st ${t.status}">${STATUS_LABEL[t.status]}</span>
+          ${t.note ? ` — <span style="color:var(--muted);">${esc(t.note)}</span>` : ''}
+        </div>`;
+    }).join('');
+  } else { $('c_timeline_wrap').style.display = 'none'; }
+  $('modal-cand').classList.add('show');
+}
+
+/* ============================================================
+   CONTACT CANDIDATE — AI rewrite + mock send + log
+   ============================================================ */
+function openContactModal() {
+  if (!EDITING_CAND) return;
+  const c = DB.getCandidate(EDITING_CAND); if (!c) return;
+  const j = DB.getJob(CURRENT_JOB);
+  $('contactSub').innerHTML = `Drafting an email to <b>${esc(c.name)}</b> about <b>${esc(j.title)}</b> at ${esc(j.client)}.`;
+  $('m_to').value = c.email || '(no email on file)';
+  $('m_subject').value = `${j.title} — exploration call`;
+  $('m_draft').value = '';
+  $('m_rewritten').value = '';
+  $('modal-contact').classList.add('show');
+  setTimeout(()=>$('m_draft').focus(), 50);
+}
+function closeContactModal(){ $('modal-contact').classList.remove('show'); }
+
+// Mock LLM rewrite — replace with a real model call later.
+function aiRewrite() {
+  const draft = $('m_draft').value.trim();
+  if (!draft) { alert('Type a rough draft first.'); return; }
+  const c = DB.getCandidate(EDITING_CAND);
+  const j = DB.getJob(CURRENT_JOB);
+  const firstName = (c.name || '').split(' ')[0];
+  const recruiter = disp(CURRENT);
+  const polished = `Hi ${firstName},
+
+I hope this finds you well. I'm ${recruiter} from Trees Engineering — we're a specialist recruitment partner for energy and engineering firms across SEA.
+
+I'm reaching out about a role I think could be a strong fit for your background:
+
+  · ${j.title}
+  · ${j.client}
+
+A quick note from my side:
+
+${draft.split('\n').map(l => '  ' + l).join('\n')}
+
+Would you be open to a short call this week to talk it through? Happy to share the full brief and answer any questions on package, scope and team.
+
+Warm regards,
+${recruiter}
+Trees Engineering`;
+  $('m_rewritten').value = polished;
+  toast('AI rewrite ready · edit before sending');
+}
+
+function sendEmail() {
+  if (!EDITING_CAND) return;
+  const body = $('m_rewritten').value.trim();
+  const subject = $('m_subject').value.trim();
+  if (!body) { alert('Generate or write the email body first.'); return; }
+  if (!subject) { alert('Subject required.'); return; }
+  const c = DB.getCandidate(EDITING_CAND);
+  if (!c.email) { alert('No email on file for this candidate. Save an email address first.'); return; }
+
+  c.emails = c.emails || [];
+  c.emails.unshift({
+    at: Date.now(), from: CURRENT, to: c.email,
+    subject, body, status: 'sent_mock'
+  });
+  c.timeline = c.timeline || [];
+  c.timeline.unshift({ at: Date.now(), type: 'email', subject, status: c.status });
+  c.updated_at = Date.now();
+  DB.save();
+  closeContactModal();
+  bumpStreak();
+  awardTokens(1, `Email sent to ${c.name}`);
+  toast('Email sent (mock) · logged in candidate timeline');
+  // Refresh edit modal timeline if still open
+  if ($('modal-cand').classList.contains('show')) openEditCandidate(EDITING_CAND);
+  renderJobDetail();
+}
+function closeCandModal(){ $('modal-cand').classList.remove('show'); }
+function saveCandidate() {
+  const name = $('c_name').value.trim();
+  if (!name) { alert('Name is required.'); return; }
+  const payload = {
+    job_id: CURRENT_JOB,
+    name,
+    email: $('c_email').value.trim(),
+    phone: $('c_phone').value.trim(),
+    cv_link: $('c_cv').value.trim(),
+    notes: $('c_notes').value.trim(),
+    prep_notes: $('c_prep').value.trim(),
+    status: $('c_status').value,
+    status_date: $('c_date').value
+  };
+  let cand, oldStatus = null;
+  if (EDITING_CAND) {
+    oldStatus = DB.getCandidate(EDITING_CAND)?.status;
+    cand = DB.updateCandidate(EDITING_CAND, payload);
+  } else {
+    cand = DB.createCandidate(payload);
+  }
+  closeCandModal();
+  bumpStreak();
+  maybeAward(cand, oldStatus, cand.status);
+  toast('Candidate saved');
+  renderJobDetail();
+}
+function deleteCandidate() {
+  if (!EDITING_CAND) return;
+  if (!confirm('Delete this candidate?')) return;
+  DB.removeCandidate(EDITING_CAND);
+  closeCandModal(); toast('Candidate deleted');
+  renderJobDetail();
+}
+
+/* ============================================================
+   Helpers
+   ============================================================ */
+function esc(s){ return String(s==null?'':s).replace(/[&<>"']/g, c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); }
+function fmtDate(ts) {
+  if (!ts) return '';
+  const d = new Date(ts), now = new Date();
+  const diff = (now - d) / 1000;
+  if (diff < 60) return 'just now';
+  if (diff < 3600) return Math.floor(diff/60)+'m ago';
+  if (diff < 86400) return Math.floor(diff/3600)+'h ago';
+  if (diff < 7*86400) return Math.floor(diff/86400)+'d ago';
+  return d.toLocaleDateString('en-GB', { day:'2-digit', month:'short', year:'2-digit' });
+}
+
+/* ============================================================
+   INIT
+   ============================================================ */
+$('loginBtn').onclick = doLogin;
+$('pin').addEventListener('keydown', e => { if (e.key === 'Enter') doLogin(); });
+$('who').addEventListener('change', () => $('loginErr').classList.remove('show'));
+
+// Candidate name → live HubSpot match + auto-fill on commit
+$('c_name').addEventListener('input',  updateContactMatchIndicator);
+$('c_name').addEventListener('change', () => { updateContactMatchIndicator(); autoFillFromHubSpot(); });
+// Status change → refresh negotiation banner
+$('c_status').addEventListener('change', refreshNegBanner);
+
+// Close modal on backdrop click
+['modal-job','modal-cand','modal-contact','modal-wallet'].forEach(id => {
+  $(id).addEventListener('click', e => { if (e.target.id === id) e.target.classList.remove('show'); });
+});
+document.addEventListener('keydown', e => {
+  if (e.key === 'Escape') document.querySelectorAll('.modal-bg.show').forEach(m => m.classList.remove('show'));
+});
+
+const saved = safeRead('treesUser');
+if (saved && PINS[saved]) { CURRENT = saved; enterApp(); }
+</script>
+</body>
+</html>
