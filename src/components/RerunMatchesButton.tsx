@@ -3,6 +3,7 @@ import { RefreshCw, Loader2 } from 'lucide-react'
 import { useQueryClient } from '@tanstack/react-query'
 import { rerunMatches } from '../lib/api'
 import { useToast } from './Toast'
+import { telemetry } from '../lib/telemetry'
 
 interface RerunMatchesButtonProps {
   roleId: string | null
@@ -23,9 +24,20 @@ export function RerunMatchesButton({ roleId, variant = 'full' }: RerunMatchesBut
     if (!roleId || running) return
 
     setRunning(true)
+    telemetry.capture('matches_rerun_started', { role_id: roleId, variant })
     const toastId = toast.show('loading', 'Running matching cascade — this can take 30s–2min…')
     try {
-      const result = await rerunMatches(roleId)
+      const result = await telemetry.timed(
+        'matches_rerun',
+        () => rerunMatches(roleId),
+        { thresholdMs: 120_000, props: { role_id: roleId } },
+      )
+      telemetry.capture('matches_rerun_completed', {
+        role_id: roleId,
+        total: result.total,
+        scored: result.scored,
+        plan_b: result.plan_b,
+      })
       toast.update(
         toastId,
         'success',
@@ -34,6 +46,10 @@ export function RerunMatchesButton({ roleId, variant = 'full' }: RerunMatchesBut
       queryClient.invalidateQueries({ queryKey: ['roles'] })
       queryClient.invalidateQueries({ queryKey: ['matches', roleId] })
     } catch (err) {
+      telemetry.capture('matches_rerun_failed', {
+        role_id: roleId,
+        error_message: (err as Error).message?.slice(0, 200),
+      })
       toast.update(toastId, 'error', `Rerun failed: ${(err as Error).message}`)
     } finally {
       setRunning(false)
@@ -45,7 +61,7 @@ export function RerunMatchesButton({ roleId, variant = 'full' }: RerunMatchesBut
   const sizing = variant === 'full' ? 'flex-1 py-2.5' : 'px-3 py-2 flex-shrink-0'
 
   return (
-    <button onClick={handleClick} disabled={disabled} className={`${base} ${sizing}`}>
+    <button data-telemetry-id="matches-rerun" onClick={handleClick} disabled={disabled} className={`${base} ${sizing}`}>
       {running ? (
         <Loader2 size={15} className="animate-spin" />
       ) : (

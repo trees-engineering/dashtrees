@@ -11,7 +11,8 @@ async function fetchMatches(roleId: string): Promise<MatchWithTalent[]> {
         availability_status, available_from, notice_period_days, rate, rate_type,
         currency, visa_status, work_rights, certifications, linkedin_url, headline,
         job_family, discipline, tl_band, regional_experience, asset_experience, industries
-      )`
+      ),
+      cascade_run:cascade_run_id(run_direction)`
     )
     .eq('role_id', roleId)
     .order('match_score', { ascending: false })

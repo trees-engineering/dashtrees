@@ -2,6 +2,7 @@ import {
   createContext, useCallback, useContext, useState, type ReactNode,
 } from 'react'
 import { CheckCircle2, XCircle, Info, Loader2, X } from 'lucide-react'
+import { telemetry } from '../lib/telemetry'
 
 export type ToastType = 'success' | 'error' | 'info' | 'loading'
 
@@ -60,12 +61,18 @@ export function ToastProvider({ children }: { children: ReactNode }) {
     const id = nextId++
     setToasts((t) => [...t, { id, type, message }])
     autoDismiss(id, type)
+    if (type === 'error') {
+      telemetry.capture('api_error_shown', { message: message.slice(0, 200) })
+    }
     return id
   }, [autoDismiss])
 
   const update = useCallback((id: number, type: ToastType, message: string) => {
     setToasts((t) => t.map((x) => (x.id === id ? { ...x, type, message } : x)))
     autoDismiss(id, type)
+    if (type === 'error') {
+      telemetry.capture('api_error_shown', { message: message.slice(0, 200) })
+    }
   }, [autoDismiss])
 
   return (

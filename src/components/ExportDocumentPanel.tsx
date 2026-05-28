@@ -1,7 +1,8 @@
-import { useRef, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { X, FileDown, Loader2, Upload } from 'lucide-react'
 import { exportDocument, fileToText, type ExportRequest } from '../lib/api'
 import { useToast } from './Toast'
+import { telemetry } from '../lib/telemetry'
 
 interface ExportDocumentPanelProps {
   talentId: string
@@ -58,9 +59,32 @@ export function ExportDocumentPanel({ talentId, roleId, talentName, onClose }: E
   const effectiveFormat: 'docx' | 'pdf' = appendCv ? 'pdf' : format
   const missingTranscript = includeInterview && !transcriptFile
 
+  useEffect(() => {
+    return () => {
+      telemetry.capture('export_panel_closed', { role_id: roleId, talent_id: talentId })
+    }
+  }, [roleId, talentId])
+
+  function handleOptionToggle(option: string, value: boolean) {
+    telemetry.capture('export_options_changed', {
+      role_id: roleId,
+      talent_id: talentId,
+      option,
+      value,
+    })
+  }
+
   async function handleGenerate() {
     if (busy || missingTranscript) return
     setBusy(true)
+    telemetry.capture('dossier_export_started', {
+      role_id: roleId,
+      talent_id: talentId,
+      format: effectiveFormat,
+      tailor_to_jd: tailorToJd,
+      append_cv: appendCv,
+      include_interview: includeInterview,
+    })
     const toastId = toast.show('loading', `Generating document for ${talentName}…`)
     try {
       let transcript: string | null = null
@@ -75,10 +99,26 @@ export function ExportDocumentPanel({ talentId, roleId, talentName, onClose }: E
         includeInterview,
         transcript,
       }
-      const filename = await exportDocument(talentId, req)
+      const filename = await telemetry.timed(
+        'dossier_export',
+        () => exportDocument(talentId, req),
+        { thresholdMs: 15_000, props: { role_id: roleId, talent_id: talentId } },
+      )
+      telemetry.capture('dossier_export_completed', {
+        role_id: roleId,
+        talent_id: talentId,
+        format: effectiveFormat,
+        filename,
+      })
       toast.update(toastId, 'success', `Downloaded ${filename}`)
       onClose()
     } catch (err) {
+      telemetry.capture('dossier_export_failed', {
+        role_id: roleId,
+        talent_id: talentId,
+        format: effectiveFormat,
+        error_message: (err as Error).message?.slice(0, 200),
+      })
       toast.update(toastId, 'error', `Export failed: ${(err as Error).message}`)
       setBusy(false)
     }
@@ -140,13 +180,13 @@ export function ExportDocumentPanel({ talentId, roleId, talentName, onClose }: E
           <div className="border-t border-treeBorderLight pt-1">
             <Checkbox
               checked={tailorToJd}
-              onChange={setTailorToJd}
+              onChange={(v) => { setTailorToJd(v); handleOptionToggle('tailor_to_jd', v) }}
               label="Tailor to this role's JD"
               hint="Targeted dossier — mission, why-this-profile, needs↔candidate matrix."
             />
             <Checkbox
               checked={appendCv}
-              onChange={setAppendCv}
+              onChange={(v) => { setAppendCv(v); handleOptionToggle('append_cv', v) }}
               label="Append original CV"
               hint="Adds the candidate's uploaded CV after the generated document."
             />
@@ -155,6 +195,7 @@ export function ExportDocumentPanel({ talentId, roleId, talentName, onClose }: E
               onChange={(v) => {
                 setIncludeInterview(v)
                 if (!v) setTranscriptFile(null)
+                handleOptionToggle('include_interview', v)
               }}
               label="Include interview insights"
               hint="Adds a Qualification Interview section from a pre-screening transcript."

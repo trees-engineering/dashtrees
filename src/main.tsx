@@ -4,6 +4,7 @@ import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import './index.css'
 import App from './App'
 import { ToastProvider } from './components/Toast'
+import { telemetry } from './lib/telemetry'
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -12,6 +13,10 @@ const queryClient = new QueryClient({
       refetchOnWindowFocus: false,
     },
   },
+})
+
+telemetry.init({
+  disabled: import.meta.env.VITE_TELEMETRY_DISABLED === 'true',
 })
 
 createRoot(document.getElementById('root')!).render(

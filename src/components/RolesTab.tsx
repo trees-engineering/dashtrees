@@ -1,9 +1,14 @@
 import { useState } from 'react'
-import { ChevronDown, ChevronUp, Users } from 'lucide-react'
+import { ChevronDown, ChevronUp, Users, Loader2, XCircle } from 'lucide-react'
+import { useQueryClient } from '@tanstack/react-query'
 import { useRoles } from '../hooks/useRoles'
 import { formatDate, formatBudget, roleStatusBadgeClass } from '../lib/utils'
 import { UploadJDButton } from './UploadJDButton'
+import { TalkToTreelanceButton } from './TalkToTreelanceButton'
 import { RerunMatchesButton } from './RerunMatchesButton'
+import { useToast } from './Toast'
+import { updateRoleStatus } from '../lib/api'
+import { telemetry } from '../lib/telemetry'
 import type { RoleWithCounts } from '../types'
 
 type StatusFilter = 'open' | 'all' | 'closed'
@@ -21,12 +26,53 @@ function RoleAccordion({
   onViewMatches: (roleId: string) => void
 }) {
   const [open, setOpen] = useState(false)
+  const [closing, setClosing] = useState(false)
+  const toast = useToast()
+  const queryClient = useQueryClient()
+
+  async function handleCloseJob(e: React.MouseEvent) {
+    e.stopPropagation()
+    if (closing) return
+    const confirmed = window.confirm(
+      `Close "${role.title}"? Existing matches stay visible, but the role will be marked closed and no new matches will be scored.`,
+    )
+    if (!confirmed) {
+      telemetry.capture('role_close_cancelled', { role_id: role.id })
+      return
+    }
+    setClosing(true)
+    telemetry.capture('role_close_confirmed', { role_id: role.id })
+    const toastId = toast.show('loading', `Closing "${role.title}"…`)
+    try {
+      await telemetry.timed('role_close', () => updateRoleStatus(role.id, 'closed'), {
+        props: { role_id: role.id },
+      })
+      telemetry.capture('role_closed_manually', { role_id: role.id })
+      toast.update(toastId, 'success', `Role "${role.title}" closed.`)
+      queryClient.invalidateQueries({ queryKey: ['roles'] })
+    } catch (err) {
+      toast.update(toastId, 'error', `Couldn't close role: ${(err as Error).message}`)
+    } finally {
+      setClosing(false)
+    }
+  }
 
   return (
     <div className="border border-treeBorder rounded-xl overflow-hidden bg-treeSurface shadow-sm">
       {/* Header */}
       <button
-        onClick={() => setOpen((o) => !o)}
+        data-telemetry-id="role-accordion-toggle"
+        onClick={() => {
+          setOpen((o) => {
+            const next = !o
+            telemetry.capture('role_accordion_toggled', {
+              role_id: role.id,
+              opened: next,
+              status: role.status,
+            })
+            return next
+          })
+        }}
         className="w-full text-left p-4 flex items-start gap-3 active:bg-treeBg transition-colors"
       >
         <div className="flex-1 min-w-0">
@@ -108,12 +154,25 @@ function RoleAccordion({
           <div className="flex gap-2">
             <RerunMatchesButton roleId={role.id} variant="full" />
             <button
+              data-telemetry-id="role-view-matches"
               onClick={() => onViewMatches(role.id)}
               className="flex-1 py-2.5 rounded-lg bg-primary text-treeBg text-sm font-semibold active:bg-primaryDark transition-colors"
             >
               View Matches ({role.counts.total})
             </button>
           </div>
+
+          {role.status === 'open' && (
+            <button
+              data-telemetry-id="role-close-job"
+              onClick={handleCloseJob}
+              disabled={closing}
+              className="w-full flex items-center justify-center gap-1.5 py-2.5 rounded-lg border border-red-400/40 text-red-300 text-sm font-medium active:bg-red-500/10 transition-colors disabled:opacity-50"
+            >
+              {closing ? <Loader2 size={15} className="animate-spin" /> : <XCircle size={15} />}
+              {closing ? 'Closing…' : 'Close Job'}
+            </button>
+          )}
         </div>
       )}
     </div>
@@ -147,7 +206,10 @@ export function RolesTab({ onViewMatches, recruiterFilter }: RolesTabProps) {
         <h2 className="text-xs font-semibold text-treeTextSec uppercase tracking-wider">
           Roles
         </h2>
-        <UploadJDButton />
+        <div className="flex items-center gap-2">
+          <TalkToTreelanceButton />
+          <UploadJDButton />
+        </div>
       </div>
 
       {/* Filter chips */}
@@ -155,7 +217,13 @@ export function RolesTab({ onViewMatches, recruiterFilter }: RolesTabProps) {
         {(['open', 'all', 'closed'] as StatusFilter[]).map((s) => (
           <button
             key={s}
-            onClick={() => setStatusFilter(s)}
+            data-telemetry-id={`roles-filter-${s}`}
+            onClick={() => {
+              if (s !== statusFilter) {
+                telemetry.capture('roles_filter_changed', { from: statusFilter, to: s })
+              }
+              setStatusFilter(s)
+            }}
             className={`flex-1 py-2 rounded-lg text-sm font-medium border transition-colors ${
               statusFilter === s
                 ? 'bg-primary text-treeBg border-primary'

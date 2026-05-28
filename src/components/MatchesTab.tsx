@@ -1,7 +1,9 @@
+import { useEffect } from 'react'
 import { useRoles } from '../hooks/useRoles'
 import { useMatches } from '../hooks/useMatches'
 import { MatchCard } from './MatchCard'
 import { RerunMatchesButton } from './RerunMatchesButton'
+import { telemetry } from '../lib/telemetry'
 
 interface MatchesTabProps {
   selectedRoleId: string | null
@@ -18,6 +20,16 @@ export function MatchesTab({ selectedRoleId, onRoleChange, recruiterFilter }: Ma
       r.status === 'open' && (!recruiterFilter || r.recruiter_email === recruiterFilter)
   )
 
+  useEffect(() => {
+    if (!selectedRoleId || matchesLoading) return
+    telemetry.capture('matches_list_loaded', {
+      role_id: selectedRoleId,
+      match_count: matches?.length ?? 0,
+      shortlisted: (matches ?? []).filter((m) => m.status === 'shortlisted').length,
+      introduced: (matches ?? []).filter((m) => m.status === 'introduced').length,
+    })
+  }, [selectedRoleId, matchesLoading, matches?.length])
+
   return (
     <div className="p-4 space-y-4">
       {/* Role selector */}
@@ -30,8 +42,15 @@ export function MatchesTab({ selectedRoleId, onRoleChange, recruiterFilter }: Ma
         ) : (
           <div className="flex gap-2">
             <select
+              data-telemetry-id="matches-role-picker"
               value={selectedRoleId ?? ''}
-              onChange={(e) => onRoleChange(e.target.value)}
+              onChange={(e) => {
+                telemetry.capture('matches_role_changed', {
+                  from: selectedRoleId,
+                  to: e.target.value || null,
+                })
+                onRoleChange(e.target.value)
+              }}
               className="flex-1 h-12 px-4 rounded-xl border border-treeBorder bg-treeSurface text-treeText text-sm appearance-none focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary"
             >
               <option value="">— Choose a role —</option>

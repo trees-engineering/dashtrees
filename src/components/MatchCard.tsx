@@ -4,13 +4,14 @@ import type { MatchWithTalent } from '../types'
 import {
   scoreColor,
   scoreBg,
-  scoreLabel,
   availBadgeClass,
   statusBadgeClass,
+  shortlistedBadgeClass,
   formatDate,
   ensureHttps,
 } from '../lib/utils'
 import { ExportDocumentPanel } from './ExportDocumentPanel'
+import { telemetry } from '../lib/telemetry'
 
 interface MatchCardProps {
   match: MatchWithTalent
@@ -60,17 +61,42 @@ function ProfileRow({ label, value }: { label: string; value: React.ReactNode })
 export function MatchCard({ match, roleId }: MatchCardProps) {
   const [expanded, setExpanded] = useState(false)
   const [showExport, setShowExport] = useState(false)
+  const [hasViewed, setHasViewed] = useState(false)
   const { talent } = match
   const score = match.match_score ?? 0
   const skillScore = match.skill_score ?? 0
   const expScore = match.experience_score ?? 0
+
+  function handleToggle() {
+    setExpanded((prev) => {
+      const next = !prev
+      telemetry.capture('match_card_toggled', {
+        role_id: roleId,
+        talent_id: match.talent_id,
+        opened: next,
+        score,
+        status: match.status,
+      })
+      if (next && !hasViewed) {
+        telemetry.capture('match_viewed', {
+          role_id: roleId,
+          talent_id: match.talent_id,
+          score,
+          status: match.status,
+        })
+        setHasViewed(true)
+      }
+      return next
+    })
+  }
 
   return (
     <>
     <div className="bg-treeSurface border border-treeBorder rounded-xl overflow-hidden shadow-sm">
       {/* Summary row */}
       <button
-        onClick={() => setExpanded((e) => !e)}
+        data-telemetry-id="match-card-toggle"
+        onClick={handleToggle}
         className="w-full text-left p-4 flex items-center gap-3 active:bg-treeBg transition-colors"
       >
         {/* Score badge */}
@@ -90,7 +116,11 @@ export function MatchCard({ match, roleId }: MatchCardProps) {
           )}
           <div className="flex items-center gap-1.5 mt-1.5 flex-wrap">
             <span
-              className={`text-xs px-2 py-0.5 rounded-full font-medium border ${statusBadgeClass(match.status)}`}
+              className={`text-xs px-2 py-0.5 rounded-full font-medium border ${
+                match.status === 'shortlisted'
+                  ? shortlistedBadgeClass(match.cascade_run?.run_direction)
+                  : statusBadgeClass(match.status)
+              }`}
             >
               {match.status}
             </span>
@@ -105,12 +135,6 @@ export function MatchCard({ match, roleId }: MatchCardProps) {
                   : 'Not Available'}
               </span>
             )}
-            <span
-              className="text-xs px-2 py-0.5 rounded-full font-medium border"
-              style={{ backgroundColor: scoreBg(score), color: scoreColor(score), borderColor: scoreColor(score) + '33' }}
-            >
-              {scoreLabel(score)}
-            </span>
           </div>
         </div>
 
@@ -293,7 +317,16 @@ export function MatchCard({ match, roleId }: MatchCardProps) {
           {/* Export & LinkedIn */}
           <div className="flex flex-col gap-2">
             <button
-              onClick={() => setShowExport(true)}
+              data-telemetry-id="match-export-open"
+              onClick={() => {
+                telemetry.capture('export_panel_opened', {
+                  role_id: roleId,
+                  talent_id: match.talent_id,
+                  score,
+                  status: match.status,
+                })
+                setShowExport(true)
+              }}
               className="flex items-center justify-center gap-2 py-2.5 rounded-lg border border-primary text-primary text-sm font-medium active:bg-primary/10 transition-colors"
             >
               <FileDown size={16} />
@@ -301,9 +334,16 @@ export function MatchCard({ match, roleId }: MatchCardProps) {
             </button>
             {talent?.linkedin_url && (
               <a
+                data-telemetry-id="match-linkedin"
                 href={ensureHttps(talent.linkedin_url) ?? '#'}
                 target="_blank"
                 rel="noopener noreferrer"
+                onClick={() => {
+                  telemetry.capture('linkedin_clicked', {
+                    role_id: roleId,
+                    talent_id: match.talent_id,
+                  })
+                }}
                 className="flex items-center justify-center gap-2 py-2.5 rounded-lg border border-treeBorder text-treeTextSec text-sm font-medium active:bg-treeBg transition-colors"
               >
                 <ExternalLink size={16} />

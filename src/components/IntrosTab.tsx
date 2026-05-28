@@ -1,80 +1,36 @@
+import { useEffect } from 'react'
 import { useRoles } from '../hooks/useRoles'
 import { useMatches } from '../hooks/useMatches'
-import { scoreColor, scoreBg, statusBadgeClass, availBadgeClass } from '../lib/utils'
-import type { RoleWithCounts, MatchWithTalent } from '../types'
+import { MatchCard } from './MatchCard'
+import { telemetry } from '../lib/telemetry'
+import type { RoleWithCounts } from '../types'
 
 interface IntrosTabProps {
   recruiterFilter: string
 }
 
-function IntroCard({
-  match,
-  role,
-}: {
-  match: MatchWithTalent
-  role: RoleWithCounts
-}) {
-  const score = match.match_score ?? 0
-  return (
-    <div className="bg-treeSurface border border-treeBorder rounded-xl p-4 shadow-sm">
-      <div className="flex items-center gap-3">
-        {/* Score badge */}
-        <div
-          className="w-11 h-11 rounded-xl flex items-center justify-center flex-shrink-0 font-bold text-sm"
-          style={{ backgroundColor: scoreBg(score), color: scoreColor(score) }}
-        >
-          {score}
-        </div>
-
-        <div className="flex-1 min-w-0">
-          <p className="font-semibold text-treeText text-sm truncate">
-            {match.talent?.name ?? 'Unknown'}
-          </p>
-          <p className="text-xs text-treeTextSec truncate mt-0.5">{role.title}</p>
-          <div className="flex items-center gap-1.5 mt-1.5 flex-wrap">
-            <span
-              className={`text-xs px-2 py-0.5 rounded-full font-medium border ${statusBadgeClass(match.status)}`}
-            >
-              {match.status}
-            </span>
-            {match.talent?.availability_status && (
-              <span
-                className={`text-xs px-2 py-0.5 rounded-full font-medium border ${availBadgeClass(match.talent.availability_status)}`}
-              >
-                {match.talent.availability_status === 'yes'
-                  ? 'Available'
-                  : match.talent.availability_status === 'maybe'
-                  ? 'Maybe'
-                  : 'Unavailable'}
-              </span>
-            )}
-          </div>
-        </div>
-      </div>
-    </div>
-  )
-}
-
-// Sub-component that loads matches for a single role
-function RoleIntros({
-  role,
-}: {
-  role: RoleWithCounts
-}) {
+// One role's worth of intro/shortlist cards, with a header.
+function RoleIntros({ role }: { role: RoleWithCounts }) {
   const { data: matches } = useMatches(role.id)
 
   const intros = (matches ?? []).filter(
-    (m) => m.status === 'introduced' || m.status === 'shortlisted'
+    (m) => m.status === 'introduced' || m.status === 'shortlisted',
   )
 
   if (!intros.length) return null
 
   return (
-    <>
+    <div className="space-y-3">
+      <div className="flex items-center justify-between px-1 pt-2">
+        <p className="text-xs font-semibold text-treeText truncate">{role.title}</p>
+        <span className="text-[10px] text-treeTextSec uppercase tracking-wider">
+          {intros.length} candidate{intros.length === 1 ? '' : 's'}
+        </span>
+      </div>
       {intros.map((match) => (
-        <IntroCard key={match.id} match={match} role={role} />
+        <MatchCard key={match.id} match={match} roleId={role.id} />
       ))}
-    </>
+    </div>
   )
 }
 
@@ -82,11 +38,25 @@ export function IntrosTab({ recruiterFilter }: IntrosTabProps) {
   const { data: roles, isLoading } = useRoles()
 
   const recruiterRoles = (roles ?? []).filter(
-    (r) => !recruiterFilter || r.recruiter_email === recruiterFilter
+    (r) => !recruiterFilter || r.recruiter_email === recruiterFilter,
   )
 
-  // Only load matches for roles that have intros
-  const rolesWithIntros = recruiterRoles.filter((r) => r.counts.introduced > 0 || r.counts.shortlisted > 0)
+  const rolesWithIntros = recruiterRoles.filter(
+    (r) => r.counts.introduced > 0 || r.counts.shortlisted > 0,
+  )
+
+  const totalIntroductions = recruiterRoles.reduce((s, r) => s + r.counts.introduced, 0)
+  const totalShortlisted = recruiterRoles.reduce((s, r) => s + r.counts.shortlisted, 0)
+
+  useEffect(() => {
+    if (isLoading) return
+    telemetry.capture('intros_tab_summary', {
+      roles_with_intros: rolesWithIntros.length,
+      total_shortlisted: totalShortlisted,
+      total_introduced: totalIntroductions,
+    })
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isLoading, rolesWithIntros.length])
 
   if (isLoading) {
     return (
@@ -114,10 +84,27 @@ export function IntrosTab({ recruiterFilter }: IntrosTabProps) {
   }
 
   return (
-    <div className="p-4 space-y-3">
-      <p className="text-xs text-treeTextSec uppercase tracking-wider font-semibold">
-        Shortlisted & Introduced
-      </p>
+    <div className="p-4 space-y-4">
+      <div className="flex gap-3">
+        <div className="flex-1 bg-treeSurface border border-treeBorder rounded-xl p-3 text-xs leading-relaxed">
+          <span className="font-semibold text-treeText">Shortlisted</span>
+          <span className="text-treeTextSec"> (</span>
+          <span className="text-purple-300 font-medium">the user showed interest</span>
+          <span className="text-treeTextSec">, or </span>
+          <span className="text-pink-300 font-medium">the recruiter chose a candidate</span>
+          <span className="text-treeTextSec">) &amp; </span>
+          <span className="font-semibold text-blue-300">Introduced</span>
+          <span className="text-treeTextSec"> (double opt-in approved, introduction made)</span>
+        </div>
+        <div className="flex-shrink-0 bg-treeSurface border border-treeBorder rounded-xl p-3 flex flex-col items-center justify-center min-w-[88px]">
+          <span className="text-2xl font-bold text-blue-300 leading-none">
+            {totalIntroductions}
+          </span>
+          <span className="text-[10px] text-treeTextSec uppercase tracking-wider mt-1.5 text-center">
+            Introductions
+          </span>
+        </div>
+      </div>
       {rolesWithIntros.map((role) => (
         <RoleIntros key={role.id} role={role} />
       ))}

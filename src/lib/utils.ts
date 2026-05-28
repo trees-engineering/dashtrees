@@ -11,12 +11,6 @@ export function scoreBg(score: number): string {
   return 'rgba(248,113,113,0.18)'
 }
 
-export function scoreLabel(score: number): string {
-  if (score >= 70) return 'High'
-  if (score >= 40) return 'Medium'
-  return 'Low'
-}
-
 // All badge styles below are for the dark navy theme — translucent fills,
 // matching coloured text + soft border. Mirrors the .st classes in template.html.
 export function availBadgeClass(status: string): string {
@@ -71,6 +65,18 @@ export function statusBadgeClass(status: string): string {
     default:
       return 'bg-slate-500/15 text-slate-300 border-slate-500/25'
   }
+}
+
+// For a `shortlisted` match, the colour reveals who initiated the shortlist:
+//   reverse  → candidate-driven  → purple
+//   forward  → recruiter-driven  → pink
+// All other statuses still go through statusBadgeClass().
+export function shortlistedBadgeClass(
+  direction: 'forward' | 'reverse' | null | undefined,
+): string {
+  return direction === 'reverse'
+    ? 'bg-purple-500/20 text-purple-300 border-purple-500/30'
+    : 'bg-pink-500/15 text-pink-300 border-pink-500/30'
 }
 
 /** Tailwind classes for the open/closed/draft pill used on role cards. */

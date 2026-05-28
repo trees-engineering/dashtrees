@@ -1,8 +1,11 @@
+import { useEffect } from 'react'
 import { ChevronRight } from 'lucide-react'
 import { StatCard } from './StatCard'
 import { UploadJDButton } from './UploadJDButton'
+import { TalkToTreelanceButton } from './TalkToTreelanceButton'
 import { useRoles } from '../hooks/useRoles'
 import { formatDate, roleStatusBadgeClass } from '../lib/utils'
+import { telemetry } from '../lib/telemetry'
 
 interface HomeTabProps {
   onNavigate: (tab: string) => void
@@ -36,6 +39,16 @@ export function HomeTab({ onNavigate, recruiterFilter }: HomeTabProps) {
 
   const recentRoles = filteredRoles.slice(0, 5)
 
+  useEffect(() => {
+    if (rolesLoading || !stats) return
+    telemetry.capture('home_stats_viewed', {
+      roles_open: stats.roles_open,
+      roles_total: stats.roles_total,
+      matches_total: stats.matches_total,
+      intros: stats.intros,
+    })
+  }, [rolesLoading, stats?.roles_open, stats?.roles_total, stats?.matches_total, stats?.intros])
+
   const error = rolesError
   if (error) {
     return (
@@ -59,7 +72,10 @@ export function HomeTab({ onNavigate, recruiterFilter }: HomeTabProps) {
           <h2 className="text-xs font-semibold text-treeTextSec uppercase tracking-wider">
             Overview
           </h2>
-          <UploadJDButton />
+          <div className="flex items-center gap-2">
+            <TalkToTreelanceButton />
+            <UploadJDButton />
+          </div>
         </div>
         <div className="grid grid-cols-2 gap-3">
           {rolesLoading ? (
@@ -87,7 +103,11 @@ export function HomeTab({ onNavigate, recruiterFilter }: HomeTabProps) {
             Recent Roles
           </h2>
           <button
-            onClick={() => onNavigate('roles')}
+            data-telemetry-id="home-view-all-roles"
+            onClick={() => {
+              telemetry.capture('home_view_all_clicked', { destination: 'roles' })
+              onNavigate('roles')
+            }}
             className="text-xs text-primary font-medium flex items-center gap-0.5"
           >
             View all <ChevronRight size={14} />
@@ -113,7 +133,14 @@ export function HomeTab({ onNavigate, recruiterFilter }: HomeTabProps) {
               {recentRoles.map((role) => (
                 <button
                   key={role.id}
-                  onClick={() => onNavigate('roles')}
+                  data-telemetry-id="home-recent-role"
+                  onClick={() => {
+                    telemetry.capture('home_recent_role_clicked', {
+                      role_id: role.id,
+                      status: role.status,
+                    })
+                    onNavigate('roles')
+                  }}
                   className="w-full text-left p-4 flex items-center justify-between active:bg-treeBg transition-colors"
                 >
                   <div className="flex-1 min-w-0">

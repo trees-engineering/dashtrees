@@ -63,10 +63,13 @@ export interface ScoreDetails {
   experience_reasoning?: string
 }
 
+export type CascadeRunDirection = 'forward' | 'reverse'
+
 export interface Match {
   id: string
   talent_id: string
   role_id: string
+  cascade_run_id: string | null
   match_score: number | null
   skill_score: number | null
   experience_score: number | null
@@ -79,6 +82,7 @@ export interface Match {
 
 export interface MatchWithTalent extends Match {
   talent: Talent | null
+  cascade_run: { run_direction: CascadeRunDirection } | null
 }
 
 export interface Recruiter {

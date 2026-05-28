@@ -78,6 +78,24 @@ export function rerunMatches(roleId: string): Promise<RerunResult> {
   return postJson<RerunResult>(`/api/roles/${roleId}/rerun-matches`, {})
 }
 
+// ── Manual role status update (e.g. close a job) ──────────────────────────────
+export type RoleStatus = 'open' | 'closed' | 'draft'
+
+export interface UpdateRoleStatusResult {
+  ok: boolean
+  status: RoleStatus
+}
+
+export async function updateRoleStatus(roleId: string, status: RoleStatus): Promise<UpdateRoleStatusResult> {
+  const res = await fetch(`${API_BASE}/api/roles/${roleId}/status`, {
+    method: 'PATCH',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ status }),
+  })
+  if (!res.ok) throw new Error(await readError(res))
+  return res.json() as Promise<UpdateRoleStatusResult>
+}
+
 // ── Feature C: configurable export ────────────────────────────────────────────
 export interface ExportRequest {
   roleId: string
