@@ -48,7 +48,6 @@ export function fileToText(file: File): Promise<string> {
 // ── Feature A: JD upload ──────────────────────────────────────────────────────
 export interface UploadResult {
   ok: boolean
-  matchingStarted: boolean
   roleId: string
   title: string
   requirementsInserted: number
@@ -57,13 +56,26 @@ export interface UploadResult {
   jdTextLength: number
 }
 
-export async function uploadJD(file: File): Promise<UploadResult> {
+export async function uploadJD(file: File, createdBy: string): Promise<UploadResult> {
   const content_base64 = await fileToBase64(file)
   return postJson<UploadResult>('/api/roles/upload', {
     filename: file.name,
     mime_type: file.type || undefined,
     content_base64,
+    created_by: createdBy,
   })
+}
+
+// Kick off the matching cascade for a freshly-confirmed role. Fire-and-forget
+// on the server, so this resolves immediately. The actual work takes minutes
+// and runs in the background.
+export interface StartMatchingResult {
+  ok: boolean
+  started: boolean
+}
+
+export function startMatching(roleId: string): Promise<StartMatchingResult> {
+  return postJson<StartMatchingResult>(`/api/roles/${roleId}/start-matching`, {})
 }
 
 // ── Feature B: rerun matching ─────────────────────────────────────────────────
@@ -94,6 +106,32 @@ export async function updateRoleStatus(roleId: string, status: RoleStatus): Prom
   })
   if (!res.ok) throw new Error(await readError(res))
   return res.json() as Promise<UpdateRoleStatusResult>
+}
+
+// ── Role edit ─────────────────────────────────────────────────────────────────
+// Only the basic recruiter-editable fields. TET v2 / requirements are
+// LLM-derived and not in this patch surface.
+export interface RolePatch {
+  title?: string
+  description?: string | null
+  status?: RoleStatus
+  location_requirement?: string | null
+  location_regions?: string[] | null
+  salary_min?: number | null
+  salary_max?: number | null
+  budget_currency?: string | null
+  start_deadline?: string | null
+  provides_sponsorship?: boolean | null
+}
+
+export async function updateRole(roleId: string, patch: RolePatch): Promise<{ ok: true; role: Record<string, unknown> }> {
+  const res = await fetch(`${API_BASE}/api/roles/${roleId}`, {
+    method: 'PATCH',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(patch),
+  })
+  if (!res.ok) throw new Error(await readError(res))
+  return res.json() as Promise<{ ok: true; role: Record<string, unknown> }>
 }
 
 // ── Feature C: configurable export ────────────────────────────────────────────

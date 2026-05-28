@@ -5,6 +5,13 @@ import { HomeTab } from './components/HomeTab'
 import { RolesTab } from './components/RolesTab'
 import { MatchesTab } from './components/MatchesTab'
 import { IntrosTab } from './components/IntrosTab'
+import { LoginScreen } from './components/LoginScreen'
+import { NoAccessScreen } from './components/NoAccessScreen'
+import { RoleEditScreen } from './components/RoleEditScreen'
+import { UserMenu } from './components/UserMenu'
+import { useToast } from './components/Toast'
+import { useAuth } from './lib/auth'
+import { startMatching } from './lib/api'
 import { telemetry } from './lib/telemetry'
 
 type TabId = 'home' | 'roles' | 'matches' | 'intros'
@@ -30,11 +37,42 @@ const NAV_ITEMS: { id: TabId; label: string; icon: LucideIcon }[] = [
 ]
 
 function App() {
+  const auth = useAuth()
+
+  if (auth.status === 'loading') {
+    return (
+      <div className="flex flex-col h-[100dvh] bg-treeBg items-center justify-center">
+        <div className="w-8 h-8 border-2 border-primary border-t-transparent rounded-full animate-spin" />
+      </div>
+    )
+  }
+  if (auth.status === 'unauthenticated') {
+    return <LoginScreen />
+  }
+  if (auth.status === 'no-access') {
+    return <NoAccessScreen email={auth.user?.email} />
+  }
+
+  return <Dashboard />
+}
+
+function Dashboard() {
+  const { isAdmin, recruiter } = useAuth()
+  const toast = useToast()
   const [activeTab, setActiveTab] = useState<TabId>('home')
   const [selectedRoleId, setSelectedRoleId] = useState<string | null>(null)
-  const [selectedRecruiter, setSelectedRecruiter] = useState<string>(
-    () => localStorage.getItem(RECRUITER_STORAGE_KEY) ?? ''
+  const [editingRoleId, setEditingRoleId] = useState<string | null>(null)
+  // Set right after a successful JD upload alongside editingRoleId. When the
+  // recruiter saves the edit, this tells us to kick off matching. Cleared on
+  // save-fired-matching OR on back-without-save (recruiter can rerun later).
+  const [pendingCascadeRoleId, setPendingCascadeRoleId] = useState<string | null>(null)
+  // Admins choose freely from a dropdown ("" = All recruiters); their pick
+  // persists across reloads in localStorage. Non-admins don't have a
+  // dropdown — their filter is always locked to their own email below.
+  const [adminSelection, setAdminSelection] = useState<string>(
+    () => (isAdmin ? localStorage.getItem(RECRUITER_STORAGE_KEY) ?? '' : '')
   )
+  const selectedRecruiter = isAdmin ? adminSelection : recruiter?.email ?? ''
   const [quoteIndex, setQuoteIndex] = useState(0)
 
   const { data: recruiters } = useRecruiters()
@@ -60,8 +98,9 @@ function App() {
   }, [])
 
   const handleRecruiterChange = (email: string) => {
-    const prev = selectedRecruiter
-    setSelectedRecruiter(email)
+    // Admin-only — non-admins never see the dropdown that calls this.
+    const prev = adminSelection
+    setAdminSelection(email)
     localStorage.setItem(RECRUITER_STORAGE_KEY, email)
     telemetry.capture('recruiter_filter_changed', {
       from: prev || null,
@@ -77,6 +116,50 @@ function App() {
     telemetry.capture('view_matches_clicked', { role_id: roleId, from_tab: activeTab })
     setSelectedRoleId(roleId)
     handleTabChange('matches')
+  }
+
+  const handleUploadSuccess = (roleId: string) => {
+    // Open the edit screen immediately so the recruiter can verify what the
+    // LLM extracted. Matching is gated on their save.
+    setPendingCascadeRoleId(roleId)
+    setEditingRoleId(roleId)
+  }
+
+  const handleEditClose = () => {
+    if (pendingCascadeRoleId) {
+      // They bailed on a freshly-uploaded role without confirming. Don't
+      // start matching — they can use Rerun Matching from the role accordion
+      // when they're ready.
+      telemetry.capture('role_confirm_skipped', { role_id: pendingCascadeRoleId })
+    }
+    setEditingRoleId(null)
+    setPendingCascadeRoleId(null)
+  }
+
+  const handleEditSaved = (roleId: string) => {
+    if (roleId === pendingCascadeRoleId) {
+      // First save after upload — fire the cascade in the background and tell
+      // the recruiter. Fire-and-forget; failures land in the server log.
+      telemetry.capture('role_confirmed_matching_started', { role_id: roleId })
+      startMatching(roleId).catch((err) => {
+        console.error('[Dashboard] start-matching failed:', err)
+      })
+      toast.show('success', 'Matching started — candidates appear in ~1 min.')
+      setPendingCascadeRoleId(null)
+    }
+    setEditingRoleId(null)
+  }
+
+  // Role editor takes over the whole viewport when active; tab + nav state
+  // is preserved so closing the editor lands the user back where they were.
+  if (editingRoleId) {
+    return (
+      <RoleEditScreen
+        roleId={editingRoleId}
+        onClose={handleEditClose}
+        onSaved={handleEditSaved}
+      />
+    )
   }
 
   return (
@@ -95,21 +178,26 @@ function App() {
 
         <div className="flex-1" />
 
-        {/* Recruiter filter */}
-        <div className="flex-shrink-0">
-          <select
-            value={selectedRecruiter}
-            onChange={(e) => handleRecruiterChange(e.target.value)}
-            className="text-xs bg-white border border-slate-300 text-slate-800 rounded-lg px-2 py-1.5 max-w-[130px] focus:outline-none focus:ring-1 focus:ring-primary/40 appearance-none"
-          >
-            <option value="">All recruiters</option>
-            {(recruiters ?? []).map((r) => (
-              <option key={r.id} value={r.email} className="bg-white text-slate-800">
-                {r.name ?? r.email}
-              </option>
-            ))}
-          </select>
-        </div>
+        {/* Recruiter filter — admins only. Non-admins are scoped to their
+            own email automatically via useRoles/recruiterFilter. */}
+        {isAdmin && (
+          <div className="flex-shrink-0">
+            <select
+              value={selectedRecruiter}
+              onChange={(e) => handleRecruiterChange(e.target.value)}
+              className="text-xs bg-white border border-slate-300 text-slate-800 rounded-lg px-2 py-1.5 max-w-[130px] focus:outline-none focus:ring-1 focus:ring-primary/40 appearance-none"
+            >
+              <option value="">All recruiters</option>
+              {(recruiters ?? []).map((r) => (
+                <option key={r.id} value={r.email} className="bg-white text-slate-800">
+                  {r.name ?? r.email}
+                </option>
+              ))}
+            </select>
+          </div>
+        )}
+
+        <UserMenu />
       </header>
 
       {/* Content area */}
@@ -117,12 +205,15 @@ function App() {
         {activeTab === 'home' && (
           <HomeTab
             onNavigate={handleNavigateToRoles}
+            onUploadSuccess={handleUploadSuccess}
             recruiterFilter={selectedRecruiter}
           />
         )}
         {activeTab === 'roles' && (
           <RolesTab
             onViewMatches={handleViewMatches}
+            onEditRole={setEditingRoleId}
+            onUploadSuccess={handleUploadSuccess}
             recruiterFilter={selectedRecruiter}
           />
         )}

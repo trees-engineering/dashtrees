@@ -91,4 +91,5 @@ export interface Recruiter {
   name: string | null
   company: string | null
   verified: boolean | null
+  is_admin: boolean
 }

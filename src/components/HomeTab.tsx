@@ -9,6 +9,7 @@ import { telemetry } from '../lib/telemetry'
 
 interface HomeTabProps {
   onNavigate: (tab: string) => void
+  onUploadSuccess: (roleId: string) => void
   recruiterFilter: string
 }
 
@@ -21,7 +22,7 @@ function SkeletonCard() {
   )
 }
 
-export function HomeTab({ onNavigate, recruiterFilter }: HomeTabProps) {
+export function HomeTab({ onNavigate, onUploadSuccess, recruiterFilter }: HomeTabProps) {
   const { data: roles, isLoading: rolesLoading, error: rolesError } = useRoles()
 
   const filteredRoles = (roles ?? []).filter(
@@ -74,7 +75,10 @@ export function HomeTab({ onNavigate, recruiterFilter }: HomeTabProps) {
           </h2>
           <div className="flex items-center gap-2">
             <TalkToTreelanceButton />
-            <UploadJDButton />
+            <UploadJDButton
+              recruiterFilter={recruiterFilter}
+              onUploadSuccess={onUploadSuccess}
+            />
           </div>
         </div>
         <div className="grid grid-cols-2 gap-3">

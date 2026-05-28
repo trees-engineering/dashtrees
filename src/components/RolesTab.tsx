@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { ChevronDown, ChevronUp, Users, Loader2, XCircle } from 'lucide-react'
+import { ChevronDown, ChevronUp, Users, Loader2, XCircle, Pencil } from 'lucide-react'
 import { useQueryClient } from '@tanstack/react-query'
 import { useRoles } from '../hooks/useRoles'
 import { formatDate, formatBudget, roleStatusBadgeClass } from '../lib/utils'
@@ -15,15 +15,19 @@ type StatusFilter = 'open' | 'all' | 'closed'
 
 interface RolesTabProps {
   onViewMatches: (roleId: string) => void
+  onEditRole: (roleId: string) => void
+  onUploadSuccess: (roleId: string) => void
   recruiterFilter: string
 }
 
 function RoleAccordion({
   role,
   onViewMatches,
+  onEditRole,
 }: {
   role: RoleWithCounts
   onViewMatches: (roleId: string) => void
+  onEditRole: (roleId: string) => void
 }) {
   const [open, setOpen] = useState(false)
   const [closing, setClosing] = useState(false)
@@ -162,24 +166,37 @@ function RoleAccordion({
             </button>
           </div>
 
-          {role.status === 'open' && (
+          <div className="flex gap-2">
             <button
-              data-telemetry-id="role-close-job"
-              onClick={handleCloseJob}
-              disabled={closing}
-              className="w-full flex items-center justify-center gap-1.5 py-2.5 rounded-lg border border-red-400/40 text-red-300 text-sm font-medium active:bg-red-500/10 transition-colors disabled:opacity-50"
+              data-telemetry-id="role-edit"
+              onClick={(e) => {
+                e.stopPropagation()
+                telemetry.capture('role_edit_clicked', { role_id: role.id, status: role.status })
+                onEditRole(role.id)
+              }}
+              className="flex-1 flex items-center justify-center gap-1.5 py-2.5 rounded-lg border border-treeBorder text-treeText text-sm font-medium active:bg-treeBg transition-colors"
             >
-              {closing ? <Loader2 size={15} className="animate-spin" /> : <XCircle size={15} />}
-              {closing ? 'Closing…' : 'Close Job'}
+              <Pencil size={14} /> Edit
             </button>
-          )}
+            {role.status === 'open' && (
+              <button
+                data-telemetry-id="role-close-job"
+                onClick={handleCloseJob}
+                disabled={closing}
+                className="flex-1 flex items-center justify-center gap-1.5 py-2.5 rounded-lg border border-red-400/40 text-red-300 text-sm font-medium active:bg-red-500/10 transition-colors disabled:opacity-50"
+              >
+                {closing ? <Loader2 size={15} className="animate-spin" /> : <XCircle size={15} />}
+                {closing ? 'Closing…' : 'Close Job'}
+              </button>
+            )}
+          </div>
         </div>
       )}
     </div>
   )
 }
 
-export function RolesTab({ onViewMatches, recruiterFilter }: RolesTabProps) {
+export function RolesTab({ onViewMatches, onEditRole, onUploadSuccess, recruiterFilter }: RolesTabProps) {
   const [statusFilter, setStatusFilter] = useState<StatusFilter>('open')
   const { data: roles, isLoading } = useRoles()
 
@@ -208,7 +225,10 @@ export function RolesTab({ onViewMatches, recruiterFilter }: RolesTabProps) {
         </h2>
         <div className="flex items-center gap-2">
           <TalkToTreelanceButton />
-          <UploadJDButton />
+          <UploadJDButton
+            recruiterFilter={recruiterFilter}
+            onUploadSuccess={onUploadSuccess}
+          />
         </div>
       </div>
 
@@ -253,7 +273,12 @@ export function RolesTab({ onViewMatches, recruiterFilter }: RolesTabProps) {
       ) : (
         <div className="space-y-3">
           {filtered.map((role) => (
-            <RoleAccordion key={role.id} role={role} onViewMatches={onViewMatches} />
+            <RoleAccordion
+              key={role.id}
+              role={role}
+              onViewMatches={onViewMatches}
+              onEditRole={onEditRole}
+            />
           ))}
         </div>
       )}

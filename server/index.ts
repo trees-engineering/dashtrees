@@ -54,17 +54,28 @@ app.post('/api/roles/upload', async (req: Request, res: Response) => {
     const createdBy = created_by && UUID_RE.test(created_by) ? created_by : null;
     const result = await ingestRoleFromBuffer(buffer, filename, mime_type, createdBy);
 
-    // Auto-run matching in the background — the pipeline makes 50-200 LLM calls
-    // and takes 30s-2min, so we never make the HTTP response wait for it.
-    runCascadePipeline(result.roleId).catch(err => {
-      console.error(`[server] background cascade failed for role ${result.roleId}:`, err);
-    });
-
-    res.json({ ok: true, matchingStarted: true, ...result });
+    // Matching is no longer auto-started — the recruiter confirms the role in
+    // the edit screen first, then POST /start-matching kicks off the cascade.
+    res.json({ ok: true, ...result });
   } catch (err) {
     console.error('[server] JD upload failed:', err);
     res.status(500).json({ error: err instanceof Error ? err.message : 'Unknown error' });
   }
+});
+
+// ── Start matching (fire-and-forget) ─────────────────────────────────────────
+// Called after the recruiter confirms a newly-uploaded role via the edit
+// screen. The cascade makes 50-200 LLM calls and takes 30s-2min, so this
+// returns immediately and the work happens in the background.
+app.post('/api/roles/:roleId/start-matching', (req: Request, res: Response) => {
+  if (!UUID_RE.test(req.params.roleId)) {
+    res.status(400).json({ error: 'invalid role id' });
+    return;
+  }
+  runCascadePipeline(req.params.roleId).catch(err => {
+    console.error(`[server] background cascade failed for role ${req.params.roleId}:`, err);
+  });
+  res.json({ ok: true, started: true });
 });
 
 // ── Feature B: re-run the matching cascade for a role (awaited) ──────────────
@@ -105,6 +116,131 @@ app.patch('/api/roles/:roleId/status', async (req: Request, res: Response) => {
     return;
   }
   res.json({ ok: true, status });
+});
+
+// ── Manual role edit ─────────────────────────────────────────────────────────
+// PATCH the basic, recruiter-editable fields. TET v2 / requirements stay
+// LLM-only — if those need correcting, reupload the JD.
+const ROLE_EDITABLE_FIELDS = [
+  'title',
+  'description',
+  'status',
+  'location_requirement',
+  'location_regions',
+  'salary_min',
+  'salary_max',
+  'budget_currency',
+  'start_deadline',
+  'provides_sponsorship',
+] as const;
+type RoleEditableField = (typeof ROLE_EDITABLE_FIELDS)[number];
+
+function sanitizeRolePatch(body: Record<string, unknown>): Record<string, unknown> | string {
+  const patch: Record<string, unknown> = {};
+  for (const field of ROLE_EDITABLE_FIELDS) {
+    if (!(field in body)) continue;
+    const v = body[field];
+    switch (field as RoleEditableField) {
+      case 'title': {
+        if (typeof v !== 'string' || v.trim().length === 0) return 'title must be a non-empty string';
+        patch.title = v.trim();
+        break;
+      }
+      case 'description':
+      case 'location_requirement':
+      case 'budget_currency':
+      case 'start_deadline': {
+        if (v !== null && typeof v !== 'string') return `${field} must be a string or null`;
+        patch[field] = v === null ? null : (v as string).trim() || null;
+        break;
+      }
+      case 'status': {
+        if (v !== 'open' && v !== 'closed' && v !== 'draft') {
+          return 'status must be one of: open, closed, draft';
+        }
+        patch.status = v;
+        break;
+      }
+      case 'location_regions': {
+        if (v === null) { patch.location_regions = null; break; }
+        if (!Array.isArray(v) || v.some(x => typeof x !== 'string')) {
+          return 'location_regions must be an array of strings or null';
+        }
+        patch.location_regions = (v as string[]).map(s => s.trim()).filter(Boolean);
+        break;
+      }
+      case 'salary_min':
+      case 'salary_max': {
+        if (v === null) { patch[field] = null; break; }
+        const n = Number(v);
+        if (!Number.isFinite(n) || n < 0) return `${field} must be a non-negative number or null`;
+        patch[field] = n;
+        break;
+      }
+      case 'provides_sponsorship': {
+        if (v !== null && typeof v !== 'boolean') return 'provides_sponsorship must be a boolean or null';
+        patch.provides_sponsorship = v;
+        break;
+      }
+    }
+  }
+  return patch;
+}
+
+app.patch('/api/roles/:roleId', async (req: Request, res: Response) => {
+  if (!UUID_RE.test(req.params.roleId)) {
+    res.status(400).json({ error: 'invalid role id' });
+    return;
+  }
+  if (!supabase) {
+    res.status(500).json({ error: 'database not configured' });
+    return;
+  }
+
+  const body = (req.body ?? {}) as Record<string, unknown>;
+  const sanitized = sanitizeRolePatch(body);
+  if (typeof sanitized === 'string') {
+    res.status(400).json({ error: sanitized });
+    return;
+  }
+  if (Object.keys(sanitized).length === 0) {
+    res.status(400).json({ error: 'no editable fields provided' });
+    return;
+  }
+
+  // salary_min <= salary_max if both end up set after the patch. Load the
+  // current row to enforce the invariant against the merged state.
+  if ('salary_min' in sanitized || 'salary_max' in sanitized) {
+    const { data: current, error: loadErr } = await supabase
+      .from('_role')
+      .select('salary_min, salary_max')
+      .eq('id', req.params.roleId)
+      .single();
+    if (loadErr || !current) {
+      res.status(404).json({ error: 'role not found' });
+      return;
+    }
+    const nextMin = 'salary_min' in sanitized ? (sanitized.salary_min as number | null) : current.salary_min;
+    const nextMax = 'salary_max' in sanitized ? (sanitized.salary_max as number | null) : current.salary_max;
+    if (typeof nextMin === 'number' && typeof nextMax === 'number' && nextMin > nextMax) {
+      res.status(400).json({ error: 'salary_min cannot exceed salary_max' });
+      return;
+    }
+  }
+
+  const { data, error } = await supabase
+    .from('_role')
+    .update(sanitized)
+    .eq('id', req.params.roleId)
+    .select('*')
+    .single();
+  if (error || !data) {
+    console.error('[server] role update failed:', error);
+    res.status(500).json({ error: error?.message ?? 'update failed' });
+    return;
+  }
+
+  res.json({ ok: true, role: data });
 });
 
 // ── Recruiter UX telemetry: batch event ingest ───────────────────────────────

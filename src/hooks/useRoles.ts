@@ -1,19 +1,25 @@
 import { useQuery } from '@tanstack/react-query'
 import { supabase } from '../lib/supabase'
+import { useAuth } from '../lib/auth'
 import type { RoleWithCounts } from '../types'
 
 // Supabase/PostgREST caps a single response at 1000 rows. Page through
 // with .range() until a short page is returned so nothing is silently dropped.
 const PAGE_SIZE = 1000
 
-async function fetchAllRoles() {
+async function fetchAllRoles(recruiterId: string | null) {
   const all: any[] = []
   for (let from = 0; ; from += PAGE_SIZE) {
-    const { data, error } = await supabase
+    let query = supabase
       .from('_role')
       .select('*')
       .order('created_at', { ascending: false })
       .range(from, from + PAGE_SIZE - 1)
+    // Non-admins: scope at the query level so the browser literally never
+    // sees other recruiters' rows. Admins (recruiterId === null) get every
+    // role.
+    if (recruiterId) query = query.eq('created_by', recruiterId)
+    const { data, error } = await query
     if (error) throw error
     if (!data || data.length === 0) break
     all.push(...data)
@@ -38,15 +44,16 @@ async function fetchAllMatches(roleIds: string[]) {
   return all
 }
 
-async function fetchRoles(): Promise<RoleWithCounts[]> {
-  // Step 1: Fetch all roles (paginated)
-  const roles = await fetchAllRoles()
+async function fetchRoles(recruiterId: string | null): Promise<RoleWithCounts[]> {
+  // Step 1: Fetch roles (scoped for non-admins, all for admins).
+  const roles = await fetchAllRoles(recruiterId)
   if (roles.length === 0) return []
 
   const roleIds = roles.map((r) => r.id)
   const createdByIds = [...new Set(roles.map((r) => r.created_by).filter(Boolean))] as string[]
 
-  // Step 2: Fetch match counts (paginated) in parallel with recruiter emails
+  // Step 2: Fetch match counts (scoped to the visible role set) in parallel
+  // with recruiter emails for the join.
   const [matches, recruitersRes] = await Promise.all([
     fetchAllMatches(roleIds),
     createdByIds.length > 0
@@ -83,9 +90,19 @@ async function fetchRoles(): Promise<RoleWithCounts[]> {
 }
 
 export function useRoles() {
+  const { isAdmin, recruiter } = useAuth()
+  // Admins see everything → recruiterId = null (no filter).
+  // Non-admins are scoped to their own recruiter id.
+  const recruiterId = isAdmin ? null : recruiter?.id ?? null
+
   return useQuery<RoleWithCounts[]>({
-    queryKey: ['roles'],
-    queryFn: fetchRoles,
+    // The cache key includes the scope so an admin → non-admin transition
+    // (same browser, different user) doesn't reuse stale data.
+    queryKey: ['roles', recruiterId ?? 'all'],
+    queryFn: () => fetchRoles(recruiterId),
     staleTime: 2 * 60 * 1000,
+    // Don't fire until we know who they are: admins can run with null,
+    // non-admins need their recruiter id.
+    enabled: isAdmin || !!recruiterId,
   })
 }
