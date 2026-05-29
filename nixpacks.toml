@@ -1,0 +1,15 @@
+# Coolify uses Nixpacks. DashTrees has BOTH a static frontend (dist/) and
+# an Express server (dist-server/) that must run together — Express serves
+# the SPA same-origin AND handles /api/*. Without this override Nixpacks
+# sees dist/ after vite build and deploys as a static site, leaving every
+# /api/* request unrouted (returns the SPA HTML, breaking auth + uploads
+# + edits + reports).
+
+[phases.install]
+cmds = ["npm ci"]
+
+[phases.build]
+cmds = ["npm run build"]
+
+[start]
+cmd = "node dist-server/index.js"
