@@ -15,10 +15,18 @@ export function MatchesTab({ selectedRoleId, onRoleChange, recruiterFilter }: Ma
   const { data: roles, isLoading: rolesLoading } = useRoles()
   const { data: matches, isLoading: matchesLoading } = useMatches(selectedRoleId)
 
-  const openRoles = (roles ?? []).filter(
-    (r) =>
-      r.status === 'open' && (!recruiterFilter || r.recruiter_email === recruiterFilter)
+  const visibleRoles = (roles ?? []).filter(
+    (r) => !recruiterFilter || r.recruiter_email === recruiterFilter,
   )
+  const openRoles = visibleRoles.filter((r) => r.status === 'open')
+  const closedRoles = visibleRoles.filter((r) => r.status === 'closed')
+
+  // Each dropdown reflects the current selection only if the selected role
+  // matches that dropdown's status. Picking from one naturally clears the
+  // other because its option set doesn't include the new id.
+  const selectedRole = visibleRoles.find((r) => r.id === selectedRoleId)
+  const selectedOpenId = selectedRole?.status === 'open' ? selectedRoleId ?? '' : ''
+  const selectedClosedId = selectedRole?.status === 'closed' ? selectedRoleId ?? '' : ''
 
   useEffect(() => {
     if (!selectedRoleId || matchesLoading) return
@@ -42,21 +50,45 @@ export function MatchesTab({ selectedRoleId, onRoleChange, recruiterFilter }: Ma
         ) : (
           <div className="flex gap-2">
             <select
-              data-telemetry-id="matches-role-picker"
-              value={selectedRoleId ?? ''}
+              data-telemetry-id="matches-role-picker-open"
+              value={selectedOpenId}
               onChange={(e) => {
                 telemetry.capture('matches_role_changed', {
                   from: selectedRoleId,
                   to: e.target.value || null,
+                  status_picked: e.target.value ? 'open' : null,
                 })
                 onRoleChange(e.target.value)
               }}
-              className="flex-1 h-12 px-4 rounded-xl border border-treeBorder bg-treeSurface text-treeText text-sm appearance-none focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary"
+              className="flex-1 min-w-0 h-12 px-4 rounded-xl border border-treeBorder bg-treeSurface text-treeText text-sm appearance-none focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary"
             >
-              <option value="">— Choose a role —</option>
+              <option value="">— Open role —</option>
               {openRoles.map((role) => (
                 <option key={role.id} value={role.id}>
                   {role.title}
+                  {role.location_requirement ? ` · ${role.location_requirement}` : ''}
+                </option>
+              ))}
+            </select>
+            <select
+              data-telemetry-id="matches-role-picker-closed"
+              value={selectedClosedId}
+              onChange={(e) => {
+                telemetry.capture('matches_role_changed', {
+                  from: selectedRoleId,
+                  to: e.target.value || null,
+                  status_picked: e.target.value ? 'closed' : null,
+                })
+                onRoleChange(e.target.value)
+              }}
+              disabled={closedRoles.length === 0}
+              className="flex-1 min-w-0 h-12 px-4 rounded-xl border border-slate-500/30 bg-slate-500/10 text-slate-300 text-sm appearance-none focus:outline-none focus:ring-2 focus:ring-slate-400/30 focus:border-slate-400/50 disabled:opacity-50 disabled:cursor-not-allowed"
+              title={closedRoles.length === 0 ? 'No closed roles' : undefined}
+            >
+              <option value="">— Closed role —</option>
+              {closedRoles.map((role) => (
+                <option key={role.id} value={role.id}>
+                  [Closed] {role.title}
                   {role.location_requirement ? ` · ${role.location_requirement}` : ''}
                 </option>
               ))}

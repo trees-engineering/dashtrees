@@ -26,12 +26,27 @@ export function RoleEditScreen({ roleId, onClose, onSaved }: RoleEditScreenProps
     [roles, roleId],
   )
 
+  // Form reports its dirty state up so the back button can prompt before
+  // discarding work.
+  const [isDirty, setIsDirty] = useState(false)
+  const handleBack = () => {
+    if (isDirty) {
+      const ok = window.confirm('Discard unsaved changes?')
+      if (!ok) {
+        telemetry.capture('role_edit_discard_cancelled', { role_id: roleId })
+        return
+      }
+      telemetry.capture('role_edit_discarded', { role_id: roleId })
+    }
+    onClose()
+  }
+
   return (
     <div className="flex flex-col h-[100dvh] bg-treeBg">
       <header className="flex-shrink-0 bg-white border-b border-slate-200 px-4 h-[50px] flex items-center gap-3 z-10">
         <button
           data-telemetry-id="role-edit-back"
-          onClick={onClose}
+          onClick={handleBack}
           className="flex items-center gap-1 text-sm text-slate-700 hover:text-slate-900 -ml-2 px-2 py-1 rounded"
           aria-label="Back"
         >
@@ -41,6 +56,11 @@ export function RoleEditScreen({ roleId, onClose, onSaved }: RoleEditScreenProps
         <h1 className="text-sm font-semibold text-slate-800 truncate flex-1">
           {role?.title ?? 'Edit role'}
         </h1>
+        {isDirty && (
+          <span className="flex-shrink-0 text-[10px] font-semibold uppercase tracking-wider text-amber-700 bg-amber-100 border border-amber-300 rounded-full px-2 py-0.5">
+            Unsaved
+          </span>
+        )}
       </header>
 
       <main className="flex-1 overflow-y-auto">
@@ -53,7 +73,11 @@ export function RoleEditScreen({ roleId, onClose, onSaved }: RoleEditScreenProps
             Role not found.
           </div>
         ) : (
-          <RoleEditForm role={role} onSaved={() => onSaved(role.id)} />
+          <RoleEditForm
+            role={role}
+            onSaved={() => onSaved(role.id)}
+            onDirtyChange={setIsDirty}
+          />
         )}
       </main>
     </div>
@@ -65,9 +89,10 @@ export function RoleEditScreen({ roleId, onClose, onSaved }: RoleEditScreenProps
 interface RoleEditFormProps {
   role: RoleWithCounts
   onSaved: () => void
+  onDirtyChange: (dirty: boolean) => void
 }
 
-function RoleEditForm({ role, onSaved }: RoleEditFormProps) {
+function RoleEditForm({ role, onSaved, onDirtyChange }: RoleEditFormProps) {
   const toast = useToast()
   const queryClient = useQueryClient()
 
@@ -98,6 +123,35 @@ function RoleEditForm({ role, onSaved }: RoleEditFormProps) {
 
   const [saving, setSaving] = useState(false)
   const [error, setError] = useState<string | null>(null)
+
+  // Dirty tracking — true when any field diverges from the persisted role.
+  // Compared against the same normalisations used to initialise the form so
+  // a string-trim or array-join doesn't falsely flag dirty.
+  const isDirty = useMemo(() => {
+    return (
+      title !== (role.title ?? '') ||
+      description !== (role.description ?? '') ||
+      status !== role.status ||
+      locationRequirement !== (role.location_requirement ?? '') ||
+      locationRegions !== (role.location_regions ?? []).join(', ') ||
+      salaryMin !== (role.salary_min != null ? String(role.salary_min) : '') ||
+      salaryMax !== (role.salary_max != null ? String(role.salary_max) : '') ||
+      budgetCurrency !== (role.budget_currency ?? '') ||
+      startDeadline !== (role.start_deadline ? role.start_deadline.slice(0, 10) : '') ||
+      sponsorship !== (
+        role.provides_sponsorship === true ? 'yes'
+          : role.provides_sponsorship === false ? 'no'
+          : 'unknown'
+      )
+    )
+  }, [
+    role, title, description, status, locationRequirement, locationRegions,
+    salaryMin, salaryMax, budgetCurrency, startDeadline, sponsorship,
+  ])
+
+  useEffect(() => {
+    onDirtyChange(isDirty)
+  }, [isDirty, onDirtyChange])
 
   // Re-sync if the underlying role changes (e.g. background refetch).
   useEffect(() => {

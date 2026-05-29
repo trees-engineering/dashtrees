@@ -8,6 +8,7 @@ import { isSupported } from './document.js';
 import { runCascadePipeline } from './matching/cascade.js';
 import { buildExport } from './export/index.js';
 import { supabase } from './db.js';
+import { authMiddleware, checkRoleOwnership } from './auth.js';
 
 const app = express();
 const PORT = Number(process.env.PORT) || 3000;
@@ -24,7 +25,7 @@ app.get('/api/health', (_req: Request, res: Response) => {
 });
 
 // ── Feature A: JD upload → ingest → auto-run matching in the background ──────
-app.post('/api/roles/upload', async (req: Request, res: Response) => {
+app.post('/api/roles/upload', authMiddleware, async (req: Request, res: Response) => {
   const { filename, mime_type, content_base64, created_by } = (req.body ?? {}) as {
     filename?: string; mime_type?: string; content_base64?: string; created_by?: string;
   };
@@ -50,8 +51,22 @@ app.post('/api/roles/upload', async (req: Request, res: Response) => {
     return;
   }
 
+  // Attribution rules:
+  //   - Admin: can attribute to any recruiter UUID they send.
+  //   - Non-admin: server forces created_by to their own recruiterId regardless
+  //     of what the client sends, so a curious caller can't spoof attribution.
+  let createdBy: string;
+  if (req.auth!.isAdmin) {
+    if (!created_by || !UUID_RE.test(created_by)) {
+      res.status(400).json({ error: 'created_by must be a valid recruiter id' });
+      return;
+    }
+    createdBy = created_by;
+  } else {
+    createdBy = req.auth!.recruiterId;
+  }
+
   try {
-    const createdBy = created_by && UUID_RE.test(created_by) ? created_by : null;
     const result = await ingestRoleFromBuffer(buffer, filename, mime_type, createdBy);
 
     // Matching is no longer auto-started — the recruiter confirms the role in
@@ -67,11 +82,13 @@ app.post('/api/roles/upload', async (req: Request, res: Response) => {
 // Called after the recruiter confirms a newly-uploaded role via the edit
 // screen. The cascade makes 50-200 LLM calls and takes 30s-2min, so this
 // returns immediately and the work happens in the background.
-app.post('/api/roles/:roleId/start-matching', (req: Request, res: Response) => {
+app.post('/api/roles/:roleId/start-matching', authMiddleware, async (req: Request, res: Response) => {
   if (!UUID_RE.test(req.params.roleId)) {
     res.status(400).json({ error: 'invalid role id' });
     return;
   }
+  if (!(await checkRoleOwnership(req, res, req.params.roleId))) return;
+
   runCascadePipeline(req.params.roleId).catch(err => {
     console.error(`[server] background cascade failed for role ${req.params.roleId}:`, err);
   });
@@ -79,7 +96,13 @@ app.post('/api/roles/:roleId/start-matching', (req: Request, res: Response) => {
 });
 
 // ── Feature B: re-run the matching cascade for a role (awaited) ──────────────
-app.post('/api/roles/:roleId/rerun-matches', async (req: Request, res: Response) => {
+app.post('/api/roles/:roleId/rerun-matches', authMiddleware, async (req: Request, res: Response) => {
+  if (!UUID_RE.test(req.params.roleId)) {
+    res.status(400).json({ error: 'invalid role id' });
+    return;
+  }
+  if (!(await checkRoleOwnership(req, res, req.params.roleId))) return;
+
   try {
     const tree = await runCascadePipeline(req.params.roleId);
     res.json({
@@ -95,7 +118,7 @@ app.post('/api/roles/:roleId/rerun-matches', async (req: Request, res: Response)
 });
 
 // ── Manual role status update (e.g. close a job) ─────────────────────────────
-app.patch('/api/roles/:roleId/status', async (req: Request, res: Response) => {
+app.patch('/api/roles/:roleId/status', authMiddleware, async (req: Request, res: Response) => {
   if (!UUID_RE.test(req.params.roleId)) {
     res.status(400).json({ error: 'invalid role id' });
     return;
@@ -109,6 +132,8 @@ app.patch('/api/roles/:roleId/status', async (req: Request, res: Response) => {
     res.status(500).json({ error: 'database not configured' });
     return;
   }
+  if (!(await checkRoleOwnership(req, res, req.params.roleId))) return;
+
   const { error } = await supabase.from('_role').update({ status }).eq('id', req.params.roleId);
   if (error) {
     console.error('[server] role status update failed:', error);
@@ -187,7 +212,7 @@ function sanitizeRolePatch(body: Record<string, unknown>): Record<string, unknow
   return patch;
 }
 
-app.patch('/api/roles/:roleId', async (req: Request, res: Response) => {
+app.patch('/api/roles/:roleId', authMiddleware, async (req: Request, res: Response) => {
   if (!UUID_RE.test(req.params.roleId)) {
     res.status(400).json({ error: 'invalid role id' });
     return;
@@ -196,6 +221,7 @@ app.patch('/api/roles/:roleId', async (req: Request, res: Response) => {
     res.status(500).json({ error: 'database not configured' });
     return;
   }
+  if (!(await checkRoleOwnership(req, res, req.params.roleId))) return;
 
   const body = (req.body ?? {}) as Record<string, unknown>;
   const sanitized = sanitizeRolePatch(body);
@@ -291,7 +317,7 @@ app.post('/api/telemetry/batch', async (req: Request, res: Response) => {
 });
 
 // ── Feature C: configurable CV / dossier export ──────────────────────────────
-app.post('/api/talent/:talentId/export', async (req: Request, res: Response) => {
+app.post('/api/talent/:talentId/export', authMiddleware, async (req: Request, res: Response) => {
   const body = (req.body ?? {}) as {
     roleId?: string;
     format?: 'docx' | 'pdf';
@@ -304,6 +330,12 @@ app.post('/api/talent/:talentId/export', async (req: Request, res: Response) => 
     res.status(400).json({ error: 'roleId is required' });
     return;
   }
+  if (!UUID_RE.test(body.roleId)) {
+    res.status(400).json({ error: 'invalid role id' });
+    return;
+  }
+  // Non-admins can only export for roles they own.
+  if (!(await checkRoleOwnership(req, res, body.roleId))) return;
 
   try {
     const result = await buildExport({

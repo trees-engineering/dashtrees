@@ -1,6 +1,8 @@
 // Client for the DashTrees backend (server/). Calls are relative ("/api/*"):
 // the Vite dev proxy forwards them in dev, and the Express server serves the
 // built SPA same-origin in production. VITE_API_BASE can override the origin.
+import { supabase } from './supabase'
+
 const API_BASE = (import.meta.env.VITE_API_BASE as string | undefined) ?? ''
 
 async function readError(res: Response): Promise<string> {
@@ -12,10 +14,18 @@ async function readError(res: Response): Promise<string> {
   }
 }
 
+// All mutation endpoints on the server require a Bearer token. Telemetry
+// stays open and uses fetch directly, so it doesn't go through here.
+async function authHeaders(): Promise<Record<string, string>> {
+  const { data } = await supabase.auth.getSession()
+  const token = data.session?.access_token
+  return token ? { Authorization: `Bearer ${token}` } : {}
+}
+
 async function postJson<T>(path: string, body: unknown): Promise<T> {
   const res = await fetch(`${API_BASE}${path}`, {
     method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
+    headers: { 'Content-Type': 'application/json', ...(await authHeaders()) },
     body: JSON.stringify(body),
   })
   if (!res.ok) throw new Error(await readError(res))
@@ -101,7 +111,7 @@ export interface UpdateRoleStatusResult {
 export async function updateRoleStatus(roleId: string, status: RoleStatus): Promise<UpdateRoleStatusResult> {
   const res = await fetch(`${API_BASE}/api/roles/${roleId}/status`, {
     method: 'PATCH',
-    headers: { 'Content-Type': 'application/json' },
+    headers: { 'Content-Type': 'application/json', ...(await authHeaders()) },
     body: JSON.stringify({ status }),
   })
   if (!res.ok) throw new Error(await readError(res))
@@ -127,7 +137,7 @@ export interface RolePatch {
 export async function updateRole(roleId: string, patch: RolePatch): Promise<{ ok: true; role: Record<string, unknown> }> {
   const res = await fetch(`${API_BASE}/api/roles/${roleId}`, {
     method: 'PATCH',
-    headers: { 'Content-Type': 'application/json' },
+    headers: { 'Content-Type': 'application/json', ...(await authHeaders()) },
     body: JSON.stringify(patch),
   })
   if (!res.ok) throw new Error(await readError(res))
@@ -148,7 +158,7 @@ export interface ExportRequest {
 export async function exportDocument(talentId: string, req: ExportRequest): Promise<string> {
   const res = await fetch(`${API_BASE}/api/talent/${talentId}/export`, {
     method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
+    headers: { 'Content-Type': 'application/json', ...(await authHeaders()) },
     body: JSON.stringify(req),
   })
   if (!res.ok) throw new Error(await readError(res))
