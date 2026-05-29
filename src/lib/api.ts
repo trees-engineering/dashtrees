@@ -161,12 +161,86 @@ export async function exportDocument(talentId: string, req: ExportRequest): Prom
     headers: { 'Content-Type': 'application/json', ...(await authHeaders()) },
     body: JSON.stringify(req),
   })
-  if (!res.ok) throw new Error(await readError(res))
+  return finishBlobDownload(res, `export.${req.format}`)
+}
 
+// ── Monthly reports ───────────────────────────────────────────────────────────
+export interface SavedReportRow {
+  id: string
+  client_label: string
+  workspace_id: string | null
+  recruiter_id: string | null
+  period_year: number
+  period_month: number
+  period_label: string
+  filename: string
+  size_bytes: number
+  generated_at: string
+}
+
+/** Generate the current scope's monthly report, persist server-side, and
+ *  trigger a browser download. recruiterScope only matters for admins; the
+ *  server forces non-admins to their own scope regardless. */
+export async function generateAndDownloadMonthlyReport(opts: {
+  /** 'all' | a recruiter UUID | undefined. Admin-only; ignored for non-admin. */
+  recruiterScope?: string
+}): Promise<string> {
+  const qs = opts.recruiterScope ? `?recruiter_id=${encodeURIComponent(opts.recruiterScope)}` : ''
+  const res = await fetch(`${API_BASE}/api/report/monthly${qs}`, {
+    method: 'POST',
+    headers: { ...(await authHeaders()) },
+  })
+  if (!res.ok) throw new Error(await readError(res))
+  return finishBlobDownload(res, 'report.html')
+}
+
+export async function listSavedReports(filter: {
+  month?: string // 'YYYY-MM'
+  recruiterScope?: string // 'all' | UUID
+}): Promise<SavedReportRow[]> {
+  const params = new URLSearchParams()
+  if (filter.month) params.set('month', filter.month)
+  if (filter.recruiterScope) params.set('recruiter_id', filter.recruiterScope)
+  const qs = params.toString() ? `?${params.toString()}` : ''
+  const res = await fetch(`${API_BASE}/api/report/monthly/list${qs}`, {
+    headers: { ...(await authHeaders()) },
+  })
+  if (!res.ok) throw new Error(await readError(res))
+  const json = (await res.json()) as { reports: SavedReportRow[] }
+  return json.reports ?? []
+}
+
+/** Fetch a saved report's HTML as a blob URL for viewing or downloading. The
+ *  caller must revokeObjectURL when done. */
+export async function fetchSavedReportBlob(id: string): Promise<{ blobUrl: string; filename: string }> {
+  const res = await fetch(`${API_BASE}/api/report/monthly/${id}`, {
+    headers: { ...(await authHeaders()) },
+  })
+  if (!res.ok) throw new Error(await readError(res))
   const disposition = res.headers.get('Content-Disposition') ?? ''
   const match = disposition.match(/filename="?([^"]+)"?/)
-  const filename = match?.[1] ?? `export.${req.format}`
+  const filename = match?.[1] ?? `report-${id}.html`
+  const blob = await res.blob()
+  return { blobUrl: URL.createObjectURL(blob), filename }
+}
 
+export async function deleteSavedReport(id: string): Promise<void> {
+  const res = await fetch(`${API_BASE}/api/report/monthly/${id}`, {
+    method: 'DELETE',
+    headers: { ...(await authHeaders()) },
+  })
+  if (!res.ok) throw new Error(await readError(res))
+}
+
+// ── Blob download helper ──────────────────────────────────────────────────────
+// Shared by exportDocument + generateAndDownloadMonthlyReport. Reads
+// filename from Content-Disposition, falls back to the caller's name,
+// triggers the browser download, and returns the filename used.
+async function finishBlobDownload(res: Response, fallbackName: string): Promise<string> {
+  if (!res.ok) throw new Error(await readError(res))
+  const disposition = res.headers.get('Content-Disposition') ?? ''
+  const match = disposition.match(/filename="?([^"]+)"?/)
+  const filename = match?.[1] ?? fallbackName
   const blob = await res.blob()
   const url = URL.createObjectURL(blob)
   const a = document.createElement('a')
@@ -178,3 +252,4 @@ export async function exportDocument(talentId: string, req: ExportRequest): Prom
   URL.revokeObjectURL(url)
   return filename
 }
+

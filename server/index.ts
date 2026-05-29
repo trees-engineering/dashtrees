@@ -9,6 +9,12 @@ import { runCascadePipeline } from './matching/cascade.js';
 import { buildExport } from './export/index.js';
 import { supabase } from './db.js';
 import { authMiddleware, checkRoleOwnership } from './auth.js';
+import {
+  generateMonthlyReport,
+  saveMonthlyReport,
+  listMonthlyReports,
+  getMonthlyReportById,
+} from './monthly-report.js';
 
 const app = express();
 const PORT = Number(process.env.PORT) || 3000;
@@ -314,6 +320,162 @@ app.post('/api/telemetry/batch', async (req: Request, res: Response) => {
     return;
   }
   res.json({ ok: true, inserted: rows.length });
+});
+
+// ── Reports: monthly database HTML report ────────────────────────────────────
+// Generate + download a self-contained HTML report scoped to the caller:
+//   - non-admin: always scoped to their own recruiter id
+//   - admin   : ?recruiter_id=<uuid> scopes to that recruiter
+//               ?recruiter_id=all (or missing) → org-wide
+
+async function resolveReportScope(req: Request, res: Response): Promise<
+  { recruiterId: string | null; recruiterName: string | null } | null
+> {
+  const auth = req.auth!;
+  if (!supabase) {
+    res.status(500).json({ error: 'database not configured' });
+    return null;
+  }
+
+  let targetRecruiterId: string | null;
+  if (!auth.isAdmin) {
+    targetRecruiterId = auth.recruiterId;
+  } else {
+    const param = (req.query.recruiter_id as string | undefined) ?? '';
+    if (!param || param === 'all') targetRecruiterId = null;
+    else if (UUID_RE.test(param)) targetRecruiterId = param;
+    else {
+      res.status(400).json({ error: 'recruiter_id must be a UUID or "all"' });
+      return null;
+    }
+  }
+
+  if (!targetRecruiterId) return { recruiterId: null, recruiterName: null };
+
+  const { data: rec, error } = await supabase
+    .from('_recruiters')
+    .select('name, email')
+    .eq('id', targetRecruiterId)
+    .maybeSingle();
+  if (error) {
+    res.status(500).json({ error: error.message });
+    return null;
+  }
+  if (!rec) {
+    res.status(404).json({ error: 'recruiter not found' });
+    return null;
+  }
+  return {
+    recruiterId: targetRecruiterId,
+    recruiterName: (rec.name as string | null) ?? (rec.email as string | null) ?? 'Recruiter',
+  };
+}
+
+// Generate + persist + return the HTML.
+app.post('/api/report/monthly', authMiddleware, async (req: Request, res: Response) => {
+  const scope = await resolveReportScope(req, res);
+  if (!scope) return;
+
+  try {
+    const { html, filename, period } = await generateMonthlyReport({
+      recruiterId: scope.recruiterId,
+      recruiterName: scope.recruiterName,
+    });
+    try {
+      await saveMonthlyReport({ html, filename, period, recruiterId: scope.recruiterId });
+    } catch (saveErr) {
+      console.error('[monthly-report] save failed (continuing with download):', saveErr);
+    }
+    res.setHeader('Content-Type', 'text/html; charset=utf-8');
+    res.setHeader('Content-Disposition', `attachment; filename="${filename}"`);
+    res.send(html);
+  } catch (err) {
+    console.error('[monthly-report] generation failed:', err);
+    res.status(500).json({ error: err instanceof Error ? err.message : 'generation failed' });
+  }
+});
+
+// List saved reports. Non-admin → only their own; admin → all by default, or
+// scoped via ?recruiter_id=<uuid|all>.
+app.get('/api/report/monthly/list', authMiddleware, async (req: Request, res: Response) => {
+  const auth = req.auth!;
+  const monthParam = req.query.month as string | undefined; // "YYYY-MM"
+  let year: number | undefined;
+  let month: number | undefined;
+  if (monthParam) {
+    const m = /^(\d{4})-(\d{2})$/.exec(monthParam);
+    if (!m) { res.status(400).json({ error: 'month must be YYYY-MM' }); return; }
+    year = Number(m[1]);
+    month = Number(m[2]);
+  }
+
+  let recruiterScope = false;
+  let recruiterId: string | null = null;
+  if (!auth.isAdmin) {
+    recruiterScope = true;
+    recruiterId = auth.recruiterId;
+  } else {
+    const param = (req.query.recruiter_id as string | undefined) ?? '';
+    if (param === 'all') { recruiterScope = true; recruiterId = null; }
+    else if (param && UUID_RE.test(param)) { recruiterScope = true; recruiterId = param; }
+    // missing param → recruiterScope=false → see everything
+  }
+
+  try {
+    const reports = await listMonthlyReports({ year, month, recruiterId, recruiterScope });
+    res.json({ reports });
+  } catch (err) {
+    res.status(500).json({ error: err instanceof Error ? err.message : 'list failed' });
+  }
+});
+
+// Fetch a single saved report (HTML body). Non-admins can only fetch reports
+// scoped to themselves. Admins can fetch any.
+app.get('/api/report/monthly/:id', authMiddleware, async (req: Request, res: Response) => {
+  if (!UUID_RE.test(req.params.id)) {
+    res.status(400).json({ error: 'invalid report id' });
+    return;
+  }
+  try {
+    const r = await getMonthlyReportById(req.params.id);
+    if (!r) { res.status(404).json({ error: 'report not found' }); return; }
+    if (!req.auth!.isAdmin && r.recruiter_id !== req.auth!.recruiterId) {
+      res.status(403).json({ error: 'forbidden' });
+      return;
+    }
+    res.setHeader('Content-Type', 'text/html; charset=utf-8');
+    res.setHeader('Content-Disposition', `inline; filename="${r.filename}"`);
+    res.send(r.html);
+  } catch (err) {
+    res.status(500).json({ error: err instanceof Error ? err.message : 'fetch failed' });
+  }
+});
+
+// Delete a saved report. Non-admins can only delete their own.
+app.delete('/api/report/monthly/:id', authMiddleware, async (req: Request, res: Response) => {
+  if (!UUID_RE.test(req.params.id)) {
+    res.status(400).json({ error: 'invalid report id' });
+    return;
+  }
+  if (!supabase) {
+    res.status(500).json({ error: 'database not configured' });
+    return;
+  }
+  // Load first so we can enforce ownership before deleting.
+  const { data: row, error: loadErr } = await supabase
+    .from('_monthly_report')
+    .select('recruiter_id')
+    .eq('id', req.params.id)
+    .maybeSingle();
+  if (loadErr) { res.status(500).json({ error: loadErr.message }); return; }
+  if (!row) { res.status(404).json({ error: 'report not found' }); return; }
+  if (!req.auth!.isAdmin && row.recruiter_id !== req.auth!.recruiterId) {
+    res.status(403).json({ error: 'forbidden' });
+    return;
+  }
+  const { error } = await supabase.from('_monthly_report').delete().eq('id', req.params.id);
+  if (error) { res.status(500).json({ error: error.message }); return; }
+  res.json({ ok: true });
 });
 
 // ── Feature C: configurable CV / dossier export ──────────────────────────────

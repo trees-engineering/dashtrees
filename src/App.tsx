@@ -1,10 +1,11 @@
 import { useState, useCallback, useEffect } from 'react'
-import { Home, Briefcase, Users, UserCheck, type LucideIcon } from 'lucide-react'
+import { Home, Briefcase, Users, UserCheck, FileBarChart2, type LucideIcon } from 'lucide-react'
 import { useRecruiters } from './hooks/useRecruiters'
 import { HomeTab } from './components/HomeTab'
 import { RolesTab } from './components/RolesTab'
 import { MatchesTab } from './components/MatchesTab'
 import { IntrosTab } from './components/IntrosTab'
+import { ReportsTab } from './components/ReportsTab'
 import { LoginScreen } from './components/LoginScreen'
 import { NoAccessScreen } from './components/NoAccessScreen'
 import { RoleEditScreen } from './components/RoleEditScreen'
@@ -14,7 +15,7 @@ import { useAuth } from './lib/auth'
 import { startMatching } from './lib/api'
 import { telemetry } from './lib/telemetry'
 
-type TabId = 'home' | 'roles' | 'matches' | 'intros'
+type TabId = 'home' | 'roles' | 'matches' | 'intros' | 'reports'
 
 const FOOTER_QUOTES = [
   '"Oil is found in the minds of men." — Wallace Pratt',
@@ -34,6 +35,7 @@ const NAV_ITEMS: { id: TabId; label: string; icon: LucideIcon }[] = [
   { id: 'roles', label: 'Roles', icon: Briefcase },
   { id: 'matches', label: 'Matches', icon: Users },
   { id: 'intros', label: 'Intros', icon: UserCheck },
+  { id: 'reports', label: 'Reports', icon: FileBarChart2 },
 ]
 
 function App() {
@@ -226,6 +228,9 @@ function Dashboard() {
         )}
         {activeTab === 'intros' && (
           <IntrosTab recruiterFilter={selectedRecruiter} />
+        )}
+        {activeTab === 'reports' && (
+          <ReportsTab recruiterFilter={selectedRecruiter} />
         )}
 
         {/* Footer quote */}
