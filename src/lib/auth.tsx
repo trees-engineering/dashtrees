@@ -98,7 +98,17 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     })
 
     // Subscribe to subsequent changes: sign-in, sign-out, token refresh.
-    const { data: sub } = supabase.auth.onAuthStateChange((_event, session) => {
+    const { data: sub } = supabase.auth.onAuthStateChange((event, session) => {
+      // On sign-in, strip the leftover OAuth hash fragment from the URL.
+      // Supabase consumes the tokens out of #access_token=... but doesn't
+      // clean the hash itself, leaving a bare "#" in the address bar.
+      if (event === 'SIGNED_IN' && window.location.hash) {
+        window.history.replaceState(
+          null,
+          '',
+          window.location.pathname + window.location.search,
+        )
+      }
       void resolveSession(session?.user ?? null)
     })
 
