@@ -17,7 +17,7 @@ interface UploadJDButtonProps {
   onUploadSuccess: (roleId: string) => void
 }
 
-/** "Upload JD" button — base64-encodes the chosen file and POSTs it to the
+/** "Post a role" button — base64-encodes the chosen JD file and POSTs it to the
  *  backend, which ingests the role and kicks off matching in the background.
  *
  *  Attribution rules:
@@ -112,10 +112,10 @@ export function UploadJDButton({ recruiterFilter, onUploadSuccess }: UploadJDBut
         onClick={() => inputRef.current?.click()}
         disabled={disabled}
         title={disabledReason}
-        className="flex items-center gap-1.5 text-xs font-semibold bg-primary text-treeBg px-3 py-1.5 rounded-lg active:bg-primaryDark transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+        className="flex items-center gap-1.5 text-xs font-semibold bg-primary text-white px-3 py-1.5 rounded-lg active:bg-primaryDark transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
       >
         {busy ? <Loader2 size={14} className="animate-spin" /> : <Upload size={14} />}
-        Upload JD
+        Post a role
       </button>
     </>
   )
