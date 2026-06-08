@@ -160,7 +160,7 @@ function RoleAccordion({
             <button
               data-telemetry-id="role-view-matches"
               onClick={() => onViewMatches(role.id)}
-              className="flex-1 py-2.5 rounded-lg bg-primary text-treeBg text-sm font-semibold active:bg-primaryDark transition-colors"
+              className="flex-1 py-2.5 rounded-lg bg-primary text-white text-sm font-semibold active:bg-primaryDark transition-colors"
             >
               View Matches ({role.counts.total})
             </button>
@@ -183,7 +183,7 @@ function RoleAccordion({
                 data-telemetry-id="role-close-job"
                 onClick={handleCloseJob}
                 disabled={closing}
-                className="flex-1 flex items-center justify-center gap-1.5 py-2.5 rounded-lg border border-red-400/40 text-red-300 text-sm font-medium active:bg-red-500/10 transition-colors disabled:opacity-50"
+                className="flex-1 flex items-center justify-center gap-1.5 py-2.5 rounded-lg border border-red-300 text-red-600 text-sm font-medium active:bg-red-50 transition-colors disabled:opacity-50"
               >
                 {closing ? <Loader2 size={15} className="animate-spin" /> : <XCircle size={15} />}
                 {closing ? 'Closing…' : 'Close Job'}
@@ -246,7 +246,7 @@ export function RolesTab({ onViewMatches, onEditRole, onUploadSuccess, recruiter
             }}
             className={`flex-1 py-2 rounded-lg text-sm font-medium border transition-colors ${
               statusFilter === s
-                ? 'bg-primary text-treeBg border-primary'
+                ? 'bg-primary text-white border-primary'
                 : 'bg-treeSurface text-treeText border-treeBorder'
             }`}
           >
