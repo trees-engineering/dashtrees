@@ -154,7 +154,7 @@ export function ReportsTab({ recruiterFilter }: ReportsTabProps) {
           data-telemetry-id="report-generate"
           onClick={handleGenerate}
           disabled={generating}
-          className="flex items-center gap-1.5 text-sm font-semibold bg-primary text-treeBg px-4 py-2 rounded-lg active:bg-primaryDark transition-colors disabled:opacity-50"
+          className="flex items-center gap-1.5 text-sm font-semibold bg-primary text-white px-4 py-2 rounded-lg active:bg-primaryDark transition-colors disabled:opacity-50"
         >
           {generating
             ? <Loader2 size={14} className="animate-spin" />
@@ -189,7 +189,7 @@ export function ReportsTab({ recruiterFilter }: ReportsTabProps) {
         </div>
 
         {listError && (
-          <p className="text-sm text-red-400 bg-red-500/10 border border-red-500/30 rounded-lg px-3 py-2 mb-3">
+          <p className="text-sm text-red-700 bg-red-100 border border-red-200 rounded-lg px-3 py-2 mb-3">
             {listError}
           </p>
         )}
@@ -221,7 +221,7 @@ export function ReportsTab({ recruiterFilter }: ReportsTabProps) {
                         data-telemetry-id="report-view"
                         onClick={() => handleView(r)}
                         disabled={busy}
-                        className="flex items-center gap-1 text-xs text-blue-300 hover:text-blue-200 px-2 py-1 rounded transition-colors disabled:opacity-50"
+                        className="flex items-center gap-1 text-xs text-blue-600 hover:text-blue-700 px-2 py-1 rounded transition-colors disabled:opacity-50"
                       >
                         <ExternalLink size={12} /> View
                       </button>
@@ -229,7 +229,7 @@ export function ReportsTab({ recruiterFilter }: ReportsTabProps) {
                         data-telemetry-id="report-download"
                         onClick={() => handleDownload(r)}
                         disabled={busy}
-                        className="flex items-center gap-1 text-xs text-green-300 hover:text-green-200 px-2 py-1 rounded transition-colors disabled:opacity-50"
+                        className="flex items-center gap-1 text-xs text-green-600 hover:text-green-700 px-2 py-1 rounded transition-colors disabled:opacity-50"
                       >
                         <Download size={12} /> Download
                       </button>
@@ -237,7 +237,7 @@ export function ReportsTab({ recruiterFilter }: ReportsTabProps) {
                         data-telemetry-id="report-delete"
                         onClick={() => handleDelete(r)}
                         disabled={busy}
-                        className="flex items-center gap-1 text-xs text-red-300 hover:text-red-200 px-2 py-1 rounded transition-colors disabled:opacity-50"
+                        className="flex items-center gap-1 text-xs text-red-600 hover:text-red-700 px-2 py-1 rounded transition-colors disabled:opacity-50"
                       >
                         {busy ? <Loader2 size={12} className="animate-spin" /> : <Trash2 size={12} />}
                         Delete

@@ -82,7 +82,7 @@ export function MatchesTab({ selectedRoleId, onRoleChange, recruiterFilter }: Ma
                 onRoleChange(e.target.value)
               }}
               disabled={closedRoles.length === 0}
-              className="flex-1 min-w-0 h-12 px-4 rounded-xl border border-slate-500/30 bg-slate-500/10 text-slate-300 text-sm appearance-none focus:outline-none focus:ring-2 focus:ring-slate-400/30 focus:border-slate-400/50 disabled:opacity-50 disabled:cursor-not-allowed"
+              className="flex-1 min-w-0 h-12 px-4 rounded-xl border border-treeBorder bg-treeSurface2 text-treeText text-sm appearance-none focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary/50 disabled:opacity-50 disabled:cursor-not-allowed"
               title={closedRoles.length === 0 ? 'No closed roles' : undefined}
             >
               <option value="">— Closed role —</option>

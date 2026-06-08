@@ -39,8 +39,8 @@ const ICONS: Record<ToastType, typeof CheckCircle2> = {
 }
 
 const ACCENT: Record<ToastType, string> = {
-  success: 'text-green-400',
-  error: 'text-red-400',
+  success: 'text-green-500',
+  error: 'text-red-500',
   info: 'text-primary',
   loading: 'text-primary',
 }

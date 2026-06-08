@@ -89,15 +89,15 @@ export function IntrosTab({ recruiterFilter }: IntrosTabProps) {
         <div className="flex-1 bg-treeSurface border border-treeBorder rounded-xl p-3 text-xs leading-relaxed">
           <span className="font-semibold text-treeText">Shortlisted</span>
           <span className="text-treeTextSec"> (</span>
-          <span className="text-purple-300 font-medium">the user showed interest</span>
+          <span className="text-purple-600 font-medium">the user showed interest</span>
           <span className="text-treeTextSec">, or </span>
-          <span className="text-pink-300 font-medium">the recruiter chose a candidate</span>
+          <span className="text-pink-600 font-medium">the recruiter chose a candidate</span>
           <span className="text-treeTextSec">) &amp; </span>
-          <span className="font-semibold text-blue-300">Introduced</span>
+          <span className="font-semibold text-blue-600">Introduced</span>
           <span className="text-treeTextSec"> (double opt-in approved, introduction made)</span>
         </div>
         <div className="flex-shrink-0 bg-treeSurface border border-treeBorder rounded-xl p-3 flex flex-col items-center justify-center min-w-[88px]">
-          <span className="text-2xl font-bold text-blue-300 leading-none">
+          <span className="text-2xl font-bold text-blue-600 leading-none">
             {totalIntroductions}
           </span>
           <span className="text-[10px] text-treeTextSec uppercase tracking-wider mt-1.5 text-center">

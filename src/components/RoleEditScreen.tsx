@@ -342,7 +342,7 @@ function RoleEditForm({ role, onSaved, onDirtyChange }: RoleEditFormProps) {
       </Field>
 
       {error && (
-        <p className="text-sm text-red-400 bg-red-500/10 border border-red-500/30 rounded-lg px-3 py-2">
+        <p className="text-sm text-red-700 bg-red-100 border border-red-200 rounded-lg px-3 py-2">
           {error}
         </p>
       )}
@@ -352,7 +352,7 @@ function RoleEditForm({ role, onSaved, onDirtyChange }: RoleEditFormProps) {
           type="submit"
           disabled={saving}
           data-telemetry-id="role-edit-save"
-          className="flex-1 flex items-center justify-center gap-2 py-3 rounded-lg bg-primary text-treeBg font-semibold active:bg-primaryDark transition-colors disabled:opacity-50"
+          className="flex-1 flex items-center justify-center gap-2 py-3 rounded-lg bg-primary text-white font-semibold active:bg-primaryDark transition-colors disabled:opacity-50"
         >
           {saving ? <Loader2 size={16} className="animate-spin" /> : <Save size={16} />}
           {saving ? 'Saving…' : 'Save changes'}
@@ -379,7 +379,7 @@ function Field({
     <label className="block">
       <span className="block text-xs font-semibold text-treeTextSec uppercase tracking-wider mb-1.5">
         {label}
-        {required && <span className="text-red-400"> *</span>}
+        {required && <span className="text-red-500"> *</span>}
       </span>
       {children}
       {hint && (
