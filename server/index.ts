@@ -322,6 +322,41 @@ app.post('/api/telemetry/batch', async (req: Request, res: Response) => {
   res.json({ ok: true, inserted: rows.length });
 });
 
+// ── Analytics: aggregated telemetry overview (admin-only) ────────────────────
+// Reads are admin-only — the ingest endpoint above is public, but exposing one
+// recruiter's click behavior to another is not. All aggregation happens in the
+// analytics_overview() Postgres function; this handler just validates inputs
+// and forwards the jsonb blob it returns. days is an allow-list (7|30|90);
+// recruiter narrows to one email (org-wide when omitted).
+app.get('/api/analytics/overview', authMiddleware, async (req: Request, res: Response) => {
+  if (!req.auth!.isAdmin) {
+    res.status(403).json({ error: 'admin only' });
+    return;
+  }
+  if (!supabase) {
+    res.status(500).json({ error: 'database not configured' });
+    return;
+  }
+
+  const daysRaw = Number(req.query.days ?? 30);
+  const days = [7, 30, 90].includes(daysRaw) ? daysRaw : 30;
+  const recruiter =
+    typeof req.query.recruiter === 'string' && req.query.recruiter
+      ? req.query.recruiter.slice(0, 200)
+      : null;
+
+  const { data, error } = await supabase.rpc('analytics_overview', {
+    p_days: days,
+    p_recruiter: recruiter,
+  });
+  if (error) {
+    console.error('[analytics] rpc failed:', error.message);
+    res.status(500).json({ error: 'analytics query failed' });
+    return;
+  }
+  res.json({ overview: data });
+});
+
 // ── Reports: monthly database HTML report ────────────────────────────────────
 // Generate + download a self-contained HTML report scoped to the caller:
 //   - non-admin: always scoped to their own recruiter id

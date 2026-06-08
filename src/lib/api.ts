@@ -232,6 +232,43 @@ export async function deleteSavedReport(id: string): Promise<void> {
   if (!res.ok) throw new Error(await readError(res))
 }
 
+// ── Analytics overview (admin-only) ───────────────────────────────────────────
+// One RPC-backed call that returns every section of the Analytics tab. The
+// server aggregates in Postgres; we just type the shape and unwrap `overview`.
+export interface AnalyticsOverview {
+  summary: {
+    total_events: number
+    sessions: number
+    active_recruiters: number
+    rage_clicks: number
+    dead_clicks: number
+    errors: number
+    avg_load_ms: number
+  }
+  by_day: { day: string; events: number; sessions: number }[]
+  tabs: { tab: string; views: number; total_ms: number; avg_ms: number }[]
+  frustration: { target: string; kind: 'rage' | 'dead'; count: number }[]
+  errors: { ts: string; recruiter: string | null; name: string; message: string }[]
+  performance: { name: string; count: number; p50_ms: number; p95_ms: number }[]
+  scroll: { tab: string; pct: number; count: number }[]
+}
+
+/** Fetch the admin analytics overview. recruiterScope is an email (one
+ *  recruiter) or undefined (org-wide). days is 7 | 30 | 90. */
+export async function fetchAnalyticsOverview(opts: {
+  days: number
+  recruiterScope?: string
+}): Promise<AnalyticsOverview> {
+  const params = new URLSearchParams({ days: String(opts.days) })
+  if (opts.recruiterScope) params.set('recruiter', opts.recruiterScope)
+  const res = await fetch(`${API_BASE}/api/analytics/overview?${params.toString()}`, {
+    headers: { ...(await authHeaders()) },
+  })
+  if (!res.ok) throw new Error(await readError(res))
+  const json = (await res.json()) as { overview: AnalyticsOverview }
+  return json.overview
+}
+
 // ── Blob download helper ──────────────────────────────────────────────────────
 // Shared by exportDocument + generateAndDownloadMonthlyReport. Reads
 // filename from Content-Disposition, falls back to the caller's name,
