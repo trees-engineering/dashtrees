@@ -1,11 +1,13 @@
 import { useState, useCallback, useEffect } from 'react'
-import { Home, Briefcase, Users, UserCheck, FileBarChart2, type LucideIcon } from 'lucide-react'
+import { Home, Briefcase, Users, UserCheck, FileBarChart2, BarChart3, Menu, type LucideIcon } from 'lucide-react'
 import { useRecruiters } from './hooks/useRecruiters'
+import { Sidebar } from './components/Sidebar'
 import { HomeTab } from './components/HomeTab'
 import { RolesTab } from './components/RolesTab'
 import { MatchesTab } from './components/MatchesTab'
 import { IntrosTab } from './components/IntrosTab'
 import { ReportsTab } from './components/ReportsTab'
+import { AnalyticsTab } from './components/AnalyticsTab'
 import { LoginScreen } from './components/LoginScreen'
 import { NoAccessScreen } from './components/NoAccessScreen'
 import { RoleEditScreen } from './components/RoleEditScreen'
@@ -15,7 +17,7 @@ import { useAuth } from './lib/auth'
 import { startMatching } from './lib/api'
 import { telemetry } from './lib/telemetry'
 
-type TabId = 'home' | 'roles' | 'matches' | 'intros' | 'reports'
+type TabId = 'home' | 'roles' | 'matches' | 'intros' | 'reports' | 'analytics'
 
 const FOOTER_QUOTES = [
   '"Oil is found in the minds of men." — Wallace Pratt',
@@ -30,12 +32,14 @@ const FOOTER_QUOTES = [
 
 const RECRUITER_STORAGE_KEY = 'trees_recruiter'
 
-const NAV_ITEMS: { id: TabId; label: string; icon: LucideIcon }[] = [
+// adminOnly items are filtered out for non-admins before render.
+const NAV_ITEMS: { id: TabId; label: string; icon: LucideIcon; adminOnly?: boolean }[] = [
   { id: 'home', label: 'Home', icon: Home },
   { id: 'roles', label: 'Roles', icon: Briefcase },
   { id: 'matches', label: 'Matches', icon: Users },
   { id: 'intros', label: 'Intros', icon: UserCheck },
   { id: 'reports', label: 'Reports', icon: FileBarChart2 },
+  { id: 'analytics', label: 'Analytics', icon: BarChart3, adminOnly: true },
 ]
 
 function App() {
@@ -76,14 +80,26 @@ function Dashboard() {
   )
   const selectedRecruiter = isAdmin ? adminSelection : recruiter?.email ?? ''
   const [quoteIndex, setQuoteIndex] = useState(0)
+  // Left-nav UI state. `navCollapsed` is the desktop icon-only rail (persisted);
+  // `mobileNavOpen` is the off-canvas drawer for small screens.
+  const [navCollapsed, setNavCollapsed] = useState<boolean>(
+    () => localStorage.getItem('trees_nav_collapsed') === '1'
+  )
+  const [mobileNavOpen, setMobileNavOpen] = useState(false)
 
   const { data: recruiters } = useRecruiters()
 
-  // Identify the recruiter to telemetry on boot + whenever the selection
-  // changes. Empty string ("All recruiters") clears the identity.
+  // Non-admins never see admin-only tabs (e.g. Analytics).
+  const navItems = NAV_ITEMS.filter((item) => !item.adminOnly || isAdmin)
+
+  // Identify telemetry to the *logged-in human*, not the header dropdown.
+  // The dropdown is a view filter (it drives recruiterFilter below); using it
+  // as the telemetry identity mis-stamped an admin's own clicks as whichever
+  // recruiter they were inspecting. Admin events are excluded from analytics
+  // server-side (analytics_overview JOINs _recruiters and drops is_admin rows).
   useEffect(() => {
-    telemetry.identify(selectedRecruiter || null)
-  }, [selectedRecruiter])
+    telemetry.identify(recruiter?.email ?? null)
+  }, [recruiter?.email])
 
   // Emit the initial tab view once on mount so tab_time has a starting edge.
   useEffect(() => {
@@ -96,7 +112,16 @@ function Dashboard() {
       if (prev !== tab) telemetry.trackTab(tab)
       return tab
     })
+    setMobileNavOpen(false) // close the mobile drawer after navigating
     setQuoteIndex((i) => (i + 1) % FOOTER_QUOTES.length)
+  }, [])
+
+  const toggleNavCollapsed = useCallback(() => {
+    setNavCollapsed((c) => {
+      const next = !c
+      localStorage.setItem('trees_nav_collapsed', next ? '1' : '0')
+      return next
+    })
   }, [])
 
   const handleRecruiterChange = (email: string) => {
@@ -165,111 +190,106 @@ function Dashboard() {
   }
 
   return (
-    <div className="flex flex-col h-[100dvh] bg-treeBg">
-      {/* Header */}
-      <header className="flex-shrink-0 bg-white border-b border-slate-200 px-4 h-[50px] flex items-center gap-3 z-10">
-        {/* Brand mark — the official Trees Engineering wordmark (tree + "TREES ENGINEERING") */}
-        <img
-          src="/Trees.jpg"
-          alt="Trees Engineering"
-          className="h-10 w-auto flex-shrink-0"
-        />
-        <span className="hidden sm:inline-flex flex-shrink-0 text-[10px] font-semibold uppercase tracking-wider text-primary bg-primary/10 border border-primary/30 rounded-full px-2.5 py-1">
-          Trees Engineering Dashboard
-        </span>
+    <div className="flex h-[100dvh] bg-treeBg overflow-hidden">
+      <Sidebar
+        navItems={navItems}
+        activeTab={activeTab}
+        onSelect={(id) => handleTabChange(id as TabId)}
+        collapsed={navCollapsed}
+        onToggleCollapse={toggleNavCollapsed}
+        mobileOpen={mobileNavOpen}
+        onCloseMobile={() => setMobileNavOpen(false)}
+      />
 
-        <div className="flex-1" />
+      <div className="flex flex-col flex-1 min-w-0 h-full">
+        {/* Header */}
+        <header className="flex-shrink-0 bg-white border-b border-slate-200 px-4 h-[50px] flex items-center gap-3 z-10">
+          {/* Mobile: open the nav drawer (desktop uses the persistent sidebar) */}
+          <button
+            data-telemetry-id="nav-open-mobile"
+            onClick={() => setMobileNavOpen(true)}
+            aria-label="Open menu"
+            className="lg:hidden flex items-center justify-center w-9 h-9 -ml-1.5 flex-shrink-0 rounded-lg text-slate-500 hover:text-slate-800 hover:bg-slate-100 transition-colors"
+          >
+            <Menu size={20} />
+          </button>
 
-        {/* Recruiter filter — admins only. Non-admins are scoped to their
-            own email automatically via useRoles/recruiterFilter. */}
-        {isAdmin && (
-          <div className="flex-shrink-0">
-            <select
-              value={selectedRecruiter}
-              onChange={(e) => handleRecruiterChange(e.target.value)}
-              className="text-xs bg-white border border-slate-300 text-slate-800 rounded-lg px-2 py-1.5 max-w-[130px] focus:outline-none focus:ring-1 focus:ring-primary/40 appearance-none"
-            >
-              <option value="">All recruiters</option>
-              {(recruiters ?? []).map((r) => (
-                <option key={r.id} value={r.email} className="bg-white text-slate-800">
-                  {r.name ?? r.email}
-                </option>
-              ))}
-            </select>
-          </div>
-        )}
-
-        <UserMenu />
-      </header>
-
-      {/* Content area */}
-      <main className="flex-1 overflow-y-auto">
-        {activeTab === 'home' && (
-          <HomeTab
-            onNavigate={handleNavigateToRoles}
-            onUploadSuccess={handleUploadSuccess}
-            recruiterFilter={selectedRecruiter}
+          {/* Brand mark — the official Trees Engineering wordmark (tree + "TREES ENGINEERING") */}
+          <img
+            src="/Trees.jpg"
+            alt="Trees Engineering"
+            className="h-10 w-auto flex-shrink-0"
           />
-        )}
-        {activeTab === 'roles' && (
-          <RolesTab
-            onViewMatches={handleViewMatches}
-            onEditRole={setEditingRoleId}
-            onUploadSuccess={handleUploadSuccess}
-            recruiterFilter={selectedRecruiter}
-          />
-        )}
-        {activeTab === 'matches' && (
-          <MatchesTab
-            selectedRoleId={selectedRoleId}
-            onRoleChange={setSelectedRoleId}
-            recruiterFilter={selectedRecruiter}
-          />
-        )}
-        {activeTab === 'intros' && (
-          <IntrosTab recruiterFilter={selectedRecruiter} />
-        )}
-        {activeTab === 'reports' && (
-          <ReportsTab recruiterFilter={selectedRecruiter} />
-        )}
+          <span className="hidden sm:inline-flex flex-shrink-0 text-[10px] font-semibold uppercase tracking-wider text-primary bg-primary/10 border border-primary/30 rounded-full px-2.5 py-1">
+            Trees Engineering Dashboard
+          </span>
 
-        {/* Footer quote */}
-        <div className="px-4 py-6 text-center">
-          <p className="text-xs text-treeTextSec italic opacity-70">
-            {FOOTER_QUOTES[quoteIndex]}
-          </p>
-        </div>
-      </main>
+          <div className="flex-1" />
 
-      {/* Bottom nav */}
-      <nav className="flex-shrink-0 bg-treeSurface border-t border-treeBorder safe-bottom z-10">
-        <div className="flex">
-          {NAV_ITEMS.map(({ id, label, icon: Icon }) => {
-            const active = activeTab === id
-            return (
-              <button
-                key={id}
-                onClick={() => handleTabChange(id)}
-                className={`relative flex-1 flex flex-col items-center justify-center py-2.5 gap-1 transition-colors min-h-[56px] ${
-                  active ? 'text-primary' : 'text-treeTextSec'
-                }`}
+          {/* Recruiter filter — admins only. Non-admins are scoped to their
+              own email automatically via useRoles/recruiterFilter. */}
+          {isAdmin && (
+            <div className="flex-shrink-0">
+              <select
+                value={selectedRecruiter}
+                onChange={(e) => handleRecruiterChange(e.target.value)}
+                className="text-xs bg-white border border-slate-300 text-slate-800 rounded-lg px-2 py-1.5 max-w-[130px] focus:outline-none focus:ring-1 focus:ring-primary/40 appearance-none"
               >
-                <Icon size={active ? 22 : 20} />
-                <span
-                  className={`text-[10px] font-medium leading-none ${
-                    active ? 'text-primary' : 'text-treeTextSec'
-                  }`}
-                >
-                  {label}
-                </span>
-                {active && (
-                  <span className="absolute top-0 left-1/2 -translate-x-1/2 w-8 h-0.5 bg-primary rounded-full" />
-                )}
-              </button>
-            )
-          })}
-        </div>
-      </nav>
+                <option value="">All recruiters</option>
+                {(recruiters ?? []).map((r) => (
+                  <option key={r.id} value={r.email} className="bg-white text-slate-800">
+                    {r.name ?? r.email}
+                  </option>
+                ))}
+              </select>
+            </div>
+          )}
+
+          <UserMenu />
+        </header>
+
+        {/* Content area */}
+        <main className="flex-1 overflow-y-auto">
+          {activeTab === 'home' && (
+            <HomeTab
+              onNavigate={handleNavigateToRoles}
+              onUploadSuccess={handleUploadSuccess}
+              recruiterFilter={selectedRecruiter}
+            />
+          )}
+          {activeTab === 'roles' && (
+            <RolesTab
+              onViewMatches={handleViewMatches}
+              onEditRole={setEditingRoleId}
+              onUploadSuccess={handleUploadSuccess}
+              recruiterFilter={selectedRecruiter}
+            />
+          )}
+          {activeTab === 'matches' && (
+            <MatchesTab
+              selectedRoleId={selectedRoleId}
+              onRoleChange={setSelectedRoleId}
+              recruiterFilter={selectedRecruiter}
+            />
+          )}
+          {activeTab === 'intros' && (
+            <IntrosTab recruiterFilter={selectedRecruiter} />
+          )}
+          {activeTab === 'reports' && (
+            <ReportsTab recruiterFilter={selectedRecruiter} />
+          )}
+          {activeTab === 'analytics' && isAdmin && (
+            <AnalyticsTab recruiterFilter={selectedRecruiter} />
+          )}
+
+          {/* Footer quote */}
+          <div className="px-4 py-6 text-center">
+            <p className="text-xs text-treeTextSec italic opacity-70">
+              {FOOTER_QUOTES[quoteIndex]}
+            </p>
+          </div>
+        </main>
+      </div>
     </div>
   )
 }
