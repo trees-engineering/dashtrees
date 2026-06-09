@@ -185,6 +185,13 @@ export interface CascadeTree {
   threshold_hit: boolean;
   config: ResolvedCascadeConfig;
   created_at: string;
+  // Incremental-matching support (set on full runs; carried by incremental runs).
+  // Per-step minimum surviving effective score (score × completeness), so a later
+  // newcomer can be judged against the same bar without re-ranking the pool.
+  step_cutoffs?: { floor: number; step1: number; step2: number; step3: number; step4: number; step5: number };
+  // Every verified candidate the run considered — used to detect new candidates.
+  evaluated_talent_ids?: string[];
+  mode?: 'full' | 'incremental';
 }
 
 export const MIN_SURVIVORS_THRESHOLD = 15;
