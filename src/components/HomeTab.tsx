@@ -9,7 +9,7 @@ import { telemetry } from '../lib/telemetry'
 
 interface HomeTabProps {
   onNavigate: (tab: string) => void
-  onUploadSuccess: (roleId: string) => void
+  onPostRole: () => void
   recruiterFilter: string
 }
 
@@ -22,7 +22,7 @@ function SkeletonCard() {
   )
 }
 
-export function HomeTab({ onNavigate, onUploadSuccess, recruiterFilter }: HomeTabProps) {
+export function HomeTab({ onNavigate, onPostRole, recruiterFilter }: HomeTabProps) {
   const { data: roles, isLoading: rolesLoading, error: rolesError } = useRoles()
 
   const filteredRoles = (roles ?? []).filter(
@@ -77,7 +77,7 @@ export function HomeTab({ onNavigate, onUploadSuccess, recruiterFilter }: HomeTa
             <TalkToTreelanceButton />
             <UploadJDButton
               recruiterFilter={recruiterFilter}
-              onUploadSuccess={onUploadSuccess}
+              onPostRole={onPostRole}
             />
           </div>
         </div>

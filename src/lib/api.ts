@@ -76,6 +76,45 @@ export async function uploadJD(file: File, createdBy: string): Promise<UploadRes
   })
 }
 
+/** Create a role from pasted JD text (no file). Same downstream as uploadJD:
+ *  LLM extraction → role + requirements → review screen. */
+export async function importRoleText(text: string, createdBy: string): Promise<UploadResult> {
+  return postJson<UploadResult>('/api/roles/import-text', {
+    text,
+    created_by: createdBy,
+  })
+}
+
+// ── Recruiter profile (self-service) ──────────────────────────────────────────
+export interface RecruiterProfile {
+  id: string
+  email: string
+  name: string | null
+  position: string | null
+  linkedin_url: string | null
+  booking_link: string | null
+  about: string | null
+}
+
+/** Update the logged-in recruiter's own profile. Email is immutable server-side.
+ *  Returns the saved row. */
+export async function updateProfile(patch: {
+  name?: string
+  position?: string
+  linkedin_url?: string
+  booking_link?: string
+  about?: string
+}): Promise<RecruiterProfile> {
+  const res = await fetch(`${API_BASE}/api/profile`, {
+    method: 'PATCH',
+    headers: { 'Content-Type': 'application/json', ...(await authHeaders()) },
+    body: JSON.stringify(patch),
+  })
+  if (!res.ok) throw new Error(await readError(res))
+  const json = (await res.json()) as { profile: RecruiterProfile }
+  return json.profile
+}
+
 // Kick off the matching cascade for a freshly-confirmed role. Fire-and-forget
 // on the server, so this resolves immediately. The actual work takes minutes
 // and runs in the background.

@@ -1,5 +1,5 @@
 import { useState, useCallback, useEffect } from 'react'
-import { Home, Briefcase, Users, UserCheck, FileBarChart2, BarChart3, Menu, type LucideIcon } from 'lucide-react'
+import { Home, Briefcase, Users, UserCheck, FileBarChart2, BarChart3, UserCircle, Menu, type LucideIcon } from 'lucide-react'
 import { useRecruiters } from './hooks/useRecruiters'
 import { Sidebar } from './components/Sidebar'
 import { HomeTab } from './components/HomeTab'
@@ -8,16 +8,18 @@ import { MatchesTab } from './components/MatchesTab'
 import { IntrosTab } from './components/IntrosTab'
 import { ReportsTab } from './components/ReportsTab'
 import { AnalyticsTab } from './components/AnalyticsTab'
+import { ProfileTab } from './components/ProfileTab'
 import { LoginScreen } from './components/LoginScreen'
 import { NoAccessScreen } from './components/NoAccessScreen'
 import { RoleEditScreen } from './components/RoleEditScreen'
+import { NewRoleScreen } from './components/NewRoleScreen'
 import { UserMenu } from './components/UserMenu'
 import { useToast } from './components/Toast'
 import { useAuth } from './lib/auth'
 import { startMatching } from './lib/api'
 import { telemetry } from './lib/telemetry'
 
-type TabId = 'home' | 'roles' | 'matches' | 'intros' | 'reports' | 'analytics'
+type TabId = 'home' | 'roles' | 'matches' | 'intros' | 'reports' | 'analytics' | 'profile'
 
 const FOOTER_QUOTES = [
   '"Oil is found in the minds of men." — Wallace Pratt',
@@ -40,6 +42,7 @@ const NAV_ITEMS: { id: TabId; label: string; icon: LucideIcon; adminOnly?: boole
   { id: 'intros', label: 'Intros', icon: UserCheck },
   { id: 'reports', label: 'Reports', icon: FileBarChart2 },
   { id: 'analytics', label: 'Analytics', icon: BarChart3, adminOnly: true },
+  { id: 'profile', label: 'Profile', icon: UserCircle },
 ]
 
 function App() {
@@ -68,6 +71,7 @@ function Dashboard() {
   const [activeTab, setActiveTab] = useState<TabId>('home')
   const [selectedRoleId, setSelectedRoleId] = useState<string | null>(null)
   const [editingRoleId, setEditingRoleId] = useState<string | null>(null)
+  const [creatingRole, setCreatingRole] = useState(false)
   // Set right after a successful JD upload alongside editingRoleId. When the
   // recruiter saves the edit, this tells us to kick off matching. Cleared on
   // save-fired-matching OR on back-without-save (recruiter can rerun later).
@@ -189,6 +193,21 @@ function Dashboard() {
     )
   }
 
+  // New-role flow also takes over the viewport; on success it hands the new
+  // role id to handleUploadSuccess, which opens the review/edit screen.
+  if (creatingRole) {
+    return (
+      <NewRoleScreen
+        recruiterFilter={selectedRecruiter}
+        onClose={() => setCreatingRole(false)}
+        onCreated={(roleId) => {
+          setCreatingRole(false)
+          handleUploadSuccess(roleId)
+        }}
+      />
+    )
+  }
+
   return (
     <div className="flex h-[100dvh] bg-treeBg overflow-hidden">
       <Sidebar
@@ -253,7 +272,7 @@ function Dashboard() {
           {activeTab === 'home' && (
             <HomeTab
               onNavigate={handleNavigateToRoles}
-              onUploadSuccess={handleUploadSuccess}
+              onPostRole={() => setCreatingRole(true)}
               recruiterFilter={selectedRecruiter}
             />
           )}
@@ -261,7 +280,7 @@ function Dashboard() {
             <RolesTab
               onViewMatches={handleViewMatches}
               onEditRole={setEditingRoleId}
-              onUploadSuccess={handleUploadSuccess}
+              onPostRole={() => setCreatingRole(true)}
               recruiterFilter={selectedRecruiter}
             />
           )}
@@ -281,6 +300,7 @@ function Dashboard() {
           {activeTab === 'analytics' && isAdmin && (
             <AnalyticsTab recruiterFilter={selectedRecruiter} />
           )}
+          {activeTab === 'profile' && <ProfileTab />}
 
           {/* Footer quote */}
           <div className="px-4 py-6 text-center">

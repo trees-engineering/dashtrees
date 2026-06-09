@@ -16,7 +16,7 @@ type StatusFilter = 'open' | 'all' | 'closed'
 interface RolesTabProps {
   onViewMatches: (roleId: string) => void
   onEditRole: (roleId: string) => void
-  onUploadSuccess: (roleId: string) => void
+  onPostRole: () => void
   recruiterFilter: string
 }
 
@@ -30,6 +30,7 @@ function RoleAccordion({
   onEditRole: (roleId: string) => void
 }) {
   const [open, setOpen] = useState(false)
+  const [showFull, setShowFull] = useState(false)
   const [closing, setClosing] = useState(false)
   const toast = useToast()
   const queryClient = useQueryClient()
@@ -119,6 +120,24 @@ function RoleAccordion({
             </p>
           )}
 
+          {role.detailed_description && (
+            <div>
+              <button
+                data-telemetry-id="role-toggle-full-description"
+                onClick={() => setShowFull((s) => !s)}
+                className="flex items-center gap-1 text-xs font-medium text-primary hover:text-primaryDark transition-colors"
+              >
+                {showFull ? <ChevronUp size={13} /> : <ChevronDown size={13} />}
+                {showFull ? 'Hide full description' : 'Full description'}
+              </button>
+              {showFull && (
+                <p className="mt-2 text-xs text-treeTextSec leading-relaxed whitespace-pre-wrap">
+                  {role.detailed_description}
+                </p>
+              )}
+            </div>
+          )}
+
           <div className="grid grid-cols-2 gap-2 text-xs">
             {role.start_deadline && (
               <div>
@@ -196,7 +215,7 @@ function RoleAccordion({
   )
 }
 
-export function RolesTab({ onViewMatches, onEditRole, onUploadSuccess, recruiterFilter }: RolesTabProps) {
+export function RolesTab({ onViewMatches, onEditRole, onPostRole, recruiterFilter }: RolesTabProps) {
   const [statusFilter, setStatusFilter] = useState<StatusFilter>('open')
   const { data: roles, isLoading } = useRoles()
 
@@ -227,7 +246,7 @@ export function RolesTab({ onViewMatches, onEditRole, onUploadSuccess, recruiter
           <TalkToTreelanceButton />
           <UploadJDButton
             recruiterFilter={recruiterFilter}
-            onUploadSuccess={onUploadSuccess}
+            onPostRole={onPostRole}
           />
         </div>
       </div>
