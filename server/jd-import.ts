@@ -2,7 +2,7 @@
 // Turns a single uploaded file buffer into a _role row + _role_requirements,
 // using the live `role_extraction` prompt. Persists legacy + TET v2 taxonomy.
 import { supabase } from './db.js';
-import { getPrompt, callLlmWithMessages, callLlmWithVision } from './llm.js';
+import { getPrompt, callLlm, callLlmWithMessages, callLlmWithVision } from './llm.js';
 import { extractText, resolveExtension } from './document.js';
 
 export interface IngestResult {
@@ -97,17 +97,64 @@ async function extractRoleFromText(jdText: string, promptTemplate: string): Prom
   return JSON.parse(text) as Record<string, unknown>;
 }
 
+// ── Detailed description ──
+// A ~1000-word structured overview generated from the raw JD, regardless of the
+// input's length/format. Sits between the short `description` and `raw_jd_text`.
+// Non-fatal: returns null on any failure so the role still gets created.
+const DETAILED_DESC_SECTIONS = [
+  'Position', 'Scope of work', 'Start date', 'Contract type',
+  'Specific requirements', 'Location', 'Certification',
+];
+
+export async function generateDetailedDescription(jdText: string): Promise<string | null> {
+  const source = jdText.trim().slice(0, 24_000);
+  if (!source) return null;
+
+  const prompt = [
+    'Rewrite the following job description into a clear, recruiter-facing overview of about 1000 words.',
+    'Use ONLY information present in the source — do not invent specifics.',
+    '',
+    'Structure it as exactly these seven numbered sections, in this order, each starting on its own line with the UPPERCASE heading, followed by the content:',
+    DETAILED_DESC_SECTIONS.map((s, i) => `${i + 1}. ${s.toUpperCase()}`).join('\n'),
+    '',
+    'Rules:',
+    '- Aim for ~1000 words total; give the most space to "SCOPE OF WORK" and "SPECIFIC REQUIREMENTS".',
+    '- If the source does not state something, write "Not specified in the job description."',
+    '- Plain text only: short paragraphs or simple "- " bullets. No markdown headers (#) or bold (**).',
+    '',
+    'SOURCE JOB DESCRIPTION:',
+    '"""',
+    source,
+    '"""',
+  ].join('\n');
+
+  try {
+    const { text } = await callLlm(prompt, {
+      maxTokens: 2048,
+      temperature: 0.3,
+      operation: 'role_detailed_description',
+    });
+    const out = text.trim();
+    return out.length > 0 ? out : null;
+  } catch (err) {
+    console.warn('[jd-import] detailed description generation failed:', (err as Error).message);
+    return null;
+  }
+}
+
 // ── Insert the role + requirements ──
 async function insertRole(
   extracted: Record<string, unknown>,
   jdText: string,
   createdBy: string | null,
+  detailedDescription: string | null = null,
 ): Promise<{ roleId: string; requirementsInserted: number }> {
   if (!supabase) throw new Error('Database not configured');
 
   const row: Record<string, unknown> = {
     title: String(extracted.title),
     description: (extracted.description as string) ?? '',
+    detailed_description: detailedDescription,
     status: 'open',
     salary_min: (extracted.salary_min as number) ?? null,
     salary_max: (extracted.salary_max as number) ?? null,
@@ -240,7 +287,49 @@ async function insertRole(
 }
 
 /**
- * Ingest a single JD file buffer into a new _role. Throws on any hard failure.
+ * Ingest already-extracted JD text into a new _role. Shared by the file path
+ * (ingestRoleFromBuffer) and the paste-text path (/api/roles/import-text):
+ * LLM extraction → role + requirements → result. Throws on any hard failure.
+ */
+export async function ingestRoleFromText(
+  jdText: string,
+  createdBy: string | null,
+  visionUsed = false,
+): Promise<IngestResult> {
+  if (!jdText.trim()) throw new Error('No job text was provided');
+
+  const promptTemplate = await getPrompt('role_extraction');
+  if (!promptTemplate) throw new Error('role_extraction prompt not found in _prompts table');
+
+  // 1. LLM extraction + the long-form structured overview, in parallel.
+  const [extracted, detailedDescription] = await Promise.all([
+    extractRoleFromText(jdText, promptTemplate),
+    generateDetailedDescription(jdText),
+  ]);
+  if (!extracted.title) {
+    throw new Error('The role_extraction prompt could not identify a role title in this document');
+  }
+
+  // 2. Insert role + requirements.
+  const { roleId, requirementsInserted } = await insertRole(extracted, jdText, createdBy, detailedDescription);
+
+  // 3. TET v2 completeness — share of v2 taxonomy fields the extraction filled.
+  const filledV2 = TET_V2_FIELDS.filter(f => isFilled(extracted[f])).length;
+  const tetCompleteness = Math.round((filledV2 / TET_V2_FIELDS.length) * 100);
+
+  return {
+    roleId,
+    title: String(extracted.title),
+    requirementsInserted,
+    tetCompleteness,
+    visionUsed,
+    jdTextLength: jdText.length,
+  };
+}
+
+/**
+ * Ingest a single JD file buffer into a new _role. Extracts text (with a vision
+ * OCR fallback for scanned/empty documents), then delegates to ingestRoleFromText.
  */
 export async function ingestRoleFromBuffer(
   buffer: Buffer,
@@ -248,10 +337,7 @@ export async function ingestRoleFromBuffer(
   mimeType: string | undefined,
   createdBy: string | null,
 ): Promise<IngestResult> {
-  const promptTemplate = await getPrompt('role_extraction');
-  if (!promptTemplate) throw new Error('role_extraction prompt not found in _prompts table');
-
-  // 1. Extract text — fall back to vision OCR for scanned/empty documents.
+  // Extract text — fall back to vision OCR for scanned/empty documents.
   let jdText = '';
   let visionUsed = false;
   try {
@@ -271,25 +357,5 @@ export async function ingestRoleFromBuffer(
     throw new Error('Could not extract any text from the document, even with vision OCR');
   }
 
-  // 2. LLM extraction.
-  const extracted = await extractRoleFromText(jdText, promptTemplate);
-  if (!extracted.title) {
-    throw new Error('The role_extraction prompt could not identify a role title in this document');
-  }
-
-  // 3. Insert role + requirements.
-  const { roleId, requirementsInserted } = await insertRole(extracted, jdText, createdBy);
-
-  // 4. TET v2 completeness — share of v2 taxonomy fields the extraction filled.
-  const filledV2 = TET_V2_FIELDS.filter(f => isFilled(extracted[f])).length;
-  const tetCompleteness = Math.round((filledV2 / TET_V2_FIELDS.length) * 100);
-
-  return {
-    roleId,
-    title: String(extracted.title),
-    requirementsInserted,
-    tetCompleteness,
-    visionUsed,
-    jdTextLength: jdText.length,
-  };
+  return ingestRoleFromText(jdText, createdBy, visionUsed);
 }

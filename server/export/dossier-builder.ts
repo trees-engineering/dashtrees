@@ -4,7 +4,7 @@ import {
   Document, Packer, Paragraph, Table, TableRow, TableCell,
   TextRun, ImageRun, Header, Footer, ExternalHyperlink,
   AlignmentType, WidthType, BorderStyle, ShadingType, LevelFormat,
-  UnderlineType, VerticalAlign,
+  UnderlineType, VerticalAlign, TableLayoutType,
 } from 'docx';
 
 export interface DossierConfig {
@@ -134,8 +134,18 @@ function tc(children: Paragraph | Paragraph[], opts: CellOpts = {}): TableCell {
     children: ([] as Paragraph[]).concat(children),
   });
 }
+// Every Table MUST declare columnWidths: the docx lib otherwise emits a
+// placeholder <w:tblGrid> of 100 twips/col. Word ignores that grid, but Google
+// Docs treats it as authoritative and renders the columns badly squished. The
+// arrays here mirror the per-cell tcW widths so the grid is correct.
 function singleColTable(rows: TableRow[]): Table {
-  return new Table({ width: { size: W, type: WidthType.DXA }, borders: noBorders(), rows });
+  return new Table({
+    width: { size: W, type: WidthType.DXA },
+    columnWidths: [W],
+    layout: TableLayoutType.FIXED,
+    borders: noBorders(),
+    rows,
+  });
 }
 function spacer(after = 120): Paragraph {
   return para([run('')], { after });
@@ -178,7 +188,10 @@ function headerTable(cfg: DossierConfig): Table {
     { width: 6960 }
   );
   return new Table({
-    width: { size: W, type: WidthType.DXA }, borders: noBorders(),
+    width: { size: W, type: WidthType.DXA },
+    columnWidths: [2400, 6960],
+    layout: TableLayoutType.FIXED,
+    borders: noBorders(),
     rows: [new TableRow({ children: [logoCell, titleCell] })],
   });
 }
@@ -271,7 +284,13 @@ function matchTable(cfg: DossierConfig): Table {
       ],
     });
   });
-  return new Table({ width: { size: W, type: WidthType.DXA }, borders: divBorders(), rows: [hdr, ...dataRows] });
+  return new Table({
+    width: { size: W, type: WidthType.DXA },
+    columnWidths: [4680, 4680],
+    layout: TableLayoutType.FIXED,
+    borders: divBorders(),
+    rows: [hdr, ...dataRows],
+  });
 }
 
 function qualSection(cfg: DossierConfig): (Paragraph | Table)[] {
@@ -327,7 +346,13 @@ function skillsTable(cfg: DossierConfig): Table {
         ],
       })
     );
-  return new Table({ width: { size: W, type: WidthType.DXA }, borders: divBorders(), rows });
+  return new Table({
+    width: { size: W, type: WidthType.DXA },
+    columnWidths: [2400, 6960],
+    layout: TableLayoutType.FIXED,
+    borders: divBorders(),
+    rows,
+  });
 }
 
 function educationSection(cfg: DossierConfig): Paragraph[] {

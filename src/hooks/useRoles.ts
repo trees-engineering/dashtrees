@@ -80,10 +80,12 @@ async function fetchRoles(recruiterId: string | null): Promise<RoleWithCounts[]>
   // Build lookup maps
   const recruiterMap = new Map(recruiters.map((r) => [r.id, r.email]))
 
-  // Count every match, including screened-out ones — recruiters need to see
-  // poorly-ranked candidates and may disagree with the pipeline's screening.
+  // Only count scored candidates — skip the auto-rejected `screened_out` pile
+  // (too-thin / unscored profiles with score 0), which would otherwise inflate
+  // the match count with candidates not worth surfacing.
   const countMap = new Map<string, { total: number; shortlisted: number; introduced: number }>()
   for (const m of matches) {
+    if (m.status === 'screened_out') continue
     const existing = countMap.get(m.role_id) ?? { total: 0, shortlisted: 0, introduced: 0 }
     existing.total++
     if (m.status === 'shortlisted') existing.shortlisted++

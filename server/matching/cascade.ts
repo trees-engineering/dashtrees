@@ -104,6 +104,36 @@ function prunePool(
   return { survivors, pruned };
 }
 
+// Variant of prunePool for the incremental path: keep candidates whose effective
+// score (raw × completeness) meets a frozen cutoff from a prior full run, instead
+// of slicing a top-N. Lets a newcomer be judged against the same bar the funnel
+// applied, without re-ranking the whole pool.
+function prunePoolByCutoff(
+  candidates: Talent[],
+  scores: Map<string, BatchScore>,
+  completenessMultiplier: (t: Talent) => number,
+  cutoff: number,
+  stepLabel: string,
+): { survivors: Talent[]; pruned: CascadePrunedCandidate[] } {
+  const survivors: Talent[] = [];
+  const pruned: CascadePrunedCandidate[] = [];
+  for (const t of candidates) {
+    const s = scores.get(t.id);
+    const effective = (s?.score ?? 0) * completenessMultiplier(t);
+    if (effective >= cutoff) {
+      survivors.push(t);
+    } else {
+      pruned.push({
+        talent_id: t.id,
+        talent_name: t.name,
+        reason: `${stepLabel} score: ${s?.score ?? 0}/100 (effective ${effective.toFixed(1)}) below cutoff ${cutoff.toFixed(1)} — ${s?.reasoning ?? 'no reasoning'}`,
+        borderline: false,
+      });
+    }
+  }
+  return { survivors, pruned };
+}
+
 // ============================================================================
 // Step 1: Function + Job Identity
 // ============================================================================
@@ -145,12 +175,15 @@ async function runStep1(
   role: Role,
   candidates: Talent[],
   cfg: ResolvedCascadeConfig,
+  cutoff?: number,
 ): Promise<{ scores: Map<string, BatchScore>; survivors: Talent[]; pruned: CascadePrunedCandidate[] }> {
   const stepCfg = resolveStepConfig('step1', cfg);
   const targetCount = computeSurvivors(candidates.length, stepCfg);
   const scores = new Map<string, BatchScore>();
 
-  if (candidates.length <= stepCfg.survivor_min) {
+  // Small-pool shortcut is full-run only; the incremental path (cutoff set)
+  // always scores so the frozen cutoff can be applied to newcomers.
+  if (cutoff === undefined && candidates.length <= stepCfg.survivor_min) {
     for (const t of candidates) scores.set(t.id, { talent_id: t.id, score: 100, reasoning: 'Small pool — all proceed' });
     return { scores, survivors: candidates, pruned: [] };
   }
@@ -176,7 +209,12 @@ async function runStep1(
   }
 
   const mult = (t: Talent) => Math.max(0.4, computeCoreFieldsFilled(t) / 9);
-  return { scores, ...prunePool(candidates, scores, mult, targetCount, 'Step 1 (Function+Identity)') };
+  return {
+    scores,
+    ...(cutoff !== undefined
+      ? prunePoolByCutoff(candidates, scores, mult, cutoff, 'Step 1 (Function+Identity)')
+      : prunePool(candidates, scores, mult, targetCount, 'Step 1 (Function+Identity)')),
+  };
 }
 
 // ============================================================================
@@ -228,12 +266,13 @@ async function runStep2(
   role: Role,
   candidates: Talent[],
   cfg: ResolvedCascadeConfig,
+  cutoff?: number,
 ): Promise<{ scores: Map<string, BatchScore>; survivors: Talent[]; pruned: CascadePrunedCandidate[] }> {
   const stepCfg = resolveStepConfig('step2', cfg);
   const targetCount = computeSurvivors(candidates.length, stepCfg);
   const scores = new Map<string, BatchScore>();
 
-  if (candidates.length <= stepCfg.survivor_min) {
+  if (cutoff === undefined && candidates.length <= stepCfg.survivor_min) {
     for (const t of candidates) scores.set(t.id, { talent_id: t.id, score: 100, reasoning: 'Small pool — all proceed' });
     return { scores, survivors: candidates, pruned: [] };
   }
@@ -256,7 +295,12 @@ async function runStep2(
   }
 
   const mult = (t: Talent) => Math.max(0.4, computeCoreFieldsFilled(t) / 9);
-  return { scores, ...prunePool(candidates, scores, mult, targetCount, 'Step 2 (Asset+Systems)') };
+  return {
+    scores,
+    ...(cutoff !== undefined
+      ? prunePoolByCutoff(candidates, scores, mult, cutoff, 'Step 2 (Asset+Systems)')
+      : prunePool(candidates, scores, mult, targetCount, 'Step 2 (Asset+Systems)')),
+  };
 }
 
 // ============================================================================
@@ -304,12 +348,13 @@ async function runStep3(
   role: Role,
   candidates: Talent[],
   cfg: ResolvedCascadeConfig,
+  cutoff?: number,
 ): Promise<{ scores: Map<string, BatchScore>; survivors: Talent[]; pruned: CascadePrunedCandidate[] }> {
   const stepCfg = resolveStepConfig('step3', cfg);
   const targetCount = computeSurvivors(candidates.length, stepCfg);
   const scores = new Map<string, BatchScore>();
 
-  if (candidates.length <= stepCfg.survivor_min) {
+  if (cutoff === undefined && candidates.length <= stepCfg.survivor_min) {
     for (const t of candidates) scores.set(t.id, { talent_id: t.id, score: 100, reasoning: 'Small pool — all proceed' });
     return { scores, survivors: candidates, pruned: [] };
   }
@@ -332,7 +377,12 @@ async function runStep3(
   }
 
   const mult = (_t: Talent) => 1.0;
-  return { scores, ...prunePool(candidates, scores, mult, targetCount, 'Step 3 (Seniority+Track+Auth)') };
+  return {
+    scores,
+    ...(cutoff !== undefined
+      ? prunePoolByCutoff(candidates, scores, mult, cutoff, 'Step 3 (Seniority+Track+Auth)')
+      : prunePool(candidates, scores, mult, targetCount, 'Step 3 (Seniority+Track+Auth)')),
+  };
 }
 
 // ============================================================================
@@ -383,12 +433,13 @@ async function runStep4(
   role: Role,
   candidates: Talent[],
   cfg: ResolvedCascadeConfig,
+  cutoff?: number,
 ): Promise<{ scores: Map<string, BatchScore>; survivors: Talent[]; pruned: CascadePrunedCandidate[] }> {
   const stepCfg = resolveStepConfig('step4', cfg);
   const targetCount = computeSurvivors(candidates.length, stepCfg);
   const scores = new Map<string, BatchScore>();
 
-  if (candidates.length <= stepCfg.survivor_min) {
+  if (cutoff === undefined && candidates.length <= stepCfg.survivor_min) {
     for (const t of candidates) scores.set(t.id, { talent_id: t.id, score: 100, reasoning: 'Small pool — all proceed' });
     return { scores, survivors: candidates, pruned: [] };
   }
@@ -416,7 +467,12 @@ async function runStep4(
   }
 
   const mult = (_t: Talent) => 1.0;
-  return { scores, ...prunePool(candidates, scores, mult, targetCount, 'Step 4 (Phase+Workstream)') };
+  return {
+    scores,
+    ...(cutoff !== undefined
+      ? prunePoolByCutoff(candidates, scores, mult, cutoff, 'Step 4 (Phase+Workstream)')
+      : prunePool(candidates, scores, mult, targetCount, 'Step 4 (Phase+Workstream)')),
+  };
 }
 
 // ============================================================================
@@ -490,12 +546,13 @@ async function runStep5(
   role: Role,
   candidates: Talent[],
   cfg: ResolvedCascadeConfig,
+  cutoff?: number,
 ): Promise<{ scores: Map<string, BatchScore>; survivors: Talent[]; pruned: CascadePrunedCandidate[] }> {
   const stepCfg = resolveStepConfig('step5', cfg);
   const targetCount = computeSurvivors(candidates.length, stepCfg);
   const scores = new Map<string, BatchScore>();
 
-  if (candidates.length <= stepCfg.survivor_min) {
+  if (cutoff === undefined && candidates.length <= stepCfg.survivor_min) {
     for (const t of candidates) scores.set(t.id, { talent_id: t.id, score: 100, reasoning: 'Small pool — all proceed' });
     return { scores, survivors: candidates, pruned: [] };
   }
@@ -516,7 +573,12 @@ async function runStep5(
   }
 
   const mult = (_t: Talent) => 1.0;
-  return { scores, ...prunePool(candidates, scores, mult, targetCount, 'Step 5 (Deliverables+Creds)') };
+  return {
+    scores,
+    ...(cutoff !== undefined
+      ? prunePoolByCutoff(candidates, scores, mult, cutoff, 'Step 5 (Deliverables+Creds)')
+      : prunePool(candidates, scores, mult, targetCount, 'Step 5 (Deliverables+Creds)')),
+  };
 }
 
 // ============================================================================
@@ -668,6 +730,7 @@ export async function runCascadePipeline(
         missing_data_flags: ['profile too thin for scoring: fewer than 3 core fields present'],
         multipliers_applied: { completeness: computeCoreFieldsFilled(t) / 9 },
         status: 'screened_out',
+        updated_at: new Date().toISOString(),
       }, { onConflict: 'talent_id,role_id' });
     }
   }
@@ -829,6 +892,17 @@ export async function runCascadePipeline(
 
   const nodes: CascadeNode[] = [step1Node, step2Node, step3Node, step4Node, step5Node];
 
+  // Per-step cutoff = the lowest surviving effective score (score × completeness).
+  // Stored so a later incremental run can judge a newcomer against the same bar.
+  const cutoffOf = (
+    survivors: Talent[], scoreMap: Map<string, BatchScore>, pruned: CascadePrunedCandidate[],
+    mult: (t: Talent) => number,
+  ): number => (pruned.length === 0 || survivors.length === 0)
+    ? 0
+    : Math.min(...survivors.map(t => (scoreMap.get(t.id)?.score ?? 0) * mult(t)));
+  const completenessMult = (t: Talent) => Math.max(0.4, computeCoreFieldsFilled(t) / 9);
+  const oneMult = () => 1;
+
   const tree: CascadeTree = {
     role_id: roleId,
     role_title: (role as Role).title,
@@ -842,6 +916,16 @@ export async function runCascadePipeline(
     threshold_hit: false,
     config: cfg,
     created_at: new Date().toISOString(),
+    step_cutoffs: {
+      floor: 3,
+      step1: cutoffOf(step1.survivors, step1.scores, step1.pruned, completenessMult),
+      step2: cutoffOf(step2.survivors, step2.scores, step2.pruned, completenessMult),
+      step3: cutoffOf(step3.survivors, step3.scores, step3.pruned, oneMult),
+      step4: cutoffOf(step4.survivors, step4.scores, step4.pruned, oneMult),
+      step5: cutoffOf(step5.survivors, step5.scores, step5.pruned, oneMult),
+    },
+    evaluated_talent_ids: allCandidates.map(t => t.id),
+    mode: 'full',
   };
 
     for (const s of scored) {
@@ -894,6 +978,7 @@ export async function runCascadePipeline(
           hard_gate_results: hardGateResults,
         },
         status: s.scores ? 'suggested' : 'screened_out',
+        updated_at: new Date().toISOString(),
       }, { onConflict: 'talent_id,role_id' });
     }
 
@@ -973,4 +1058,281 @@ async function storeCompletedCascadeRun(
     .single();
 
   return data?.id ?? null;
+}
+
+// ============================================================================
+// Incremental scoring (new-candidate path) + dispatch
+// ============================================================================
+
+// Step 6 (full LLM scoring) + match upsert for a finalist set. Mirrors the
+// inline Step 6 of runCascadePipeline; kept separate so the incremental path can
+// reuse it without modifying the proven full-run code.
+async function scoreAndUpsertFinalists(
+  role: Role,
+  roleId: string,
+  toScore: Talent[],
+  cascadeRunId: string,
+  allReqs: RoleRequirement[],
+  skillsByTalent: Map<string, TalentSkill[]>,
+  stepScores: Record<'step1' | 'step2' | 'step3' | 'step4' | 'step5', Map<string, BatchScore>>,
+): Promise<Array<PipelineResult & { rank: number }>> {
+  if (!supabase) throw new Error('Database not configured');
+  const db = supabase;
+  const step6Limit = pLimit(STEP6_CONCURRENCY);
+
+  const scored: Array<PipelineResult & { rank: number }> = await Promise.all(
+    toScore.map((talent) => step6Limit(async () => {
+      const skills = skillsByTalent.get(talent.id) ?? [];
+      const { data: cvExtraction } = await db
+        .from('_cv_extractions')
+        .select('raw_cv_text')
+        .eq('talent_id', talent.id)
+        .order('created_at', { ascending: false })
+        .limit(1)
+        .single();
+      const cvText = (cvExtraction?.raw_cv_text as string) ?? undefined;
+
+      let scores: ScoringResult | null = null;
+      try {
+        scores = await scoreTalentForRole(talent, role, allReqs, skills, cvText);
+        if (scores) {
+          const completenessMultiplier = Math.max(0.4, computeCoreFieldsFilled(talent) / 9);
+          scores.multipliers_applied = { ...scores.multipliers_applied, completeness: completenessMultiplier };
+          scores.total_score = Math.round(scores.total_score * completenessMultiplier * 100) / 100;
+        }
+      } catch (err) {
+        console.error(`[cascade] Step 6 scoring failed for talent ${talent.id}:`, err);
+      }
+
+      return {
+        talent_id: talent.id,
+        talent_name: talent.name,
+        passed_filters: true,
+        filter_results: [],
+        scores,
+        availability_status: talent.availability_status,
+        available_from: talent.available_from,
+        notice_period_days: talent.notice_period_days,
+        location: talent.location,
+        linkedin_url: talent.linkedin_url,
+        rank: 0,
+      };
+    })),
+  );
+
+  scored.sort((a, b) => {
+    const scoreDiff = (b.scores?.total_score ?? -1) - (a.scores?.total_score ?? -1);
+    if (Math.abs(scoreDiff) > 0.01) return scoreDiff;
+    const aDate = a.available_from ? new Date(a.available_from).getTime() : 0;
+    const bDate = b.available_from ? new Date(b.available_from).getTime() : 0;
+    if (aDate !== bDate) return aDate - bDate;
+    return a.talent_id.localeCompare(b.talent_id);
+  });
+  scored.forEach((s, i) => { s.rank = i + 1; });
+
+  for (const s of scored) {
+    const talent = toScore.find(t => t.id === s.talent_id);
+    const { results: hardGateResults, missingFlags: gateFlags } = talent
+      ? computeHardGateResults(talent, role)
+      : { results: {}, missingFlags: [] };
+    const allMissingFlags = [...(s.scores?.missing_data_flags ?? []), ...gateFlags];
+
+    await db.from('_matches').upsert({
+      talent_id: s.talent_id,
+      role_id: roleId,
+      cascade_run_id: cascadeRunId,
+      match_score: s.scores?.total_score ?? 0,
+      skill_score: s.scores?.skill_score ?? 0,
+      experience_score: s.scores?.experience_score ?? 0,
+      availability_score: s.scores?.availability_score ?? 0,
+      location_score: s.scores?.location_score ?? 0,
+      assessment_score: s.scores?.assessment_score ?? 0,
+      match_reason: s.scores?.reasoning ?? 'Scoring failed',
+      role_discipline_fit: s.scores?.role_discipline_fit ?? null,
+      asset_system_fit: s.scores?.asset_system_fit ?? null,
+      deliverables_fit: s.scores?.deliverables_fit ?? null,
+      phase_fit: s.scores?.phase_fit ?? null,
+      seniority_authority_fit: s.scores?.seniority_authority_fit ?? null,
+      credentials_tools_fit: s.scores?.credentials_tools_fit ?? null,
+      region_context_fit: s.scores?.region_context_fit ?? null,
+      provenance_fit: s.scores?.provenance_fit ?? null,
+      eligible: s.scores?.eligible ?? true,
+      recommended_action: s.scores?.recommended_action ?? null,
+      missing_data_flags: allMissingFlags,
+      multipliers_applied: s.scores?.multipliers_applied ?? {},
+      score_details: {
+        skill_reasoning: s.scores?.skill_reasoning,
+        experience_reasoning: s.scores?.experience_reasoning,
+        availability_reasoning: s.scores?.availability_reasoning,
+        location_reasoning: s.scores?.location_reasoning,
+        assessment_reasoning: s.scores?.assessment_reasoning,
+        step1_score: stepScores.step1.get(s.talent_id)?.score,
+        step1_reasoning: stepScores.step1.get(s.talent_id)?.reasoning,
+        step2_score: stepScores.step2.get(s.talent_id)?.score,
+        step2_reasoning: stepScores.step2.get(s.talent_id)?.reasoning,
+        step3_score: stepScores.step3.get(s.talent_id)?.score,
+        step3_reasoning: stepScores.step3.get(s.talent_id)?.reasoning,
+        step4_score: stepScores.step4.get(s.talent_id)?.score,
+        step4_reasoning: stepScores.step4.get(s.talent_id)?.reasoning,
+        step5_score: stepScores.step5.get(s.talent_id)?.score,
+        step5_reasoning: stepScores.step5.get(s.talent_id)?.reasoning,
+        hard_gate_results: hardGateResults,
+      },
+      status: s.scores ? 'suggested' : 'screened_out',
+      updated_at: new Date().toISOString(),
+    }, { onConflict: 'talent_id,role_id' });
+  }
+
+  return scored;
+}
+
+// Floor reject upsert (profile too thin). Mirrors the full-run floor write.
+async function upsertFloorReject(t: Talent, roleId: string, cascadeRunId: string): Promise<void> {
+  if (!supabase) return;
+  await supabase.from('_matches').upsert({
+    talent_id: t.id,
+    role_id: roleId,
+    cascade_run_id: cascadeRunId,
+    match_score: 0,
+    skill_score: 0,
+    experience_score: 0,
+    availability_score: 0,
+    location_score: 0,
+    assessment_score: 0,
+    match_reason: 'Profile too thin for scoring: fewer than 3 core fields present',
+    eligible: false,
+    recommended_action: 'schedule_interview_to_close_gaps',
+    missing_data_flags: ['profile too thin for scoring: fewer than 3 core fields present'],
+    multipliers_applied: { completeness: computeCoreFieldsFilled(t) / 9 },
+    status: 'screened_out',
+    updated_at: new Date().toISOString(),
+  }, { onConflict: 'talent_id,role_id' });
+}
+
+// Incremental rerun: score only NEW candidates against the frozen per-step
+// cutoffs from the last full run. Survivors that reach Step 6 are ADDED to the
+// scored set (keep-11+ — existing matches are never dropped).
+async function runIncrementalScoring(
+  role: Role,
+  roleId: string,
+  newCandidates: Talent[],
+  lastTree: CascadeTree,
+  opts?: { jobId?: string },
+): Promise<CascadeTree> {
+  if (!supabase) throw new Error('Database not configured');
+  const db = supabase;
+  const cutoffs = lastTree.step_cutoffs;
+  if (!cutoffs) throw new Error('Last run has no step_cutoffs — cannot run incrementally');
+  const cfg = lastTree.config ?? mergeConfig();
+
+  const { data: requirements } = await db.from('_role_requirements').select('*').eq('role_id', roleId);
+  const allReqs = (requirements ?? []) as RoleRequirement[];
+
+  const newIds = newCandidates.map(t => t.id);
+  const skillsByTalent = new Map<string, TalentSkill[]>();
+  for (let i = 0; i < newIds.length; i += 200) {
+    const chunk = newIds.slice(i, i + 200);
+    const { data: chunkSkills } = await db.from('_talent_skills').select('*').in('talent_id', chunk);
+    for (const s of (chunkSkills ?? []) as TalentSkill[]) {
+      if (!skillsByTalent.has(s.talent_id)) skillsByTalent.set(s.talent_id, []);
+      skillsByTalent.get(s.talent_id)!.push(s);
+    }
+  }
+
+  const cascadeRunId = await beginCascadeRun(roleId, opts?.jobId);
+  try {
+    // Floor — same rule as the full run.
+    const afterFloor: Talent[] = [];
+    for (const t of newCandidates) {
+      if (computeCoreFieldsFilled(t) < cutoffs.floor) await upsertFloorReject(t, roleId, cascadeRunId);
+      else afterFloor.push(t);
+    }
+
+    // Funnel against the frozen cutoffs (empty sets short-circuit with no LLM calls).
+    let survivors = afterFloor;
+    const s1 = await runStep1(role, survivors, cfg, cutoffs.step1); survivors = s1.survivors;
+    const s2 = await runStep2(role, survivors, cfg, cutoffs.step2); survivors = s2.survivors;
+    const s3 = await runStep3(role, survivors, cfg, cutoffs.step3); survivors = s3.survivors;
+    const s4 = await runStep4(role, survivors, cfg, cutoffs.step4); survivors = s4.survivors;
+    const s5 = await runStep5(role, survivors, cfg, cutoffs.step5); survivors = s5.survivors;
+    console.log(`[cascade] Incremental: ${newCandidates.length} new candidate(s) → ${survivors.length} reached Step 6`);
+
+    const newScored = await scoreAndUpsertFinalists(
+      role, roleId, survivors, cascadeRunId, allReqs, skillsByTalent,
+      { step1: s1.scores, step2: s2.scores, step3: s3.scores, step4: s4.scores, step5: s5.scores },
+    );
+
+    // keep-11+: append the new finalists to the existing scored set, re-rank by score.
+    const mergedScored = [...lastTree.scored, ...newScored]
+      .sort((a, b) => (b.scores?.total_score ?? -1) - (a.scores?.total_score ?? -1))
+      .map((s, i) => ({ ...s, rank: i + 1 }));
+
+    const tree: CascadeTree = {
+      ...lastTree,
+      total_candidates: (lastTree.evaluated_talent_ids?.length ?? 0) + newCandidates.length,
+      scored: mergedScored,
+      evaluated_talent_ids: [...(lastTree.evaluated_talent_ids ?? []), ...newIds],
+      step_cutoffs: cutoffs,
+      mode: 'incremental',
+      created_at: new Date().toISOString(),
+      alerts: newScored.length === 0
+        ? [{ filter_name: 'overall', message: `${newCandidates.length} new candidate(s) evaluated; none reached the scoring tier.`, severity: 'warning' }]
+        : [],
+    };
+    await completeCascadeRun(cascadeRunId, tree);
+    console.log(`[cascade] Incremental complete: +${newScored.length} scored (total ${mergedScored.length})`);
+    return tree;
+  } catch (err) {
+    await failCascadeRun(cascadeRunId, err);
+    throw err;
+  }
+}
+
+/**
+ * Public matching entry. Decides between a full re-rank, an incremental
+ * new-candidate run, or a no-op, then executes. Called by /start-matching and
+ * /rerun-matches.
+ *   - first run / role edited / pre-incremental run  → full re-rank
+ *   - role unchanged + new candidates                → incremental (cheap)
+ *   - role unchanged + nothing new                   → no-op (zero LLM calls)
+ */
+export async function runMatching(roleId: string, opts?: { jobId?: string }): Promise<CascadeTree> {
+  if (!supabase) throw new Error('Database not configured');
+
+  const { data: role, error: roleErr } = await supabase.from('_role').select('*').eq('id', roleId).single();
+  if (roleErr || !role) throw new Error(`Role not found: ${roleId}`);
+
+  const { data: lastRun } = await supabase
+    .from('_cascade_runs')
+    .select('cascade_tree, created_at')
+    .eq('role_id', roleId)
+    .eq('status', 'completed')
+    .order('created_at', { ascending: false })
+    .limit(1)
+    .maybeSingle();
+  const lastTree = lastRun?.cascade_tree as CascadeTree | undefined;
+
+  const roleUpdatedAt = (role as { updated_at?: string | null }).updated_at;
+  const roleEdited = Boolean(
+    lastRun && roleUpdatedAt
+    && new Date(roleUpdatedAt).getTime() > new Date(lastRun.created_at).getTime(),
+  );
+
+  // Full re-rank: first run, role edited since last run, or last run predates
+  // incremental support (no stored cutoffs/evaluated set).
+  if (!lastTree || !lastTree.step_cutoffs || !lastTree.evaluated_talent_ids || roleEdited) {
+    return runCascadePipeline(roleId, undefined, opts);
+  }
+
+  const { data: talents } = await supabase.from('_talent').select('*').in('lifecycle_state', ['verified']);
+  const evaluated = new Set(lastTree.evaluated_talent_ids);
+  const newCandidates = ((talents ?? []) as Talent[]).filter(t => !evaluated.has(t.id));
+
+  if (newCandidates.length === 0) {
+    console.log(`[cascade] runMatching(${roleId}): role unchanged, no new candidates — no-op.`);
+    return lastTree;
+  }
+
+  console.log(`[cascade] runMatching(${roleId}): incremental — ${newCandidates.length} new candidate(s).`);
+  return runIncrementalScoring(role as Role, roleId, newCandidates, lastTree, opts);
 }

@@ -3,9 +3,9 @@ import path from 'node:path';
 import fs from 'node:fs';
 import express, { type Request, type Response } from 'express';
 import cors from 'cors';
-import { ingestRoleFromBuffer } from './jd-import.js';
+import { ingestRoleFromBuffer, ingestRoleFromText } from './jd-import.js';
 import { isSupported } from './document.js';
-import { runCascadePipeline } from './matching/cascade.js';
+import { runMatching } from './matching/cascade.js';
 import { buildExport } from './export/index.js';
 import { supabase } from './db.js';
 import { authMiddleware, checkRoleOwnership } from './auth.js';
@@ -84,6 +84,43 @@ app.post('/api/roles/upload', authMiddleware, async (req: Request, res: Response
   }
 });
 
+// ── Feature A (text): paste a JD as plain text → ingest (no file) ─────────────
+const JD_TEXT_MIN = 50;
+const JD_TEXT_MAX = 100_000;
+app.post('/api/roles/import-text', authMiddleware, async (req: Request, res: Response) => {
+  const { text, created_by } = (req.body ?? {}) as { text?: string; created_by?: string };
+
+  if (typeof text !== 'string' || text.trim().length < JD_TEXT_MIN) {
+    res.status(400).json({ error: `text is required (min ${JD_TEXT_MIN} characters)` });
+    return;
+  }
+  if (text.length > JD_TEXT_MAX) {
+    res.status(413).json({ error: `text too long (max ${JD_TEXT_MAX} characters)` });
+    return;
+  }
+
+  // Attribution — identical rule to /upload: admins attribute to any recruiter
+  // UUID they send; non-admins are forced to their own id.
+  let createdBy: string;
+  if (req.auth!.isAdmin) {
+    if (!created_by || !UUID_RE.test(created_by)) {
+      res.status(400).json({ error: 'created_by must be a valid recruiter id' });
+      return;
+    }
+    createdBy = created_by;
+  } else {
+    createdBy = req.auth!.recruiterId;
+  }
+
+  try {
+    const result = await ingestRoleFromText(text, createdBy);
+    res.json({ ok: true, ...result });
+  } catch (err) {
+    console.error('[server] JD text import failed:', err);
+    res.status(500).json({ error: err instanceof Error ? err.message : 'Unknown error' });
+  }
+});
+
 // ── Start matching (fire-and-forget) ─────────────────────────────────────────
 // Called after the recruiter confirms a newly-uploaded role via the edit
 // screen. The cascade makes 50-200 LLM calls and takes 30s-2min, so this
@@ -95,7 +132,7 @@ app.post('/api/roles/:roleId/start-matching', authMiddleware, async (req: Reques
   }
   if (!(await checkRoleOwnership(req, res, req.params.roleId))) return;
 
-  runCascadePipeline(req.params.roleId).catch(err => {
+  runMatching(req.params.roleId).catch(err => {
     console.error(`[server] background cascade failed for role ${req.params.roleId}:`, err);
   });
   res.json({ ok: true, started: true });
@@ -110,7 +147,7 @@ app.post('/api/roles/:roleId/rerun-matches', authMiddleware, async (req: Request
   if (!(await checkRoleOwnership(req, res, req.params.roleId))) return;
 
   try {
-    const tree = await runCascadePipeline(req.params.roleId);
+    const tree = await runMatching(req.params.roleId);
     res.json({
       ok: true,
       total: tree.total_candidates,
@@ -262,7 +299,7 @@ app.patch('/api/roles/:roleId', authMiddleware, async (req: Request, res: Respon
 
   const { data, error } = await supabase
     .from('_role')
-    .update(sanitized)
+    .update({ ...sanitized, updated_at: new Date().toISOString() })
     .eq('id', req.params.roleId)
     .select('*')
     .single();
@@ -551,6 +588,57 @@ app.post('/api/talent/:talentId/export', authMiddleware, async (req: Request, re
     console.error('[server] export failed:', err);
     res.status(500).json({ error: err instanceof Error ? err.message : 'Unknown error' });
   }
+});
+
+// ── Recruiter profile (self-service) ─────────────────────────────────────────
+// Each recruiter edits their OWN _recruiters row. The server forces the target
+// to req.auth.recruiterId, so a caller can never edit another recruiter. Email
+// is immutable (it comes from Google login and is the identity key).
+const ABOUT_MAX = 1000;
+app.patch('/api/profile', authMiddleware, async (req: Request, res: Response) => {
+  if (!supabase) { res.status(500).json({ error: 'database not configured' }); return; }
+  const body = (req.body ?? {}) as Record<string, unknown>;
+
+  const patch: Record<string, string | null> = {};
+  const setText = (key: string, max: number) => {
+    if (!(key in body)) return;
+    const raw = body[key];
+    if (raw !== null && typeof raw !== 'string') return; // ignore wrong types
+    const v = typeof raw === 'string' ? raw.trim() : '';
+    patch[key] = v ? v.slice(0, max) : null;
+  };
+  setText('name', 200);
+  setText('position', 200);
+  setText('linkedin_url', 500);
+  setText('booking_link', 500);
+
+  if ('about' in body) {
+    const v = typeof body.about === 'string' ? body.about.trim() : '';
+    if (v.length > ABOUT_MAX) {
+      res.status(400).json({ error: `about must be ${ABOUT_MAX} characters or fewer` });
+      return;
+    }
+    patch.about = v || null;
+  }
+
+  if (Object.keys(patch).length === 0) {
+    res.status(400).json({ error: 'no editable fields provided' });
+    return;
+  }
+  patch.updated_at = new Date().toISOString();
+
+  const { data, error } = await supabase
+    .from('_recruiters')
+    .update(patch)
+    .eq('id', req.auth!.recruiterId)
+    .select('id, email, name, position, linkedin_url, booking_link, about')
+    .single();
+  if (error) {
+    console.error('[profile] update failed:', error.message);
+    res.status(500).json({ error: 'profile update failed' });
+    return;
+  }
+  res.json({ profile: data });
 });
 
 // ── Static frontend (production) ─────────────────────────────────────────────

@@ -15,6 +15,9 @@ async function fetchMatches(roleId: string): Promise<MatchWithTalent[]> {
       cascade_run:cascade_run_id(run_direction)`
     )
     .eq('role_id', roleId)
+    // Only scored candidates — hide the auto-rejected `screened_out` pile
+    // (too-thin / unscored profiles with score 0).
+    .neq('status', 'screened_out')
     .order('match_score', { ascending: false })
 
   if (error) throw error

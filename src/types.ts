@@ -31,6 +31,7 @@ export interface Role {
   id: string
   title: string
   description: string | null
+  detailed_description: string | null
   status: 'open' | 'closed' | 'draft'
   location_requirement: string | null
   location_regions: string[] | null
