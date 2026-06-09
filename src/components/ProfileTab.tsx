@@ -36,12 +36,13 @@ export function ProfileTab() {
     if (!recruiter) return
     let cancelled = false
     telemetry.capture('profile_viewed', {})
-    void supabase
-      .from('_recruiters')
-      .select('name, position, linkedin_url, booking_link, about')
-      .eq('id', recruiter.id)
-      .single()
-      .then(({ data, error }) => {
+    void (async () => {
+      try {
+        const { data, error } = await supabase
+          .from('_recruiters')
+          .select('name, position, linkedin_url, booking_link, about')
+          .eq('id', recruiter.id)
+          .single()
         if (cancelled) return
         if (error) {
           toast.show('error', 'Could not load your profile.')
@@ -54,8 +55,14 @@ export function ProfileTab() {
             about: data.about ?? '',
           })
         }
-        setLoading(false)
-      })
+      } catch {
+        // A network/transport failure rejects rather than returning { error };
+        // still clear the spinner so the form doesn't hang on a skeleton.
+        if (!cancelled) toast.show('error', 'Could not load your profile.')
+      } finally {
+        if (!cancelled) setLoading(false)
+      }
+    })()
     return () => { cancelled = true }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [recruiter?.id])
