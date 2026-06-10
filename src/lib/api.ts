@@ -203,6 +203,26 @@ export async function exportDocument(talentId: string, req: ExportRequest): Prom
   return finishBlobDownload(res, `export.${req.format}`)
 }
 
+/** Fetch a candidate's original uploaded CV as a blob URL for inline preview
+ *  or download. roleId scopes the access check. The caller must
+ *  revokeObjectURL when done. */
+export async function fetchTalentCvBlob(
+  talentId: string,
+  roleId: string,
+): Promise<{ blobUrl: string; filename: string; contentType: string }> {
+  const res = await fetch(
+    `${API_BASE}/api/talent/${talentId}/cv?roleId=${encodeURIComponent(roleId)}`,
+    { headers: { ...(await authHeaders()) } },
+  )
+  if (!res.ok) throw new Error(await readError(res))
+  const contentType = res.headers.get('Content-Type') ?? 'application/octet-stream'
+  const disposition = res.headers.get('Content-Disposition') ?? ''
+  const match = disposition.match(/filename="?([^"]+)"?/)
+  const filename = match?.[1] ?? 'cv'
+  const blob = await res.blob()
+  return { blobUrl: URL.createObjectURL(blob), filename, contentType }
+}
+
 // ── Monthly reports ───────────────────────────────────────────────────────────
 export interface SavedReportRow {
   id: string

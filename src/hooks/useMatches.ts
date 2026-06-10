@@ -10,7 +10,8 @@ async function fetchMatches(roleId: string): Promise<MatchWithTalent[]> {
         id, name, location, city, country, rotation_preference, mobility_regions,
         availability_status, available_from, notice_period_days, rate, rate_type,
         currency, visa_status, work_rights, certifications, linkedin_url, headline,
-        job_family, discipline, tl_band, regional_experience, asset_experience, industries
+        job_family, discipline, tl_band, regional_experience, asset_experience, industries,
+        cv_storage_path
       ),
       cascade_run:cascade_run_id(run_direction)`
     )

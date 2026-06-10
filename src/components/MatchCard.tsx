@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { ChevronDown, ChevronUp, ExternalLink, FileDown } from 'lucide-react'
+import { ChevronDown, ChevronUp, ExternalLink, FileDown, FileText } from 'lucide-react'
 import type { MatchWithTalent } from '../types'
 import {
   scoreColor,
@@ -11,6 +11,7 @@ import {
   ensureHttps,
 } from '../lib/utils'
 import { ExportDocumentPanel } from './ExportDocumentPanel'
+import { CvViewerPanel } from './CvViewerPanel'
 import { telemetry } from '../lib/telemetry'
 
 interface MatchCardProps {
@@ -61,6 +62,7 @@ function ProfileRow({ label, value }: { label: string; value: React.ReactNode })
 export function MatchCard({ match, roleId }: MatchCardProps) {
   const [expanded, setExpanded] = useState(false)
   const [showExport, setShowExport] = useState(false)
+  const [showCv, setShowCv] = useState(false)
   const [hasViewed, setHasViewed] = useState(false)
   const { talent } = match
   const score = match.match_score ?? 0
@@ -334,6 +336,22 @@ export function MatchCard({ match, roleId }: MatchCardProps) {
               <FileDown size={16} />
               Export Document
             </button>
+            {talent?.cv_storage_path && (
+              <button
+                data-telemetry-id="match-cv-view"
+                onClick={() => {
+                  telemetry.capture('cv_view_clicked', {
+                    role_id: roleId,
+                    talent_id: match.talent_id,
+                  })
+                  setShowCv(true)
+                }}
+                className="flex items-center justify-center gap-2 py-2.5 rounded-lg border border-treeBorder text-treeText text-sm font-medium active:bg-treeBg transition-colors"
+              >
+                <FileText size={16} />
+                View CV
+              </button>
+            )}
             {talent?.linkedin_url && (
               <a
                 data-telemetry-id="match-linkedin"
@@ -362,6 +380,14 @@ export function MatchCard({ match, roleId }: MatchCardProps) {
         roleId={roleId}
         talentName={talent.name ?? 'Unknown'}
         onClose={() => setShowExport(false)}
+      />
+    )}
+    {showCv && talent && (
+      <CvViewerPanel
+        talentId={match.talent_id}
+        roleId={roleId}
+        talentName={talent.name ?? 'Unknown'}
+        onClose={() => setShowCv(false)}
       />
     )}
     </>

@@ -6,7 +6,7 @@ import cors from 'cors';
 import { ingestRoleFromBuffer, ingestRoleFromText } from './jd-import.js';
 import { isSupported } from './document.js';
 import { runMatching } from './matching/cascade.js';
-import { buildExport } from './export/index.js';
+import { buildExport, fetchTalentCvFile } from './export/index.js';
 import { supabase } from './db.js';
 import { authMiddleware, checkRoleOwnership } from './auth.js';
 import {
@@ -586,6 +586,29 @@ app.post('/api/talent/:talentId/export', authMiddleware, async (req: Request, re
     res.send(result.buffer);
   } catch (err) {
     console.error('[server] export failed:', err);
+    res.status(500).json({ error: err instanceof Error ? err.message : 'Unknown error' });
+  }
+});
+
+// ── View a candidate's original uploaded CV ──────────────────────────────────
+// Streams the original file inline (PDF renders in the browser; other formats
+// download). Role-scoped: non-admins can only view CVs under roles they own.
+app.get('/api/talent/:talentId/cv', authMiddleware, async (req: Request, res: Response) => {
+  if (!supabase) { res.status(500).json({ error: 'database not configured' }); return; }
+  const { talentId } = req.params;
+  if (!UUID_RE.test(talentId)) { res.status(400).json({ error: 'invalid talent id' }); return; }
+  const roleId = typeof req.query.roleId === 'string' ? req.query.roleId : '';
+  if (!UUID_RE.test(roleId)) { res.status(400).json({ error: 'roleId is required' }); return; }
+  if (!(await checkRoleOwnership(req, res, roleId))) return;
+
+  try {
+    const cv = await fetchTalentCvFile(talentId);
+    if (!cv) { res.status(404).json({ error: 'No CV on file for this candidate' }); return; }
+    res.setHeader('Content-Type', cv.contentType);
+    res.setHeader('Content-Disposition', `inline; filename="${cv.filename}"`);
+    res.send(cv.buffer);
+  } catch (err) {
+    console.error('[server] cv fetch failed:', err);
     res.status(500).json({ error: err instanceof Error ? err.message : 'Unknown error' });
   }
 });

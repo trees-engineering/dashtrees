@@ -31,11 +31,18 @@ function slug(s: string, max = 40): string {
 /** Best-effort fetch of the candidate's originally-uploaded CV from storage. */
 async function fetchOriginalCv(storagePath: string | null | undefined): Promise<Buffer | null> {
   if (!storagePath || !supabase) return null;
-  // cv_storage_path may be "bucket/key" or just "key" in a default bucket.
+  // CVs live in the `documents` bucket, keyed by the full cv_storage_path
+  // (e.g. "cvs/<talent>/<file>.pdf"). Fall back to treating it as "bucket/key"
+  // or a bare key in a cvs/cv bucket for any older rows stored differently.
   const slash = storagePath.indexOf('/');
-  const attempts: Array<[string, string]> = slash > 0
-    ? [[storagePath.slice(0, slash), storagePath.slice(slash + 1)], ['cvs', storagePath], ['cv', storagePath]]
-    : [['cvs', storagePath], ['cv', storagePath]];
+  const attempts: Array<[string, string]> = [
+    ['documents', storagePath],
+    ...(slash > 0
+      ? [[storagePath.slice(0, slash), storagePath.slice(slash + 1)] as [string, string]]
+      : []),
+    ['cvs', storagePath],
+    ['cv', storagePath],
+  ];
   for (const [bucket, key] of attempts) {
     try {
       const { data, error } = await supabase.storage.from(bucket).download(key);
@@ -46,6 +53,48 @@ async function fetchOriginalCv(storagePath: string | null | undefined): Promise<
   }
   console.warn('[export] could not fetch original CV from storage:', storagePath);
   return null;
+}
+
+const MIME_BY_EXT: Record<string, string> = {
+  pdf: PDF_MIME,
+  docx: DOCX_MIME,
+  doc: 'application/msword',
+  rtf: 'application/rtf',
+  odt: 'application/vnd.oasis.opendocument.text',
+  txt: 'text/plain',
+};
+
+function extOf(path: string): string {
+  const clean = path.split(/[?#]/)[0];
+  const dot = clean.lastIndexOf('.');
+  return dot >= 0 ? clean.slice(dot + 1).toLowerCase() : '';
+}
+
+export interface TalentCvFile {
+  buffer: Buffer;
+  contentType: string;
+  ext: string;
+  filename: string;
+}
+
+/** Load a talent's original uploaded CV (buffer + content type) for inline
+ *  preview or download. Returns null if the talent has no CV on file or it
+ *  can't be found in storage. */
+export async function fetchTalentCvFile(talentId: string): Promise<TalentCvFile | null> {
+  if (!supabase) return null;
+  const { data: talent } = await supabase
+    .from('_talent')
+    .select('name, cv_storage_path')
+    .eq('id', talentId)
+    .single();
+  const storagePath = talent?.cv_storage_path as string | null | undefined;
+  if (!storagePath) return null;
+  const buffer = await fetchOriginalCv(storagePath);
+  if (!buffer) return null;
+  const ext = extOf(storagePath) || 'pdf';
+  const contentType = MIME_BY_EXT[ext] ?? 'application/octet-stream';
+  const filename = `${slug(talent?.name || 'candidate')}_CV.${ext}`;
+  return { buffer, contentType, ext, filename };
 }
 
 export async function buildExport(opts: ExportOptions): Promise<ExportResult> {
