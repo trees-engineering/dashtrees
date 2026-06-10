@@ -35,6 +35,8 @@ export interface Role {
   status: 'open' | 'closed' | 'draft'
   location_requirement: string | null
   location_regions: string[] | null
+  city: string[] | null
+  country: string[] | null
   salary_min: number | null
   salary_max: number | null
   budget_currency: string | null

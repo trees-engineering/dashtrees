@@ -195,6 +195,8 @@ const ROLE_EDITABLE_FIELDS = [
   'status',
   'location_requirement',
   'location_regions',
+  'city',
+  'country',
   'salary_min',
   'salary_max',
   'budget_currency',
@@ -229,12 +231,14 @@ function sanitizeRolePatch(body: Record<string, unknown>): Record<string, unknow
         patch.status = v;
         break;
       }
-      case 'location_regions': {
-        if (v === null) { patch.location_regions = null; break; }
+      case 'location_regions':
+      case 'city':
+      case 'country': {
+        if (v === null) { patch[field] = null; break; }
         if (!Array.isArray(v) || v.some(x => typeof x !== 'string')) {
-          return 'location_regions must be an array of strings or null';
+          return `${field} must be an array of strings or null`;
         }
-        patch.location_regions = (v as string[]).map(s => s.trim()).filter(Boolean);
+        patch[field] = (v as string[]).map(s => s.trim()).filter(Boolean);
         break;
       }
       case 'salary_min':

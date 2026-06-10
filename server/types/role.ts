@@ -62,6 +62,9 @@ export interface Role {
   // Location
   location_requirement: LocationRequirement;
   location_regions: string[];
+  // Structured location: index-aligned parallel arrays (city[i] is in country[i]).
+  city?: string[];
+  country?: string[];
 
   // Requirements
   provides_sponsorship: boolean;

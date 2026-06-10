@@ -182,6 +182,8 @@ type RoleSimple = {
   id: string;
   title: string;
   location_regions: string[] | null;
+  city: string[] | null;
+  country: string[] | null;
   status: string;
   created_at: string;
   created_by: string | null;
@@ -221,13 +223,32 @@ function pctDelta(curr: number, prev: number): number | null {
   return Math.round(((curr - prev) / prev) * 1000) / 10;
 }
 
+// Display location for a role. Prefers the structured, index-aligned city/country
+// arrays ("City, Country" per location, joined by " · "); falls back to the
+// deprecated location_regions for roles imported before the split (not backfilled).
+function roleLocation(r: RoleSimple): string {
+  const cities = r.city ?? [];
+  const countries = r.country ?? [];
+  if (cities.length > 0 || countries.length > 0) {
+    const n = Math.max(cities.length, countries.length);
+    const pairs: string[] = [];
+    for (let i = 0; i < n; i++) {
+      const part = [cities[i], countries[i]].filter(Boolean).join(', ');
+      if (part) pairs.push(part);
+    }
+    if (pairs.length > 0) return pairs.join(' · ');
+  }
+  const regions = r.location_regions ?? [];
+  return regions.length > 0 ? regions.join(', ') : '—';
+}
+
 // ── Stats aggregation (scoped by recruiterId, null = org-wide) ──────────────
 async function buildStats(period: Period, recruiterId: string | null, recruiterName: string | null): Promise<Stats> {
   if (!supabase) throw new Error('DB not configured');
 
   const [allTalents, allRoles, allMatches, allConvs] = await Promise.all([
     fetchAll<TalentRow>('_talent', 'id, created_at, last_active_at, lifecycle_state, country, city, discipline, job_family, tl_band, languages, availability_status, available_from, notice_period_days'),
-    fetchAll<RoleSimple>('_role', 'id, title, location_regions, status, created_at, created_by'),
+    fetchAll<RoleSimple>('_role', 'id, title, location_regions, city, country, status, created_at, created_by'),
     fetchAll<MatchSimple>('_matches', 'id, role_id, talent_id, status, match_score, created_at'),
     fetchAll<ConvRow>('_conversation', 'talent_id, direction, created_at'),
   ]);
@@ -451,9 +472,7 @@ async function buildStats(period: Period, recruiterId: string | null, recruiterN
       }
       if (['introduced', 'shortlisted', 'accepted', 'hired'].includes(m.status)) rPipe++;
     }
-    const loc = Array.isArray(r.location_regions) && r.location_regions.length > 0
-      ? r.location_regions.join(', ')
-      : '—';
+    const loc = roleLocation(r);
     roleRows.push({
       title: r.title || '(untitled role)',
       location: loc,

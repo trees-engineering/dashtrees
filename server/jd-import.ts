@@ -161,6 +161,8 @@ async function insertRole(
     budget_currency: (extracted.budget_currency as string) ?? 'USD',
     location_requirement: (extracted.location_requirement as string) ?? 'remote',
     location_regions: strArray(extracted.location_regions),
+    city: strArray(extracted.city),
+    country: strArray(extracted.country),
     provides_sponsorship: (extracted.provides_sponsorship as boolean) ?? false,
     start_deadline: futureDate(extracted.start_deadline) ?? null,
     created_by: createdBy,

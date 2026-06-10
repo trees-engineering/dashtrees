@@ -102,9 +102,9 @@ function RoleEditForm({ role, onSaved, onDirtyChange }: RoleEditFormProps) {
   const [description, setDescription] = useState(role.description ?? '')
   const [status, setStatus] = useState<RoleStatus>(role.status)
   const [locationRequirement, setLocationRequirement] = useState(role.location_requirement ?? '')
-  const [locationRegions, setLocationRegions] = useState(
-    (role.location_regions ?? []).join(', '),
-  )
+  // City and Country are index-aligned parallel arrays, edited as comma lists.
+  const [city, setCity] = useState((role.city ?? []).join(', '))
+  const [country, setCountry] = useState((role.country ?? []).join(', '))
   const [salaryMin, setSalaryMin] = useState(
     role.salary_min != null ? String(role.salary_min) : '',
   )
@@ -133,7 +133,8 @@ function RoleEditForm({ role, onSaved, onDirtyChange }: RoleEditFormProps) {
       description !== (role.description ?? '') ||
       status !== role.status ||
       locationRequirement !== (role.location_requirement ?? '') ||
-      locationRegions !== (role.location_regions ?? []).join(', ') ||
+      city !== (role.city ?? []).join(', ') ||
+      country !== (role.country ?? []).join(', ') ||
       salaryMin !== (role.salary_min != null ? String(role.salary_min) : '') ||
       salaryMax !== (role.salary_max != null ? String(role.salary_max) : '') ||
       budgetCurrency !== (role.budget_currency ?? '') ||
@@ -145,7 +146,7 @@ function RoleEditForm({ role, onSaved, onDirtyChange }: RoleEditFormProps) {
       )
     )
   }, [
-    role, title, description, status, locationRequirement, locationRegions,
+    role, title, description, status, locationRequirement, city, country,
     salaryMin, salaryMax, budgetCurrency, startDeadline, sponsorship,
   ])
 
@@ -159,7 +160,8 @@ function RoleEditForm({ role, onSaved, onDirtyChange }: RoleEditFormProps) {
     setDescription(role.description ?? '')
     setStatus(role.status)
     setLocationRequirement(role.location_requirement ?? '')
-    setLocationRegions((role.location_regions ?? []).join(', '))
+    setCity((role.city ?? []).join(', '))
+    setCountry((role.country ?? []).join(', '))
     setSalaryMin(role.salary_min != null ? String(role.salary_min) : '')
     setSalaryMax(role.salary_max != null ? String(role.salary_max) : '')
     setBudgetCurrency(role.budget_currency ?? '')
@@ -188,17 +190,16 @@ function RoleEditForm({ role, onSaved, onDirtyChange }: RoleEditFormProps) {
       return
     }
 
-    const regions = locationRegions
-      .split(',')
-      .map((s) => s.trim())
-      .filter(Boolean)
+    const cities = splitList(city)
+    const countries = splitList(country)
 
     const patch: RolePatch = {
       title: title.trim(),
       description: description.trim() || null,
       status,
       location_requirement: locationRequirement.trim() || null,
-      location_regions: regions.length > 0 ? regions : null,
+      city: cities.length > 0 ? cities : null,
+      country: countries.length > 0 ? countries : null,
       salary_min: min,
       salary_max: max,
       budget_currency: budgetCurrency.trim() || null,
@@ -230,6 +231,23 @@ function RoleEditForm({ role, onSaved, onDirtyChange }: RoleEditFormProps) {
       setSaving(false)
     }
   }
+
+  // Soft, non-blocking sanity checks surfaced inline.
+  const cityCount = splitList(city).length
+  const countryCount = splitList(country).length
+  const locationCountMismatch =
+    cityCount > 0 && countryCount > 0 && cityCount !== countryCount
+
+  const salaryWarning = useMemo(() => {
+    const band = salaryBand(budgetCurrency)
+    if (!band) return null
+    const vals = [salaryMin, salaryMax]
+      .map((s) => (s.trim() ? Number(s) : null))
+      .filter((n): n is number => n != null && Number.isFinite(n))
+    if (!vals.some((n) => n < band.lo || n > band.hi)) return null
+    const cur = budgetCurrency.trim().toUpperCase()
+    return `That looks outside the usual monthly ${cur} range (${band.lo.toLocaleString()}–${band.hi.toLocaleString()}). Double-check it's a monthly figure.`
+  }, [budgetCurrency, salaryMin, salaryMax])
 
   return (
     <form onSubmit={handleSubmit} className="p-4 space-y-5 max-w-2xl mx-auto">
@@ -276,31 +294,50 @@ function RoleEditForm({ role, onSaved, onDirtyChange }: RoleEditFormProps) {
         </Field>
       </div>
 
-      <Field label="Location">
-        <input
-          type="text"
+      <Field
+        label="Location requirement"
+        hint="Work arrangement for the role."
+      >
+        <select
           value={locationRequirement}
           onChange={(e) => setLocationRequirement(e.target.value)}
-          placeholder="e.g. Kuala Lumpur, Malaysia"
           className={inputClass}
-        />
+        >
+          <option value="">Unspecified</option>
+          <option value="remote">Remote</option>
+          <option value="onsite">Onsite</option>
+          <option value="hybrid">Hybrid</option>
+        </select>
       </Field>
 
-      <Field
-        label="Region tags"
-        hint="Comma-separated. Used for regional matching (e.g. APAC, SEA)."
-      >
-        <input
-          type="text"
-          value={locationRegions}
-          onChange={(e) => setLocationRegions(e.target.value)}
-          placeholder="APAC, SEA"
-          className={inputClass}
-        />
-      </Field>
+      <div className="grid grid-cols-2 gap-3">
+        <Field label="City" hint="Comma-separated, one per location.">
+          <input
+            type="text"
+            value={city}
+            onChange={(e) => setCity(e.target.value)}
+            placeholder="Kuala Lumpur, Paris"
+            className={inputClass}
+          />
+        </Field>
+        <Field label="Country" hint="Comma-separated, aligned with City.">
+          <input
+            type="text"
+            value={country}
+            onChange={(e) => setCountry(e.target.value)}
+            placeholder="Malaysia, France"
+            className={inputClass}
+          />
+        </Field>
+      </div>
+      {locationCountMismatch && (
+        <p className="-mt-3 text-[11px] text-amber-700">
+          City and Country have different counts ({cityCount} vs {countryCount}) — they pair up by position, so an entry will misalign.
+        </p>
+      )}
 
       <div className="grid grid-cols-3 gap-3">
-        <Field label="Salary min">
+        <Field label="Salary min" hint="Monthly">
           <input
             type="number"
             inputMode="decimal"
@@ -310,7 +347,7 @@ function RoleEditForm({ role, onSaved, onDirtyChange }: RoleEditFormProps) {
             className={inputClass}
           />
         </Field>
-        <Field label="Salary max">
+        <Field label="Salary max" hint="Monthly">
           <input
             type="number"
             inputMode="decimal"
@@ -331,6 +368,9 @@ function RoleEditForm({ role, onSaved, onDirtyChange }: RoleEditFormProps) {
           />
         </Field>
       </div>
+      {salaryWarning && (
+        <p className="-mt-3 text-[11px] text-amber-700">⚠ {salaryWarning}</p>
+      )}
 
       <Field label="Start deadline">
         <input
@@ -360,6 +400,22 @@ function RoleEditForm({ role, onSaved, onDirtyChange }: RoleEditFormProps) {
       </div>
     </form>
   )
+}
+
+// ─── Helpers ───────────────────────────────────────────────────────────────
+
+/** Split a comma-separated input into a trimmed, non-empty string array. */
+function splitList(s: string): string[] {
+  return s.split(',').map((x) => x.trim()).filter(Boolean)
+}
+
+/** Sanity band for a *monthly* salary, by currency. USD/EUR share a band;
+ *  MYR is ~5×. Unknown currencies are not checked. */
+function salaryBand(currency: string): { lo: number; hi: number } | null {
+  const c = currency.trim().toUpperCase()
+  if (c === 'USD' || c === 'EUR') return { lo: 1000, hi: 10000 }
+  if (c === 'MYR') return { lo: 5000, hi: 50000 }
+  return null
 }
 
 // ─── Tiny field wrapper ────────────────────────────────────────────────────
