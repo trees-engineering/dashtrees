@@ -14,9 +14,14 @@ export interface BuildInputs {
   clientName: string;
   /** Position title to mirror in the dossier header. */
   positionTitle: string;
+  /** Contact block, sourced from the exporting recruiter's profile. Falls back
+   *  to FOUNDER_CONTACT (per-field) when omitted or blank. */
+  contact?: DossierConfig['contact'];
 }
 
-const CONTACT = {
+/** Company fallback contact (founder) — used for any recruiter-profile field
+ *  that's blank, or when no recruiter could be resolved. */
+export const FOUNDER_CONTACT = {
   name: 'Quentin Cloarec',
   role: 'Founder & CEO, Trees Engineering',
   email: 'quentin@trees-engineering.com',
@@ -111,8 +116,9 @@ export async function generateDossierConfig(input: BuildInputs): Promise<Dossier
 
   const parsed = JSON.parse(text) as Partial<DossierConfig>;
 
-  // Stamp the contact block — never trust the LLM with addresses / booking links.
-  parsed.contact = { ...CONTACT };
+  // Stamp the contact block server-side — never trust the LLM with names /
+  // emails / booking links. Sourced from the recruiter's profile when provided.
+  parsed.contact = input.contact ?? { ...FOUNDER_CONTACT };
 
   // Defensive defaults — the builder needs these to render.
   parsed.candidate ??= { initials: '—', position: input.positionTitle };

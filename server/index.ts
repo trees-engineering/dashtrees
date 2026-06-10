@@ -575,6 +575,7 @@ app.post('/api/talent/:talentId/export', authMiddleware, async (req: Request, re
     const result = await buildExport({
       talentId: req.params.talentId,
       roleId: body.roleId,
+      recruiterId: req.auth!.recruiterId,
       format: body.format === 'pdf' ? 'pdf' : 'docx',
       tailorToJd: Boolean(body.tailorToJd),
       appendCv: Boolean(body.appendCv),

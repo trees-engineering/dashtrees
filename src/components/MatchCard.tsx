@@ -334,7 +334,7 @@ export function MatchCard({ match, roleId }: MatchCardProps) {
               className="flex items-center justify-center gap-2 py-2.5 rounded-lg border border-primary text-primary text-sm font-medium active:bg-primary/10 transition-colors"
             >
               <FileDown size={16} />
-              Export Document
+              Download CV
             </button>
             {talent?.cv_storage_path && (
               <button

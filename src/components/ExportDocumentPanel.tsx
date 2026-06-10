@@ -135,7 +135,7 @@ export function ExportDocumentPanel({ talentId, roleId, talentName, onClose }: E
       >
         {/* Header */}
         <div className="flex items-center justify-between px-4 py-3 border-b border-treeBorderLight">
-          <h3 className="text-sm font-semibold text-treeText">Export Document</h3>
+          <h3 className="text-sm font-semibold text-treeText">Download CV</h3>
           <button onClick={onClose} className="text-treeTextSec active:text-treeText" aria-label="Close">
             <X size={18} />
           </button>

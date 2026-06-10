@@ -1,13 +1,15 @@
 // Configurable CV / dossier export — orchestrates the option matrix:
 // format (docx|pdf), tailorToJd, appendCv, includeInterview (transcript).
 import { supabase } from '../db.js';
-import { generateDossierConfig } from './dossier-llm.js';
+import { generateDossierConfig, FOUNDER_CONTACT } from './dossier-llm.js';
 import { generateDossierBuffer } from './dossier-builder.js';
 import { generateDossierPdf, mergePdfs } from './dossier-pdf.js';
 
 export interface ExportOptions {
   talentId: string;
   roleId: string;
+  /** The exporting recruiter — sources the dossier's contact block. */
+  recruiterId: string;
   format: 'docx' | 'pdf';
   tailorToJd: boolean;
   appendCv: boolean;
@@ -100,7 +102,7 @@ export async function fetchTalentCvFile(talentId: string): Promise<TalentCvFile 
 export async function buildExport(opts: ExportOptions): Promise<ExportResult> {
   if (!supabase) throw new Error('Database not configured');
 
-  const [{ data: talent }, { data: role }, { data: cv }] = await Promise.all([
+  const [{ data: talent }, { data: role }, { data: cv }, { data: recruiter }] = await Promise.all([
     supabase.from('_talent').select('name, cv_storage_path').eq('id', opts.talentId).single(),
     supabase.from('_role').select('title, raw_jd_text, description, hiring_company').eq('id', opts.roleId).single(),
     supabase
@@ -110,10 +112,23 @@ export async function buildExport(opts: ExportOptions): Promise<ExportResult> {
       .order('created_at', { ascending: false })
       .limit(1)
       .single(),
+    supabase.from('_recruiters').select('name, position, email, booking_link').eq('id', opts.recruiterId).single(),
   ]);
 
   if (!talent) throw new Error('Talent not found');
   if (!role) throw new Error('Role not found');
+
+  // Contact block = the exporting recruiter's profile, with the founder contact
+  // as a per-field fallback so an unconfigured profile never breaks the document
+  // (booking_link especially — the builders feed it straight into a hyperlink).
+  const rec = recruiter as
+    { name?: string | null; position?: string | null; email?: string | null; booking_link?: string | null } | null;
+  const contact = {
+    name: rec?.name?.trim() || rec?.email || FOUNDER_CONTACT.name,
+    role: rec?.position?.trim() || 'Trees Engineering',
+    email: rec?.email || FOUNDER_CONTACT.email,
+    booking_link: rec?.booking_link?.trim() || FOUNDER_CONTACT.booking_link,
+  };
 
   const cvText = (cv?.raw_cv_text as string) ?? '';
   if (!cvText.trim()) {
@@ -130,6 +145,7 @@ export async function buildExport(opts: ExportOptions): Promise<ExportResult> {
     transcript: opts.includeInterview ? (opts.transcript ?? null) : null,
     clientName,
     positionTitle,
+    contact,
   });
 
   // Appending the original CV requires PDF output (pdf-lib merges PDFs only).
