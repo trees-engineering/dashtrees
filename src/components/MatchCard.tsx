@@ -68,6 +68,8 @@ export function MatchCard({ match, roleId }: MatchCardProps) {
   const expScore = match.experience_score ?? 0
 
   function handleToggle() {
+    // Don't toggle when the user is selecting text (e.g. copying the candidate name)
+    if (window.getSelection()?.toString()) return
     setExpanded((prev) => {
       const next = !prev
       telemetry.capture('match_card_toggled', {
@@ -108,7 +110,7 @@ export function MatchCard({ match, roleId }: MatchCardProps) {
         </div>
 
         <div className="flex-1 min-w-0">
-          <p className="font-semibold text-treeText text-sm truncate">
+          <p className="font-semibold text-treeText text-sm truncate select-text cursor-text">
             {talent?.name ?? 'Unknown'}
           </p>
           {talent?.headline && (
