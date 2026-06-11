@@ -96,7 +96,8 @@ export function MatchCard({ match, roleId }: MatchCardProps) {
 
   return (
     <>
-    <div className="bg-treeSurface border border-treeBorder rounded-xl overflow-hidden shadow-sm">
+    <div className="flex flex-col sm:flex-row sm:items-start gap-3">
+      <div className="flex-1 min-w-0 bg-treeSurface border border-treeBorder rounded-xl overflow-hidden shadow-sm">
       {/* Summary row */}
       <button
         data-telemetry-id="match-card-toggle"
@@ -373,6 +374,15 @@ export function MatchCard({ match, roleId }: MatchCardProps) {
           </div>
         </div>
       )}
+      </div>
+      {showCv && talent && (
+        <CvViewerPanel
+          talentId={match.talent_id}
+          roleId={roleId}
+          talentName={talent.name ?? 'Unknown'}
+          onClose={() => setShowCv(false)}
+        />
+      )}
     </div>
     {showExport && talent && (
       <ExportDocumentPanel
@@ -380,14 +390,6 @@ export function MatchCard({ match, roleId }: MatchCardProps) {
         roleId={roleId}
         talentName={talent.name ?? 'Unknown'}
         onClose={() => setShowExport(false)}
-      />
-    )}
-    {showCv && talent && (
-      <CvViewerPanel
-        talentId={match.talent_id}
-        roleId={roleId}
-        talentName={talent.name ?? 'Unknown'}
-        onClose={() => setShowCv(false)}
       />
     )}
     </>
