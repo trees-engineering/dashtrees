@@ -1,0 +1,9 @@
+{
+  "name": "dc-trees-builder",
+  "version": "1.0.0",
+  "description": "Trees Engineering candidate dossier builder",
+  "type": "commonjs",
+  "dependencies": {
+    "docx": "^8.5.0"
+  }
+}

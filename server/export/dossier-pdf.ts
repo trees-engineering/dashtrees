@@ -80,12 +80,42 @@ export async function generateDossierPdf(cfg: DossierConfig, opts: BuildOptions 
       try { doc.image(lp, ml, 40, { width: 84 }); textX = ml + 96; } catch { /* logo unreadable */ }
     }
     doc.font('Helvetica-Bold').fontSize(26).fillColor(BLUE);
-    doc.text(cfg.candidate.initials || '—', textX, 42);
+    doc.text(cfg.candidate.full_name || cfg.candidate.initials || '—', textX, 42);
     doc.font('Helvetica').fontSize(11).fillColor(GRAY);
     doc.text(cfg.candidate.position || '', textX, doc.y);
     doc.moveTo(ml, 96).lineTo(doc.page.width - mr, 96).lineWidth(1.5).strokeColor(BLUE).stroke();
     doc.x = ml;
     doc.y = 108;
+
+    // ── Presented by (recruiter, from their DashTrees profile) ────────────────
+    {
+      const c = cfg.contact;
+      const padX = 12;
+      const startY = doc.y;
+      const blockH = 48;
+      doc.rect(ml, startY, cw, blockH).fill('#f7f2e8');
+      doc.rect(ml, startY, 3, blockH).fill(GOLD); // gold left accent
+      doc.font('Helvetica-Bold').fontSize(7).fillColor(GOLD);
+      doc.text('PRESENTED BY', ml + padX, startY + 7);
+      doc.font('Helvetica-Bold').fontSize(11).fillColor(BLUE);
+      doc.text(c.role ? `${c.name}   —   ${c.role}` : c.name, ml + padX, startY + 17);
+      const segs: { label: string; url: string; color: string }[] = [];
+      if (c.email)        segs.push({ label: c.email, url: 'mailto:' + c.email, color: BLUE });
+      if (c.linkedin)     segs.push({ label: 'LinkedIn', url: c.linkedin, color: BLUE });
+      if (c.booking_link) segs.push({ label: 'Book a call', url: c.booking_link, color: GOLD });
+      doc.font('Helvetica').fontSize(8.5);
+      segs.forEach((s, i) => {
+        const last = i === segs.length - 1;
+        if (i === 0) {
+          doc.fillColor(s.color).text(s.label, ml + padX, startY + 32, { continued: !last, link: s.url, underline: true });
+        } else {
+          doc.fillColor(GRAY).text('   |   ', { continued: true, underline: false });
+          doc.fillColor(s.color).text(s.label, { continued: !last, link: s.url, underline: true });
+        }
+      });
+      doc.y = startY + blockH + 10;
+      doc.x = ml;
+    }
 
     // ── Mission box (tailored only) ──────────────────────────────────────────
     if (tailored) {
@@ -121,8 +151,8 @@ export async function generateDossierPdf(cfg: DossierConfig, opts: BuildOptions 
       doc.x = ml;
     }
 
-    // ── Availability badge ───────────────────────────────────────────────────
-    {
+    // ── Availability badge (tailored only) ───────────────────────────────────
+    if (tailored) {
       const confirmed = !cfg.availability || cfg.availability.confirmed !== false;
       const label = confirmed
         ? `AVAILABILITY CONFIRMED  —  from ${cfg.mission.start_date && cfg.mission.start_date !== '—' ? cfg.mission.start_date : 'TBC'}`
@@ -206,6 +236,12 @@ export async function generateDossierPdf(cfg: DossierConfig, opts: BuildOptions 
       }
     }
 
+    // ── Profile summary ──────────────────────────────────────────────────────
+    if (cfg.profile_summary) {
+      sectionHead('PROFILE SUMMARY');
+      bodyText(cfg.profile_summary);
+    }
+
     // ── Skills ───────────────────────────────────────────────────────────────
     {
       const skillRows: [string, string[] | undefined][] = [
@@ -226,6 +262,20 @@ export async function generateDossierPdf(cfg: DossierConfig, opts: BuildOptions 
           doc.font('Helvetica').fontSize(9).fillColor(INK);
           doc.text(vals.join('  •  '), ml + 130, y, { width: cw - 130, lineGap: 1.5 });
         }
+      }
+    }
+
+    // ── Certifications & trainings ───────────────────────────────────────────
+    if (cfg.certifications && cfg.certifications.length) {
+      sectionHead('CERTIFICATIONS & TRAININGS');
+      for (const cert of cfg.certifications) {
+        ensureSpace(16);
+        const y = doc.y;
+        doc.font('Helvetica-Bold').fontSize(9).fillColor(GOLD);
+        doc.text(cert.year ? `${cert.year}   ` : '', ml, y, { continued: true });
+        doc.fillColor(INK).text(cert.name, { continued: Boolean(cert.issuer || cert.expiry) });
+        if (cert.issuer) doc.font('Helvetica').fillColor(GRAY).text(`   —   ${cert.issuer}`, { continued: Boolean(cert.expiry) });
+        if (cert.expiry) doc.font('Helvetica-Oblique').fillColor(GRAY).text(`   (valid to ${cert.expiry})`);
       }
     }
 
@@ -270,8 +320,20 @@ export async function generateDossierPdf(cfg: DossierConfig, opts: BuildOptions 
       }
     }
 
+    // ── Additional information ────────────────────────────────────────────────
+    if (cfg.additional && cfg.additional.length) {
+      sectionHead('ADDITIONAL INFORMATION');
+      bullets(cfg.additional);
+    }
+
     // ── Next steps ───────────────────────────────────────────────────────────
     sectionHead('NEXT STEPS');
+    if (cfg.contact.about) {
+      doc.font('Helvetica-Bold').fontSize(9.5).fillColor(BLUE);
+      doc.text(`About ${cfg.contact.name}${cfg.contact.role ? ', ' + cfg.contact.role : ''}.  `, ml, doc.y, { continued: true });
+      doc.font('Helvetica-Oblique').fillColor(GRAY).text(cfg.contact.about);
+      doc.moveDown(0.3);
+    }
     bodyText(`If the profile matches your needs, the simplest next step is a 30-minute call with ${cfg.contact.name} to align on timing, scope and onboarding logistics.`);
     doc.moveDown(0.3);
     doc.font('Helvetica-Bold').fontSize(10).fillColor(GOLD);
@@ -290,7 +352,9 @@ export async function generateDossierPdf(cfg: DossierConfig, opts: BuildOptions 
       const fy = doc.page.height - 40;
       doc.moveTo(ml, fy).lineTo(doc.page.width - mr, fy).lineWidth(1).strokeColor(BLUE).stroke();
       doc.font('Helvetica').fontSize(6.5).fillColor(GRAY);
-      doc.text(`${cfg.contact.name} · ${cfg.contact.role} · ${cfg.contact.email}`, ml, fy + 5, { width: cw * 0.7 });
+      const hasLi = Boolean(cfg.contact.linkedin);
+      doc.text(`${cfg.contact.name} · ${cfg.contact.role} · ${cfg.contact.email}`, ml, fy + 5, { width: cw * 0.7, continued: hasLi });
+      if (hasLi) doc.fillColor(GRAY).text(' · LinkedIn', { link: cfg.contact.linkedin, underline: true });
       doc.font('Helvetica-Oblique').fontSize(6.5).fillColor(GOLD);
       doc.text(`Trees Engineering · Page ${i - range.start + 1} of ${range.count}`, ml, fy + 5, { width: cw, align: 'right' });
       doc.page.margins.bottom = oldBottom;

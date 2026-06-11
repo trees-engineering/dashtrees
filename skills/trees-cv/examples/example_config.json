@@ -1,0 +1,121 @@
+{
+  "candidate": { "full_name": "John Doe", "initials": "J.D.", "position": "Senior Process Engineer — Brownfield Optimization" },
+  "mission": {
+    "client": "ENEOS Xplora Malaysia",
+    "position_sought": "Senior Process Engineer — Brownfield Optimization",
+    "mission_ref": "TRE-2026-014",
+    "contract_type": "Contract, full-time",
+    "start_date": "01 June 2026",
+    "duration": "12 months, renewable",
+    "location": "Kuala Lumpur HQ + offshore rotations (Layang field, offshore Sarawak)",
+    "day_rate": "MYR 1,800 / day"
+  },
+  "availability": { "confirmed": true },
+  "pitch": {
+    "reasons": [
+      "12 years of offshore process engineering in Malaysian waters (PETRONAS Carigali, Hess Malaysia) — directly transferable to ENEOS Xplora's Layang field operations.",
+      "Led three brownfield debottlenecking campaigns delivering +8% to +15% throughput gains — the exact remit of this role.",
+      "HAZOP chair on five revamp projects, fluent with PETRONAS PTS and DEP standards already in force on Layang.",
+      "Already collaborated with the Bintulu shore-base operations team in 2022, shortening onboarding by an estimated 2–3 weeks.",
+      "Based in KL, no relocation required, available from 1 June with offshore rotations up to 21 days."
+    ]
+  },
+  "match": [
+    { "need": "Min. 10 years offshore Malaysia process engineering",
+      "answer": "12 years (PETRONAS Carigali 2013–2019, Hess Malaysia 2019–2025)" },
+    { "need": "Brownfield debottlenecking track record",
+      "answer": "3 campaigns led: dehydration +12%, gas compression +8%, separator train +15%" },
+    { "need": "HAZOP leadership and PETRONAS PTS familiarity",
+      "answer": "HAZOP chair on 5 revamp projects, PTS daily-driver since 2015" },
+    { "need": "Aspen HYSYS + PIPESIM proficiency",
+      "answer": "Daily use for 10+ years; trained 4 junior engineers on both" },
+    { "need": "Available from June 2026, KL-based",
+      "answer": "Confirmed — available 1 June, KL resident, family settled, no relocation needed" }
+  ],
+  "qualification": {
+    "date": "12/05/2026",
+    "interviewer": "Quentin Cloarec",
+    "duration_min": 45,
+    "motivation": "After a 12-month consulting break, the candidate wants to return to upstream operations on a technically meaningful asset. He sees Layang as the most rewarding brownfield play in Sarawak right now, with a clear runway for production optimization work over the next 24 months.",
+    "verbatim": [
+      "\"Brownfield is where engineering actually moves the needle — greenfield is where you draw, brownfield is where you deliver.\"",
+      "\"On Layang specifically, the dehydration train is the obvious lever — I'd want to look at the data in the first month before committing to a number.\"",
+      "\"I'm not looking for a title bump, I'm looking for an asset I can actually improve.\""
+    ],
+    "soft_skills": [
+      "Structured every project description in STAR format without being prompted.",
+      "Spontaneously cited two past safety incidents and what he changed afterwards.",
+      "Asked sharp questions about ENEOS's decision authority on capex below MYR 5M.",
+      "Comfortable with offshore rotations but flagged a hard cap of 21 days due to family in KL."
+    ],
+    "notes": "Family settled in KL, will not accept rotations longer than 21 days. Available 1 June at earliest (current consulting engagement runs to end-May). Salary expectation aligned with MYR 1,800 / day; would consider 1,750 for a 12-month committed term."
+  },
+  "profile_summary": "Senior process engineer with 12 years of offshore upstream experience in Malaysian waters, specialised in brownfield debottlenecking and production optimization. Track record of unlocking double-digit throughput gains with zero or minimal capex, HAZOP chair on five revamp projects.",
+  "skills": {
+    "sectors": ["Upstream Oil & Gas", "Brownfield Optimization", "LNG", "FPSO Operations"],
+    "key_skills": ["Process Simulation", "Debottlenecking", "HAZOP Leadership", "Flare & Relief Systems", "Operations Support", "Mentoring & Team Lead"],
+    "codes": ["API 521", "API 14C", "API RP 14E", "ASME B31.3", "PETRONAS PTS", "Shell DEP"],
+    "software": ["Aspen HYSYS", "Aspen Plus", "PIPESIM", "Flarenet / Aspen Flare", "Visual Flow", "PI System"],
+    "languages": ["English (fluent)", "French (native)", "Bahasa Malaysia (working)"]
+  },
+  "certifications": [
+    { "year": "2024", "name": "BOSIET with EBS", "issuer": "OPITO-approved centre, Kuala Lumpur", "expiry": "2028" },
+    { "year": "2022", "name": "HAZOP Leadership", "issuer": "IChemE" },
+    { "year": "2019", "name": "Chartered Engineer (CEng)", "issuer": "IChemE" }
+  ],
+  "education": [
+    { "period": "2010 – 2013", "degree": "MSc Chemical Engineering", "school": "Imperial College London" },
+    { "period": "2007 – 2010", "degree": "BEng Chemical Engineering (First Class)", "school": "Universiti Teknologi PETRONAS" }
+  ],
+  "experience": [
+    {
+      "title": "Senior Process Engineer", "company": "Hess Malaysia",
+      "duration": "6 years", "period": "2019 – 2025",
+      "context": "North Malay Basin gas development — FPSO Bergading plus four satellite platforms supplying gas to Peninsular Malaysia under a long-term PETRONAS GSA.",
+      "actions": [
+        "Led debottlenecking of the TEG dehydration train, unlocking +12% gas export capacity with zero capex.",
+        "Chaired HAZOP for the 2022 compression revamp (3 trains, 60 MMSCFD each).",
+        "Built the asset's first integrated production model in PIPESIM, used weekly by operations.",
+        "Mentored four junior engineers on HYSYS, HAZOP facilitation and PETRONAS PTS application.",
+        "On-call process engineer for offshore — handled 14 unplanned shutdowns over the period."
+      ],
+      "environment": "Aspen HYSYS, PIPESIM, Flarenet, PI System — API 521, API 14C, PETRONAS PTS"
+    },
+    {
+      "title": "Process Engineer", "company": "PETRONAS Carigali",
+      "duration": "6 years", "period": "2013 – 2019",
+      "context": "Sabah upstream operations, multiple offshore platforms feeding the Kimanis Gas Terminal.",
+      "actions": [
+        "Day-to-day process support for three offshore platforms.",
+        "Operations interface for two greenfield tie-ins (engineering, commissioning, start-up).",
+        "Co-authored revisions to internal PTS sections on flare design.",
+        "Delivered safety case updates for two assets ahead of regulatory review."
+      ],
+      "environment": "Aspen HYSYS, Flarenet, Visual Flow — PETRONAS PTS, API 521, API RP 14E"
+    },
+    {
+      "title": "Graduate Process Engineer", "company": "Technip (KL office)",
+      "duration": "10 months", "period": "2012 – 2013",
+      "context": "EPC support to a PETRONAS LNG Train 9 (Bintulu) module fabrication package.",
+      "actions": [
+        "Heat-exchanger sizing, hydraulic checks and flare load contributions.",
+        "Vendor document review and technical query handling."
+      ],
+      "environment": "Aspen Exchanger Design & Rating, HYSYS"
+    }
+  ],
+  "additional": [
+    "Co-author, two internal PETRONAS PTS revisions on flare design (2017, 2018).",
+    "Speaker, OGA Kuala Lumpur 2023 — \"Zero-capex debottlenecking in mature gas assets\".",
+    "Volunteer mentor, Young Engineers programme, IEM Malaysia."
+  ],
+  "contact": {
+    "name": "Quentin Cloarec",
+    "role": "Founder & CEO",
+    "email": "quentin@trees-engineering.com",
+    "linkedin": "https://www.linkedin.com/in/quentincloarec",
+    "booking_link": "https://calendar.app.google/HLfcvtmSVVJjtb7n7",
+    "about": "Founder of Trees Engineering, placing senior engineers across APAC energy projects. 10+ years connecting offshore Oil & Gas talent with operators in Malaysia and the Middle East."
+  },
+  "output": { "filename": "Dossier_JohnDoe_ENEOS.docx" }
+}

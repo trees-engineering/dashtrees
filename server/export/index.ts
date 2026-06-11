@@ -112,7 +112,7 @@ export async function buildExport(opts: ExportOptions): Promise<ExportResult> {
       .order('created_at', { ascending: false })
       .limit(1)
       .single(),
-    supabase.from('_recruiters').select('name, position, email, booking_link').eq('id', opts.recruiterId).single(),
+    supabase.from('_recruiters').select('name, position, email, booking_link, linkedin_url, about').eq('id', opts.recruiterId).single(),
   ]);
 
   if (!talent) throw new Error('Talent not found');
@@ -121,13 +121,19 @@ export async function buildExport(opts: ExportOptions): Promise<ExportResult> {
   // Contact block = the exporting recruiter's profile, with the founder contact
   // as a per-field fallback so an unconfigured profile never breaks the document
   // (booking_link especially — the builders feed it straight into a hyperlink).
-  const rec = recruiter as
-    { name?: string | null; position?: string | null; email?: string | null; booking_link?: string | null } | null;
+  // linkedin / about are optional in the dossier — omit them when the recruiter
+  // hasn't set them rather than falling back to the founder's.
+  const rec = recruiter as {
+    name?: string | null; position?: string | null; email?: string | null;
+    booking_link?: string | null; linkedin_url?: string | null; about?: string | null;
+  } | null;
   const contact = {
     name: rec?.name?.trim() || rec?.email || FOUNDER_CONTACT.name,
     role: rec?.position?.trim() || 'Trees Engineering',
     email: rec?.email || FOUNDER_CONTACT.email,
     booking_link: rec?.booking_link?.trim() || FOUNDER_CONTACT.booking_link,
+    linkedin: rec?.linkedin_url?.trim() || undefined,
+    about: rec?.about?.trim() || undefined,
   };
 
   const cvText = (cv?.raw_cv_text as string) ?? '';
