@@ -18,6 +18,9 @@ import { useToast } from './components/Toast'
 import { useAuth } from './lib/auth'
 import { startMatching } from './lib/api'
 import { telemetry } from './lib/telemetry'
+import { GameDashboard } from './game/GameDashboard'
+
+const IS_GAME_ROUTE = window.location.pathname.startsWith('/game')
 
 type TabId = 'home' | 'roles' | 'matches' | 'intros' | 'reports' | 'analytics' | 'profile'
 
@@ -62,6 +65,7 @@ function App() {
     return <NoAccessScreen email={auth.user?.email} />
   }
 
+  if (IS_GAME_ROUTE) return <GameDashboard />
   return <Dashboard />
 }
 
@@ -244,6 +248,18 @@ function Dashboard() {
           </span>
 
           <div className="flex-1" />
+
+          <a
+            href="/game"
+            className="hidden sm:inline-flex flex-shrink-0 items-center gap-1 text-[10px] font-black uppercase tracking-wider rounded-full px-2.5 py-1 transition-all duration-150 hover:scale-105"
+            style={{
+              background: 'linear-gradient(135deg, rgba(139,92,246,0.12), rgba(79,70,229,0.08))',
+              border: '1px solid rgba(139,92,246,0.30)',
+              color: '#a78bfa',
+            }}
+          >
+            🎮 Game
+          </a>
 
           {/* Recruiter filter — admins only. Non-admins are scoped to their
               own email automatically via useRoles/recruiterFilter. */}
