@@ -195,6 +195,22 @@ export interface ExportRequest {
   transcript?: string | null
 }
 
+export interface CvUploadResult {
+  ok: boolean
+  talentId: string
+  name: string
+}
+
+/** Upload a CV to create a brand-new candidate. Triggers basic + TET extraction. */
+export async function uploadNewCandidate(file: File): Promise<CvUploadResult> {
+  const content_base64 = await fileToBase64(file)
+  return postJson<CvUploadResult>('/api/candidates/upload', {
+    filename: file.name,
+    mime_type: file.type || undefined,
+    content_base64,
+  })
+}
+
 /** Generate a CV / dossier and trigger a browser download. */
 export async function exportDocument(talentId: string, req: ExportRequest): Promise<string> {
   const res = await fetch(`${API_BASE}/api/talent/${talentId}/export`, {

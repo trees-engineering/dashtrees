@@ -4,9 +4,17 @@ import fs from 'node:fs';
 import express, { type Request, type Response } from 'express';
 import cors from 'cors';
 import { ingestRoleFromBuffer, ingestRoleFromText } from './jd-import.js';
-import { isSupported } from './document.js';
+import { isSupported, extractText } from './document.js';
 import { runMatching } from './matching/cascade.js';
 import { buildExport, fetchTalentCvFile } from './export/index.js';
+import { callLlmWithVision } from './llm.js';
+import {
+  extractFromCv,
+  uploadCvToStorage,
+  insertCvExtraction,
+  saveTalentBasicFields,
+  saveTalentTetFields,
+} from './cv-extraction.js';
 import { supabase } from './db.js';
 import { authMiddleware, checkRoleOwnership } from './auth.js';
 import {
@@ -667,6 +675,93 @@ app.patch('/api/profile', authMiddleware, async (req: Request, res: Response) =>
     return;
   }
   res.json({ profile: data });
+});
+
+// ── Upload a CV to create a new candidate ────────────────────────────────────
+// Accepts PDF/DOCX, extracts text, creates a _talent row, runs basic + TET
+// extraction. Basic is foreground (awaited before response); TET is background.
+app.post('/api/candidates/upload', authMiddleware, async (req: Request, res: Response) => {
+  if (!supabase) { res.status(500).json({ error: 'database not configured' }); return; }
+
+  const { filename, mime_type, content_base64 } = (req.body ?? {}) as {
+    filename?: string; mime_type?: string; content_base64?: string;
+  };
+  if (!filename || !content_base64) {
+    res.status(400).json({ error: 'filename and content_base64 are required' });
+    return;
+  }
+  if (!isSupported(filename, mime_type)) {
+    res.status(415).json({ error: 'Unsupported file type. Accepts PDF, DOCX, DOC, RTF, ODT, TXT.' });
+    return;
+  }
+
+  let buffer: Buffer;
+  try {
+    buffer = Buffer.from(content_base64, 'base64');
+  } catch {
+    res.status(400).json({ error: 'Invalid base64 content' });
+    return;
+  }
+
+  try {
+    // 1. Extract text; fall back to vision OCR for scanned PDFs
+    let rawCvText = await extractText(buffer, filename, mime_type);
+    if (!rawCvText.trim()) {
+      const { text } = await callLlmWithVision(
+        'Extract all text from this document verbatim. Output only the extracted text, preserving structure.',
+        'Extract all text from this CV/resume.',
+        { fileData: content_base64, filename, mimeType: mime_type },
+        { maxTokens: 4096, temperature: 0 },
+      );
+      rawCvText = text;
+    }
+
+    // 2. Basic extraction (foreground) — need the name before inserting the row
+    const basicFields = await extractFromCv('cv_extraction_basic', rawCvText);
+    const nameFromCv = typeof basicFields.name === 'string' ? basicFields.name.trim() : null;
+    const fallbackName = filename.replace(/\.[^.]+$/, '').replace(/[_-]+/g, ' ').trim();
+
+    // 3. Create the _talent row
+    const { data: newTalent, error: insertError } = await supabase
+      .from('_talent')
+      .insert({ name: nameFromCv || fallbackName, lifecycle_state: 'imported' })
+      .select('id')
+      .single();
+    if (insertError || !newTalent) {
+      res.status(500).json({ error: insertError?.message ?? 'Failed to create candidate' });
+      return;
+    }
+    const talentId = (newTalent as { id: string }).id;
+
+    // 4. Store CV in Supabase Storage + link to _talent
+    const storagePath = await uploadCvToStorage(talentId, buffer, filename, mime_type ?? 'application/octet-stream');
+    await supabase.from('_talent').update({ cv_storage_path: storagePath }).eq('id', talentId);
+
+    // 5. Save basic fields + insert _cv_extractions row
+    await saveTalentBasicFields(talentId, basicFields);
+    const extractionId = await insertCvExtraction(talentId, rawCvText, basicFields);
+
+    // 6. TET extraction (background — fire-and-forget)
+    void (async () => {
+      try {
+        const tetFields = await extractFromCv('cv_extraction_tet', rawCvText);
+        await saveTalentTetFields(talentId, tetFields);
+        if (extractionId) {
+          await supabase
+            .from('_cv_extractions')
+            .update({ llm_extracted: { ...basicFields, ...tetFields } })
+            .eq('id', extractionId);
+        }
+      } catch (err) {
+        console.error('[candidates/upload] TET extraction failed:', err);
+      }
+    })();
+
+    res.json({ ok: true, talentId, name: nameFromCv || fallbackName });
+  } catch (err) {
+    console.error('[server] candidates/upload failed:', err);
+    res.status(500).json({ error: err instanceof Error ? err.message : 'Unknown error' });
+  }
 });
 
 // ── Static frontend (production) ─────────────────────────────────────────────

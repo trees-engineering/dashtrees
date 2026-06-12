@@ -5,6 +5,7 @@ import { useRoles } from '../hooks/useRoles'
 import { formatDate, formatBudget, roleStatusBadgeClass } from '../lib/utils'
 import { UploadJDButton } from './UploadJDButton'
 import { TalkToTreelanceButton } from './TalkToTreelanceButton'
+import { CvUploadButton } from './CvUploadButton'
 import { RerunMatchesButton } from './RerunMatchesButton'
 import { useToast } from './Toast'
 import { updateRoleStatus } from '../lib/api'
@@ -244,6 +245,7 @@ export function RolesTab({ onViewMatches, onEditRole, onPostRole, recruiterFilte
         </h2>
         <div className="flex items-center gap-2">
           <TalkToTreelanceButton />
+          <CvUploadButton />
           <UploadJDButton
             recruiterFilter={recruiterFilter}
             onPostRole={onPostRole}

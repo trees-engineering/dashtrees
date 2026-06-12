@@ -3,6 +3,7 @@ import { ChevronRight } from 'lucide-react'
 import { StatCard } from './StatCard'
 import { UploadJDButton } from './UploadJDButton'
 import { TalkToTreelanceButton } from './TalkToTreelanceButton'
+import { CvUploadButton } from './CvUploadButton'
 import { useRoles } from '../hooks/useRoles'
 import { formatDate, roleStatusBadgeClass } from '../lib/utils'
 import { telemetry } from '../lib/telemetry'
@@ -75,6 +76,7 @@ export function HomeTab({ onNavigate, onPostRole, recruiterFilter }: HomeTabProp
           </h2>
           <div className="flex items-center gap-2">
             <TalkToTreelanceButton />
+            <CvUploadButton />
             <UploadJDButton
               recruiterFilter={recruiterFilter}
               onPostRole={onPostRole}
