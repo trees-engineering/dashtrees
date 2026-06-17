@@ -18,6 +18,7 @@ interface RolesTabProps {
   onViewMatches: (roleId: string) => void
   onEditRole: (roleId: string) => void
   onPostRole: () => void
+  onAddCandidate: () => void
   recruiterFilter: string
 }
 
@@ -216,7 +217,7 @@ function RoleAccordion({
   )
 }
 
-export function RolesTab({ onViewMatches, onEditRole, onPostRole, recruiterFilter }: RolesTabProps) {
+export function RolesTab({ onViewMatches, onEditRole, onPostRole, onAddCandidate, recruiterFilter }: RolesTabProps) {
   const [statusFilter, setStatusFilter] = useState<StatusFilter>('open')
   const { data: roles, isLoading } = useRoles()
 
@@ -245,7 +246,7 @@ export function RolesTab({ onViewMatches, onEditRole, onPostRole, recruiterFilte
         </h2>
         <div className="flex items-center gap-2">
           <TalkToTreelanceButton />
-          <CvUploadButton />
+          <CvUploadButton onAddCandidate={onAddCandidate} />
           <UploadJDButton
             recruiterFilter={recruiterFilter}
             onPostRole={onPostRole}

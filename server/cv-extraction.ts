@@ -131,6 +131,13 @@ function bandTL(v: unknown): number | null {
   const i = Math.round(n);
   return i >= 0 && i <= 7 ? i : null;
 }
+function isoDate(v: unknown): string | null {
+  const s = str(v);
+  if (!s) return null;
+  // Accept YYYY-MM-DD or YYYY/MM/DD; reject prose like "immediately"
+  const d = new Date(s);
+  return isNaN(d.getTime()) || !/^\d{4}[-/]\d{2}[-/]\d{2}/.test(s) ? null : s;
+}
 
 // ---------------------------------------------------------------------------
 // Field savers
@@ -154,7 +161,8 @@ export async function saveTalentBasicFields(
   }
   const avail = mapEnum(fields.availability, AVAIL_MAP);
   if (avail) update.availability_status = avail;
-  if (str(fields.available_from)) update.available_from = str(fields.available_from);
+  const availFrom = isoDate(fields.available_from);
+  if (availFrom) update.available_from = availFrom;
   const noticeDays = num(fields.notice_period_days);
   if (noticeDays !== null) update.notice_period_days = Math.round(noticeDays);
   const rate = num(fields.rate);

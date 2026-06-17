@@ -11,6 +11,7 @@ import { telemetry } from '../lib/telemetry'
 interface HomeTabProps {
   onNavigate: (tab: string) => void
   onPostRole: () => void
+  onAddCandidate: () => void
   recruiterFilter: string
 }
 
@@ -23,7 +24,7 @@ function SkeletonCard() {
   )
 }
 
-export function HomeTab({ onNavigate, onPostRole, recruiterFilter }: HomeTabProps) {
+export function HomeTab({ onNavigate, onPostRole, onAddCandidate, recruiterFilter }: HomeTabProps) {
   const { data: roles, isLoading: rolesLoading, error: rolesError } = useRoles()
 
   const filteredRoles = (roles ?? []).filter(
@@ -76,7 +77,7 @@ export function HomeTab({ onNavigate, onPostRole, recruiterFilter }: HomeTabProp
           </h2>
           <div className="flex items-center gap-2">
             <TalkToTreelanceButton />
-            <CvUploadButton />
+            <CvUploadButton onAddCandidate={onAddCandidate} />
             <UploadJDButton
               recruiterFilter={recruiterFilter}
               onPostRole={onPostRole}

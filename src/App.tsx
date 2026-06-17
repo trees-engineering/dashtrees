@@ -13,6 +13,8 @@ import { LoginScreen } from './components/LoginScreen'
 import { NoAccessScreen } from './components/NoAccessScreen'
 import { RoleEditScreen } from './components/RoleEditScreen'
 import { NewRoleScreen } from './components/NewRoleScreen'
+import { CandidateEditScreen } from './components/CandidateEditScreen'
+import { NewCandidateScreen } from './components/NewCandidateScreen'
 import { UserMenu } from './components/UserMenu'
 import { useToast } from './components/Toast'
 import { useAuth } from './lib/auth'
@@ -76,6 +78,8 @@ function Dashboard() {
   const [selectedRoleId, setSelectedRoleId] = useState<string | null>(null)
   const [editingRoleId, setEditingRoleId] = useState<string | null>(null)
   const [creatingRole, setCreatingRole] = useState(false)
+  const [creatingCandidate, setCreatingCandidate] = useState(false)
+  const [editingCandidateId, setEditingCandidateId] = useState<string | null>(null)
   // Set right after a successful JD upload alongside editingRoleId. When the
   // recruiter saves the edit, this tells us to kick off matching. Cleared on
   // save-fired-matching OR on back-without-save (recruiter can rerun later).
@@ -212,6 +216,30 @@ function Dashboard() {
     )
   }
 
+  // Candidate edit screen — opens after upload or from future candidate list.
+  if (editingCandidateId) {
+    return (
+      <CandidateEditScreen
+        talentId={editingCandidateId}
+        onClose={() => setEditingCandidateId(null)}
+        onSaved={() => setEditingCandidateId(null)}
+      />
+    )
+  }
+
+  // New-candidate flow — full-screen upload/paste; on success opens the edit screen.
+  if (creatingCandidate) {
+    return (
+      <NewCandidateScreen
+        onClose={() => setCreatingCandidate(false)}
+        onCreated={(talentId) => {
+          setCreatingCandidate(false)
+          setEditingCandidateId(talentId)
+        }}
+      />
+    )
+  }
+
   return (
     <div className="flex h-[100dvh] bg-treeBg overflow-hidden">
       <Sidebar
@@ -289,6 +317,7 @@ function Dashboard() {
             <HomeTab
               onNavigate={handleNavigateToRoles}
               onPostRole={() => setCreatingRole(true)}
+              onAddCandidate={() => setCreatingCandidate(true)}
               recruiterFilter={selectedRecruiter}
             />
           )}
@@ -297,6 +326,7 @@ function Dashboard() {
               onViewMatches={handleViewMatches}
               onEditRole={setEditingRoleId}
               onPostRole={() => setCreatingRole(true)}
+              onAddCandidate={() => setCreatingCandidate(true)}
               recruiterFilter={selectedRecruiter}
             />
           )}

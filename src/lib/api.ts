@@ -211,6 +211,70 @@ export async function uploadNewCandidate(file: File): Promise<CvUploadResult> {
   })
 }
 
+/** Create a candidate from pasted CV text (no file). */
+export async function importCandidateText(text: string): Promise<CvUploadResult> {
+  return postJson<CvUploadResult>('/api/candidates/import-text', { text })
+}
+
+export interface CandidateSkill {
+  skill_name: string
+  years_experience: number | null
+}
+
+export interface CandidateDetail {
+  id: string
+  name: string | null
+  email: string | null
+  phone: string | null
+  city: string | null
+  country: string | null
+  linkedin_url: string | null
+  visa_status: string | null
+  availability_status: string | null
+  available_from: string | null
+  notice_period_days: number | null
+  rate: number | null
+  rate_type: string | null
+  currency: string | null
+  rotation_preference: string | null
+  skills: CandidateSkill[]
+}
+
+export interface CandidatePatch {
+  name?: string | null
+  email?: string | null
+  phone?: string | null
+  city?: string | null
+  country?: string | null
+  linkedin_url?: string | null
+  visa_status?: string | null
+  availability_status?: string | null
+  available_from?: string | null
+  notice_period_days?: number | null
+  rate?: number | null
+  rate_type?: string | null
+  currency?: string | null
+  rotation_preference?: string | null
+  skills?: string[]
+}
+
+export async function getCandidate(talentId: string): Promise<CandidateDetail> {
+  const res = await fetch(`${API_BASE}/api/candidates/${encodeURIComponent(talentId)}`, {
+    headers: { ...(await authHeaders()) },
+  })
+  if (!res.ok) throw new Error(await readError(res))
+  return res.json() as Promise<CandidateDetail>
+}
+
+export async function updateCandidate(talentId: string, patch: CandidatePatch): Promise<void> {
+  const res = await fetch(`${API_BASE}/api/candidates/${encodeURIComponent(talentId)}`, {
+    method: 'PATCH',
+    headers: { 'Content-Type': 'application/json', ...(await authHeaders()) },
+    body: JSON.stringify(patch),
+  })
+  if (!res.ok) throw new Error(await readError(res))
+}
+
 /** Generate a CV / dossier and trigger a browser download. */
 export async function exportDocument(talentId: string, req: ExportRequest): Promise<string> {
   const res = await fetch(`${API_BASE}/api/talent/${talentId}/export`, {

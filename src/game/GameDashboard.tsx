@@ -13,6 +13,8 @@ import { ReportsTab } from '../components/ReportsTab'
 import { ProfileTab } from '../components/ProfileTab'
 import { RoleEditScreen } from '../components/RoleEditScreen'
 import { NewRoleScreen } from '../components/NewRoleScreen'
+import { CandidateEditScreen } from '../components/CandidateEditScreen'
+import { NewCandidateScreen } from '../components/NewCandidateScreen'
 import { UserMenu } from '../components/UserMenu'
 import { GameHUD } from './GameHUD'
 import { GameSidebar, type GameNavItem } from './GameSidebar'
@@ -48,6 +50,8 @@ export function GameDashboard() {
   const [selectedRoleId, setSelectedRoleId] = useState<string | null>(null)
   const [editingRoleId, setEditingRoleId] = useState<string | null>(null)
   const [creatingRole, setCreatingRole] = useState(false)
+  const [creatingCandidate, setCreatingCandidate] = useState(false)
+  const [editingCandidateId, setEditingCandidateId] = useState<string | null>(null)
   const [pendingCascadeRoleId, setPendingCascadeRoleId] = useState<string | null>(null)
   const [mobileNavOpen, setMobileNavOpen] = useState(false)
   const [navCollapsed, setNavCollapsed] = useState<boolean>(
@@ -131,6 +135,34 @@ export function GameDashboard() {
           onCreated={(roleId) => {
             setCreatingRole(false)
             handleUploadSuccess(roleId)
+          }}
+        />
+      </>
+    )
+  }
+
+  if (editingCandidateId) {
+    return (
+      <>
+        <ScorePopOverlay pops={pops} />
+        <CandidateEditScreen
+          talentId={editingCandidateId}
+          onClose={() => setEditingCandidateId(null)}
+          onSaved={() => setEditingCandidateId(null)}
+        />
+      </>
+    )
+  }
+
+  if (creatingCandidate) {
+    return (
+      <>
+        <ScorePopOverlay pops={pops} />
+        <NewCandidateScreen
+          onClose={() => setCreatingCandidate(false)}
+          onCreated={(talentId) => {
+            setCreatingCandidate(false)
+            setEditingCandidateId(talentId)
           }}
         />
       </>
@@ -250,6 +282,7 @@ export function GameDashboard() {
                   onViewMatches={handleViewMatches}
                   onEditRole={setEditingRoleId}
                   onPostRole={() => setCreatingRole(true)}
+                  onAddCandidate={() => setCreatingCandidate(true)}
                   recruiterFilter={selectedRecruiter}
                 />
               )}

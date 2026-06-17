@@ -764,6 +764,87 @@ app.post('/api/candidates/upload', authMiddleware, async (req: Request, res: Res
   }
 });
 
+// ── Import candidate from pasted CV text ─────────────────────────────────────
+app.post('/api/candidates/import-text', authMiddleware, async (req: Request, res: Response) => {
+  if (!supabase) { res.status(500).json({ error: 'database not configured' }); return; }
+  const { text } = (req.body ?? {}) as { text?: string };
+  if (!text || text.trim().length < 50) {
+    res.status(400).json({ error: 'text must be at least 50 characters' }); return;
+  }
+  try {
+    const rawCvText = text.trim();
+    const basicFields = await extractFromCv('cv_extraction_basic', rawCvText);
+    const nameFromCv = typeof basicFields.name === 'string' ? basicFields.name.trim() : null;
+    const { data: newTalent, error: insertError } = await supabase
+      .from('_talent').insert({ name: nameFromCv || 'New Candidate', lifecycle_state: 'imported' })
+      .select('id').single();
+    if (insertError || !newTalent) {
+      res.status(500).json({ error: insertError?.message ?? 'Failed to create candidate' }); return;
+    }
+    const talentId = (newTalent as { id: string }).id;
+    await saveTalentBasicFields(talentId, basicFields);
+    const extractionId = await insertCvExtraction(talentId, rawCvText, basicFields);
+    void (async () => {
+      try {
+        const tetFields = await extractFromCv('cv_extraction_tet', rawCvText);
+        await saveTalentTetFields(talentId, tetFields);
+        if (extractionId) {
+          await supabase.from('_cv_extractions')
+            .update({ llm_extracted: { ...basicFields, ...tetFields } }).eq('id', extractionId);
+        }
+      } catch (err) { console.error('[candidates/import-text] TET extraction failed:', err); }
+    })();
+    res.json({ ok: true, talentId, name: nameFromCv || 'New Candidate' });
+  } catch (err) {
+    console.error('[server] candidates/import-text failed:', err);
+    res.status(500).json({ error: err instanceof Error ? err.message : 'Unknown error' });
+  }
+});
+
+// ── Fetch a single candidate + skills ─────────────────────────────────────────
+app.get('/api/candidates/:talentId', authMiddleware, async (req: Request, res: Response) => {
+  if (!supabase) { res.status(500).json({ error: 'database not configured' }); return; }
+  const { talentId } = req.params;
+  const [talentRes, skillsRes] = await Promise.all([
+    supabase.from('_talent')
+      .select('id,name,email,phone,city,country,linkedin_url,visa_status,availability_status,available_from,notice_period_days,rate,rate_type,currency,rotation_preference')
+      .eq('id', talentId).single(),
+    supabase.from('_talent_skills').select('skill_name,years_experience').eq('talent_id', talentId),
+  ]);
+  if (talentRes.error || !talentRes.data) {
+    res.status(404).json({ error: 'Candidate not found' }); return;
+  }
+  res.json({ ...talentRes.data, skills: skillsRes.data ?? [] });
+});
+
+// ── Update a candidate ─────────────────────────────────────────────────────────
+app.patch('/api/candidates/:talentId', authMiddleware, async (req: Request, res: Response) => {
+  if (!supabase) { res.status(500).json({ error: 'database not configured' }); return; }
+  const { talentId } = req.params;
+  const { skills, ...rawFields } = (req.body ?? {}) as { skills?: string[]; [key: string]: unknown };
+  const ALLOWED = new Set([
+    'name','email','phone','city','country','linkedin_url','visa_status',
+    'availability_status','available_from','notice_period_days','rate','rate_type',
+    'currency','rotation_preference',
+  ]);
+  const safeFields: Record<string, unknown> = {};
+  for (const [k, v] of Object.entries(rawFields)) {
+    if (ALLOWED.has(k)) safeFields[k] = v ?? null;
+  }
+  if (Object.keys(safeFields).length > 0) {
+    const { error } = await supabase.from('_talent').update(safeFields).eq('id', talentId);
+    if (error) { res.status(500).json({ error: error.message }); return; }
+  }
+  if (Array.isArray(skills)) {
+    await supabase.from('_talent_skills').delete().eq('talent_id', talentId);
+    const rows = skills
+      .filter((s): s is string => typeof s === 'string' && s.trim().length > 0)
+      .map((s) => ({ talent_id: talentId, skill_name: s.trim(), years_experience: null }));
+    if (rows.length) await supabase.from('_talent_skills').insert(rows);
+  }
+  res.json({ ok: true });
+});
+
 // ── Static frontend (production) ─────────────────────────────────────────────
 const distDir = path.resolve(process.cwd(), 'dist');
 if (fs.existsSync(distDir)) {
