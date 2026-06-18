@@ -1,0 +1,10 @@
+{
+  "clientName": "Enviros",
+  "clientUrl": "https://www.enviros.com.my",
+  "contactName": "Jennifer",
+  "logo": "",
+  "primary": "#138a5e",
+  "output": "Demo_Enviros.html",
+  "deploy": true,
+  "projectName": "demoenvirostreelance"
+}

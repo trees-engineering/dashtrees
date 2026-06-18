@@ -1,0 +1,10 @@
+{
+  "clientName": "Acme Energy",
+  "clientUrl": "https://example.com",
+  "contactName": "Alex Tan",
+  "logo": "",
+  "primary": "#4888f8",
+  "output": "Demo_Template.html",
+  "deploy": true,
+  "projectName": "treelance-dashboard-template"
+}
