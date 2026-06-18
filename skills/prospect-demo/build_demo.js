@@ -109,14 +109,17 @@ async function main(){
     : `data:image/png;base64,${fs.readFileSync(TREELANCE_LOGO).toString('base64')}`;
 
   const runtimeConfig = {
-    clientName   : cfg.clientName,
-    clientUrl    : cfg.clientUrl  || '#',
-    contactName  : cfg.contactName || 'Account Manager',
-    logo         : logoData,
+    clientName       : cfg.clientName,
+    clientUrl        : cfg.clientUrl  || '#',
+    contactName      : cfg.contactName || 'Account Manager',
+    logo             : logoData,
     treelanceLogo,
-    bookingLink  : cfg.bookingLink  || 'https://calendar.app.google/HLfcvtmSVVJjtb7n7',
-    contactEmail : cfg.contactEmail || 'quentin@trees-engineering.com',
-    proof        : cfg.proof || ['Trusted by energy teams like Total','35,000+ professionals sourced','5 years building AI recruitment'],
+    treelanceWhatsapp: cfg.treelanceWhatsapp || 'http://wa.me/60122421849',
+    bookingLink      : cfg.bookingLink  || 'https://calendar.app.google/HLfcvtmSVVJjtb7n7',
+    contactEmail     : cfg.contactEmail || 'quentin@trees-engineering.com',
+    proof            : cfg.proof || ['Trusted by energy teams like TOTALEnergies','35,000+ professionals sourced','5 years building AI recruitment'],
+    font             : cfg.font || null,
+    data             : cfg.data || null,
     theme
   };
 

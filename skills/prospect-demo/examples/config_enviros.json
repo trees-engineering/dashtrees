@@ -3,8 +3,42 @@
   "clientUrl": "https://www.enviros.com.my",
   "contactName": "Jennifer",
   "logo": "",
-  "primary": "#138a5e",
+  "theme": { "primary": "#138a5e", "primaryDark": "#10714d", "primaryLight": "#55ab8b", "accent": "#3d9f7b" },
   "output": "Demo_Enviros.html",
+  "projectName": "demoenvirostreelance",
   "deploy": true,
-  "projectName": "demoenvirostreelance"
+  "data": {
+    "pool": { "total": 5287, "talked30d": 1140 },
+    "defaultSource": "share",
+    "first": ["Ahmad","Nurul","Wei Jie","Siti","Arif","Mei Ling","Faizal","Hafiz","Aisyah","Farah","Hakim","Carlos","Maria","Diego","Giulia","Marco","James","Aung","Thandar","Ravi"],
+    "last": ["bin Abdullah","Tan","Lim","Wong","Ismail","Hassan","Rahman","Lee","Nair","Yusof","Idris","Hernández","Rossi","Conti","Pereira","Soe","Hlaing","O'Brien","Walsh","Kaur"],
+    "titles": ["Survey Engineer","Hydrographic Surveyor","Geophysicist","Marine Crew / AB","Master / Chief Officer","ROV Pilot Technician","Offshore Rigger","HSE Officer","Carbon Capture Engineer","Equipment Technician","Project Manager","Mechanical Engineer"],
+    "disc": {"Survey Engineer":"Survey & Geomatics","Hydrographic Surveyor":"Survey & Geomatics","Geophysicist":"Survey & Geomatics","Marine Crew / AB":"Marine Crew","Master / Chief Officer":"Marine Crew","ROV Pilot Technician":"Offshore Crew / ROV","Offshore Rigger":"Offshore Crew / ROV","HSE Officer":"HSE","Carbon Capture Engineer":"Carbon & Equipment","Equipment Technician":"Carbon & Equipment","Project Manager":"Project Management","Mechanical Engineer":"Engineering & Tech Ops"},
+    "locs": ["Kuala Lumpur, MY","Kuching, Sarawak MY","Kota Kinabalu, MY","Ciudad del Carmen, MX","Milan, IT","Paramaribo, SR","Yangon, MM","Aberdeen, UK","Singapore","Labuan, MY"],
+    "nats": ["Malaysian","Malaysian","Mexican","Italian","Surinamese","Burmese","British","Filipino"],
+    "certs": ["BOSIET","HUET","STCW","Seaman's Book","OGUK Medical","OPITO","ROV Cert","DP Induction","CSWIP","NEBOSH"],
+    "skills": ["Hydrographic Survey","QPS QINSy","EIVA NaviPac","ROV Ops","DP Systems","Geophysical","Carbon Capture","Marine Ops","Offshore Survey","AutoCAD","Vessel Mgmt","HSE"],
+    "avail": ["Available now","Within 1 month","Within 2 months","On project"],
+    "sources": ["SharePoint","Company portal","WhatsApp group","Referral"],
+    "waDates": ["16 Jun 2026","12 Jun 2026","06 Jun 2026","30 May 2026"],
+    "waNotes": [
+      "Confirmed available from next crew rotation. Valid STCW + Seaman's Book. Open to the Mexico project.",
+      "Currently on project in Suriname until August, then free. Keen on the Sarawak opening.",
+      "Hydrographic surveyor, QINSy expert. Available now and mobile globally — speaks Spanish.",
+      "ROV pilot, OPITO + ROV cert valid. Available within 2 weeks, ready for offshore deployment."
+    ],
+    "notes": ["Strong offshore survey background.","Multiple marine rotations across APAC.","Carbon capture project experience.","Deployable globally, multi-lingual."],
+    "roles": [
+      {"id":"r1","title":"Survey Engineer — Mexico Project (Spanish-speaking)","loc":"Ciudad del Carmen, MX","status":"open","contract":"Contract · 6 mo","created":"2026-06-11","matches":8},
+      {"id":"r2","title":"Marine Crew Swap — Vessel Operations","loc":"Labuan, MY","status":"open","contract":"Contract · 3 mo","created":"2026-06-05","matches":7},
+      {"id":"r3","title":"HSE Officer — Sarawak Office","loc":"Kuching, Sarawak MY","status":"paused","contract":"Permanent","created":"2026-05-23","matches":6}
+    ],
+    "taxonomy": {
+      "disciplines": [["Survey & Geomatics",0.22],["Marine Crew",0.20],["Offshore Crew / ROV",0.17],["Engineering & Tech Ops",0.15],["HSE",0.10],["Carbon & Equipment",0.09],["Project Management",0.07]],
+      "availability": [["Available now",0.18],["Within 1 month",0.22],["Within 2 months",0.19],["On project / placed",0.41]],
+      "workauth": [["Malaysian",0.52],["Other ASEAN (Myanmar/Indo/Phil)",0.16],["Latin America (Mexico/Suriname)",0.12],["Europe (UK/Italy)",0.12],["Expat — permit required",0.08]],
+      "seniority": [["Junior (0–3y)",0.22],["Mid (4–7y)",0.34],["Senior (8–14y)",0.31],["Lead / Principal (15y+)",0.13]],
+      "certs": [["BOSIET / HUET",0.44],["STCW / Seaman's Book",0.38],["OPITO / ROV",0.21],["OGUK Medical",0.29],["NEBOSH / IOSH",0.15]]
+    }
+  }
 }

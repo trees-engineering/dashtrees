@@ -85,6 +85,13 @@ Optional (sensible defaults if omitted):
   Pick one matching the prospect's brand; default cobalt `#4888f8`.
 - **Booking link** (`bookingLink`) + **contact email** (`contactEmail`) — used by the landing's
   "Book a 15-min call" CTA and footer. Default to Quentin's calendar / Trees Engineering email.
+- **Client font** (`font`) — copy the prospect's website typography. Visit their site, identify the
+  primary font, and if it's on Google Fonts pass `{ "family": "Poppins", "googleUrl":
+  "https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;700;800&display=swap" }`. The
+  demo loads it and applies it everywhere. If the font is proprietary, pick the closest Google
+  Fonts match. Omit to use the default system stack.
+- **Treelance WhatsApp** (`treelanceWhatsapp`) — every plain-text "Treelance" and "WhatsApp"
+  mention (and the Treelance logos) auto-links here. Default `http://wa.me/60122421849`.
 - **Proof points** (`proof`, array of 3 short strings) — the landing proof strip. Default:
   "Trusted by energy teams like Total", "35,000+ professionals sourced", "5 years building AI
   recruitment". Override per prospect if you have stronger, true references.
@@ -173,11 +180,40 @@ To redeploy after regenerating a demo, just run the helper again with the same p
 it pushes a new production build to the same URL. For a custom domain, add it in the Vercel
 project → Settings → Domains.
 
-## Customising the mock data (optional)
-Defaults to Malaysia/Indonesia energy/engineering. For another sector/geography, edit the
-arrays near the top of the `<script>` in the generated file (or in
-`template/demo.template.html` before generating): `FIRST`/`LAST`, `TITLES`/`DISC`, `LOCS`,
-`NATS`, `CERTS`, `SKILLS`, `DB.roles`, and the `POOL` aggregates. Keep it light — it's a demo.
+## Customising the mock data — via the `data` config block (preferred)
+All sector data is config-driven: add a `data` object to the config and the template uses it
+(no file editing, no manual re-edits when the template changes). Omit it → Malaysia/Indonesia
+energy defaults. Tailor it to the prospect's real world (visit their site / use the meeting
+notes). Shape (see `examples/config_vantris.json`, `config_mhb.json`, `config_saipem.json`,
+`config_enviros.json` for full worked examples):
+
+```json
+"data": {
+  "pool": { "total": 18420, "talked30d": 2960 },
+  "defaultSource": "share",                 // which DB connector tab is active: share|drive|upload
+  "first": ["..."], "last": ["..."],        // candidate name pools (use locale-appropriate names)
+  "titles": ["Subsea Engineer", "..."],     // job titles in the pool
+  "disc": { "Subsea Engineer": "Subsea" },  // title -> discipline (disciplines drive the taxonomy)
+  "locs": ["Kuala Lumpur, MY", "..."],      // their actual locations only
+  "nats": ["Malaysian", "..."],             // nationalities (match where they hire)
+  "certs": ["BOSIET", "..."], "skills": ["Subsea", "..."],
+  "avail": ["Available now","Within 1 month","Within 2 months","On project"],
+  "sources": ["SharePoint","Company portal","WhatsApp group","Referral"],
+  "waDates": ["16 Jun 2026","..."],
+  "waNotes": ["Confirmed available ... valid BOSIET ..."],   // WhatsApp prequal notes (their jargon)
+  "notes": ["Deep EPCIC background.", "..."],
+  "roles": [ { "id":"r1","title":"Subsea Engineer — EPCIC","loc":"KL, MY","status":"open",
+              "contract":"Contract · 18 mo","created":"2026-06-12","matches":9 } ],
+  "taxonomy": {                              // each row is [label, fraction]; fractions sum ~1
+    "disciplines": [["EPC / Construction",0.24], ["Subsea",0.13]],
+    "availability":[["Available now",0.16], ["On project / placed",0.41]],
+    "workauth":    [["Malaysian",0.41], ["Expat — permit required",0.09]],  // the "legal" angle
+    "seniority":   [["Mid (4–7y)",0.33], ["Senior (8–14y)",0.32]],
+    "certs":       [["BOSIET / HUET",0.44], ["CSWIP / NDT",0.24]]
+  }
+}
+```
+Keep disciplines in `disc` consistent with `taxonomy.disciplines` labels. Keep it light — a demo.
 
 ## Files in this folder
 - `SKILL.md` — this file

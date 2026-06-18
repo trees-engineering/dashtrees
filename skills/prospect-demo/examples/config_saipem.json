@@ -1,0 +1,45 @@
+{
+  "clientName": "Saipem Indonesia",
+  "clientUrl": "https://www.saipem.com",
+  "contactName": "Danilo",
+  "logo": "logo_saipem.svg",
+  "theme": { "primary": "#2B495A", "primaryDark": "#1d333f", "primaryLight": "#5b7888", "accent": "#E98300" },
+  "font": { "family": "Titillium Web", "googleUrl": "https://fonts.googleapis.com/css2?family=Titillium+Web:wght@400;600;700&display=swap" },
+  "output": "Demo_Saipem.html",
+  "projectName": "demosaipemtreelance",
+  "deploy": true,
+  "data": {
+    "pool": { "total": 9600, "talked30d": 1620 },
+    "defaultSource": "share",
+    "first": ["Budi","Dewi","Rizki","Siti","Arif","Putri","Bayu","Indah","Agus","Sri","Hendra","Wahyu","Ratna","Eko","Yusuf","Danilo","Marco","Giulia","Rajesh","Maria"],
+    "last": ["Santoso","Wijaya","Pratama","Suharto","Lestari","Halim","Saputra","Hidayat","Kusuma","Nugroho","Wibowo","Sari","Ramli","Gunawan","Putra","Conti","Rossi","Bianchi","Nair","Dela Cruz"],
+    "titles": ["Piping Engineer","Structural Engineer","Naval Architect","Yard Fabrication Supervisor","Structural Welder (6G)","Offshore Construction Superintendent","Rigging / Lifting Supervisor","Subsea Engineer","Commissioning Engineer","Procurement Engineer","QA/QC Inspector (CSWIP)","HSE Officer"],
+    "disc": {"Piping Engineer":"Engineering","Structural Engineer":"Engineering","Naval Architect":"Engineering","Yard Fabrication Supervisor":"Fabrication / Yard","Structural Welder (6G)":"Fabrication / Yard","Offshore Construction Superintendent":"Offshore Construction","Rigging / Lifting Supervisor":"Offshore Construction","Subsea Engineer":"Subsea","Commissioning Engineer":"Commissioning","Procurement Engineer":"Procurement","QA/QC Inspector (CSWIP)":"HSE / QA-QC","HSE Officer":"HSE / QA-QC"},
+    "locs": ["Jakarta, ID","Karimun Island, ID","Jakarta, ID","Karimun Island, ID","Jakarta, ID","Karimun Island, ID"],
+    "nats": ["Indonesian","Indonesian","Indonesian","Indonesian","Italian","Filipino","Indian"],
+    "certs": ["BOSIET","HUET","CSWIP 3.1","CSWIP 3.2","NDT Level II","K3 Migas","Confined Space","Working at Height","Rigging","Scaffolding"],
+    "skills": ["AVEVA E3D","SACS","STAAD.Pro","Structural Fabrication","Welding (6G)","Pipelay","Subsea","Commissioning","EPCI","Heavy Lift","Yard Construction","QA/QC"],
+    "avail": ["Available now","Within 1 month","Within 2 months","On project"],
+    "sources": ["SharePoint","Company portal","WhatsApp group","Referral"],
+    "waDates": ["16 Jun 2026","12 Jun 2026","06 Jun 2026","30 May 2026"],
+    "waNotes": [
+      "Confirmed available, based near Karimun. Valid CSWIP + K3 Migas. Ready for yard mobilisation.",
+      "Rolling off an EPCI scope in Jakarta in 3 weeks. Open to a Karimun yard rotation.",
+      "Subsea engineer with EPCI installation experience. Available now, Jakarta-based.",
+      "Procurement engineer with a strong Batam/Karimun vendor network. Available within 1 month."
+    ],
+    "notes": ["EPCI / offshore construction background.","Karimun yard fabrication experience.","Subsea installation track record.","Procurement & expediting for fabrication."],
+    "roles": [
+      {"id":"r1","title":"Offshore Construction Superintendent — EPCI","loc":"Karimun Island, ID","status":"open","contract":"Contract · 12 mo","created":"2026-06-12","matches":9},
+      {"id":"r2","title":"Piping Engineer — FEED","loc":"Jakarta, ID","status":"open","contract":"Contract · 12 mo","created":"2026-06-06","matches":7},
+      {"id":"r3","title":"Yard Fabrication Supervisor — Karimun","loc":"Karimun Island, ID","status":"paused","contract":"Contract · 9 mo","created":"2026-05-24","matches":6}
+    ],
+    "taxonomy": {
+      "disciplines": [["Engineering",0.26],["Fabrication / Yard",0.22],["Offshore Construction",0.16],["Subsea",0.12],["Commissioning",0.09],["Procurement",0.08],["HSE / QA-QC",0.07]],
+      "availability": [["Available now",0.17],["Within 1 month",0.23],["Within 2 months",0.20],["On project / placed",0.40]],
+      "workauth": [["Indonesian citizen",0.81],["Indonesian (East ID)",0.06],["Expat — valid KITAS",0.09],["Expat — permit required",0.04]],
+      "seniority": [["Junior (0–3y)",0.23],["Mid (4–7y)",0.34],["Senior (8–14y)",0.30],["Lead / Principal (15y+)",0.13]],
+      "certs": [["BOSIET / HUET",0.38],["CSWIP / NDT",0.31],["K3 Migas (HSE)",0.44],["Confined Space / WAH",0.36],["Rigging / Scaffolding",0.22]]
+    }
+  }
+}

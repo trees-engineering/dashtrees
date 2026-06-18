@@ -44,8 +44,10 @@ fi
 SLUG="$(echo "$PROJECT" | tr '[:upper:] _' '[:lower:]--' | sed 's/[^a-z0-9-]//g; s/-\{2,\}/-/g; s/^-//; s/-$//')"
 [[ -z "$SLUG" ]] && SLUG="prospect-demo"
 
-# --- stage a deploy dir ----------------------------------------------------
-WORK="$(mktemp -d)/$SLUG"
+# --- stage a PERSISTENT deploy dir (per project) ---------------------------
+# Using a stable dir keeps Vercel's .vercel/project.json link, so every redeploy
+# of <slug> targets the SAME project/URL instead of creating "-2 / -five" forks.
+WORK="$HOME/.config/trees/deploys/$SLUG"
 mkdir -p "$WORK"
 cp "$HTML" "$WORK/index.html"
 printf '{\n  "cleanUrls": true\n}\n' > "$WORK/vercel.json"
@@ -58,6 +60,13 @@ cd "$WORK"
 SCOPE="${VERCEL_SCOPE:-}"
 if [[ -z "$SCOPE" && -f "$HOME/.config/trees/vercel-scope" ]]; then
   SCOPE="$(tr -d '[:space:]' < "$HOME/.config/trees/vercel-scope")"
+fi
+
+# Deterministically bind this dir to a project named "$SLUG" (creates it if new,
+# links to the existing one otherwise) — done once, then persisted via .vercel/.
+if [[ ! -f "$WORK/.vercel/project.json" ]]; then
+  npx --yes vercel@latest link --yes --project "$SLUG" \
+    ${SCOPE:+--scope "$SCOPE"} --token "$TOKEN" >/dev/null 2>&1 || true
 fi
 
 # Helper: run a deploy, optionally with a scope. Never let set -e kill us — we
