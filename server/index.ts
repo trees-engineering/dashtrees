@@ -955,13 +955,21 @@ app.get('/api/game/leaderboard', authMiddleware, async (_req: Request, res: Resp
   }
 
   // Shortlist counts: all-time and this month, per recruiter
+  // Also collect distinct active dates this month for participation scoring
   const shortlistAll = new Map<string, number>()
   const shortlistMonth = new Map<string, number>()
+  const activeDatesMap = new Map<string, Set<string>>()
+
+  const toDateStr = (iso: string) => iso.slice(0, 10) // 'YYYY-MM-DD'
+
   for (const s of (shortlistsRes.data ?? [])) {
     if (!s.recruiter_id) continue
     shortlistAll.set(s.recruiter_id, (shortlistAll.get(s.recruiter_id) ?? 0) + 1)
-    if (s.created_at >= monthStart)
+    if (s.created_at >= monthStart) {
       shortlistMonth.set(s.recruiter_id, (shortlistMonth.get(s.recruiter_id) ?? 0) + 1)
+      if (!activeDatesMap.has(s.recruiter_id)) activeDatesMap.set(s.recruiter_id, new Set())
+      activeDatesMap.get(s.recruiter_id)!.add(toDateStr(s.created_at))
+    }
   }
 
   // Recruiter lookup
@@ -977,7 +985,11 @@ app.get('/api/game/leaderboard', authMiddleware, async (_req: Request, res: Resp
     const mc = matchMap.get(role.id) ?? { total: 0, introduced: 0 }
     const ex = agg.get(role.created_by) ?? { rolesTotal: 0, rolesMonth: 0, matchesTotal: 0, intros: 0 }
     ex.rolesTotal++
-    if (role.created_at >= monthStart) ex.rolesMonth++
+    if (role.created_at >= monthStart) {
+      ex.rolesMonth++
+      if (!activeDatesMap.has(role.created_by)) activeDatesMap.set(role.created_by, new Set())
+      activeDatesMap.get(role.created_by)!.add(toDateStr(role.created_at))
+    }
     ex.matchesTotal += mc.total
     ex.intros += mc.introduced
     agg.set(role.created_by, ex)
@@ -990,10 +1002,13 @@ app.get('/api/game/leaderboard', authMiddleware, async (_req: Request, res: Resp
       const shortlisted = shortlistAll.get(recruiterId) ?? 0
       const achievementXP = leaderboardAchievementXP(s.rolesTotal, s.matchesTotal, shortlisted, s.intros)
       const totalXP = s.rolesTotal * 100 + s.matchesTotal * 10 + shortlisted * 50 + s.intros * 200 + achievementXP
-      // Monthly XP: only roles + shortlists this calendar month (clear, auditable output metrics)
+      // Monthly output XP
       const monthlyRoles = s.rolesMonth
       const monthlyShortlists = shortlistMonth.get(recruiterId) ?? 0
-      const monthlyXP = monthlyRoles * 100 + monthlyShortlists * 50
+      // Participation: each distinct calendar day this month with any activity = +25 XP
+      const activeDays = activeDatesMap.get(recruiterId)?.size ?? 0
+      const participationXP = activeDays * 25
+      const monthlyXP = monthlyRoles * 100 + monthlyShortlists * 50 + participationXP
       return {
         recruiter_id: recruiterId,
         recruiter_email: rec.email as string,
@@ -1005,6 +1020,8 @@ app.get('/api/game/leaderboard', authMiddleware, async (_req: Request, res: Resp
         monthlyXP,
         monthlyRoles,
         monthlyShortlists,
+        activeDays,
+        participationXP,
       }
     })
     .filter(Boolean)

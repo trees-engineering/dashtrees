@@ -258,6 +258,8 @@ export interface LeaderboardEntry {
   monthlyXP: number
   monthlyRoles: number
   monthlyShortlists: number
+  activeDays: number
+  participationXP: number
 }
 
 export async function getLeaderboard(): Promise<{ leaderboard: LeaderboardEntry[]; monthStart: string }> {

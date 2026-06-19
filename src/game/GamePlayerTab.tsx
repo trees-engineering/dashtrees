@@ -75,20 +75,21 @@ function BonusPreview({
 
       {/* Breakdown */}
       {myEntry && (
-        <div className="flex gap-3 mb-3">
+        <div className="grid grid-cols-3 gap-2 mb-3">
           {[
-            { label: '🎯 Roles posted', val: myEntry.monthlyRoles, xp: myEntry.monthlyRoles * 100, c: '#a78bfa' },
-            { label: '⭐ Shortlisted', val: myEntry.monthlyShortlists, xp: myEntry.monthlyShortlists * 50, c: '#fbbf24' },
+            { label: '🎯 Roles', val: myEntry.monthlyRoles, xp: myEntry.monthlyRoles * 100, c: '#a78bfa' },
+            { label: '⭐ Shortlists', val: myEntry.monthlyShortlists, xp: myEntry.monthlyShortlists * 50, c: '#fbbf24' },
+            { label: '📅 Active days', val: myEntry.activeDays, xp: myEntry.participationXP, c: '#34d399' },
           ].map(({ label, val, xp, c }) => (
             <div
               key={label}
-              className="flex-1 rounded-xl px-3 py-2"
+              className="rounded-xl px-2.5 py-2"
               style={{ background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.07)' }}
             >
-              <div className="text-[9px]" style={{ color: 'rgba(255,255,255,0.38)' }}>{label}</div>
-              <div className="flex items-baseline gap-1.5 mt-0.5">
+              <div className="text-[8px]" style={{ color: 'rgba(255,255,255,0.38)' }}>{label}</div>
+              <div className="flex items-baseline gap-1 mt-0.5">
                 <span className="text-sm font-black text-white">{val}</span>
-                <span className="text-[9px] font-bold" style={{ color: c }}>+{xp.toLocaleString()} XP</span>
+                <span className="text-[8px] font-bold" style={{ color: c }}>+{xp}</span>
               </div>
             </div>
           ))}
@@ -104,7 +105,7 @@ function BonusPreview({
           <span style={{ color: '#fbbf24' }}>Your bonus share</span>
           {' '}= Your monthly XP ÷ Team total × Bonus Pool
           <br />
-          Scored on: Roles posted (×100) · Shortlists (×50)
+          Output: Roles (×100) · Shortlists (×50) · Participation: Active days (×25)
         </p>
       </div>
     </div>
