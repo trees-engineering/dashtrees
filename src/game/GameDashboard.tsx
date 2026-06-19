@@ -21,9 +21,10 @@ import { UserMenu } from '../components/UserMenu'
 import { GameHUD } from './GameHUD'
 import { GameSidebar, type GameNavItem } from './GameSidebar'
 import { GameHomeTab } from './GameHomeTab'
+import { LevelUpOverlay } from './LevelUpOverlay'
 import { ScorePopOverlay, useScorePops } from './ScorePop'
 import { useGameStats } from './useGameStats'
-import { XP_REWARDS } from './gamification'
+import { XP_REWARDS, type GameLevel } from './gamification'
 
 type GameTabId = 'home' | 'roles' | 'candidates' | 'matches' | 'tracker' | 'intros' | 'reports' | 'profile'
 
@@ -61,6 +62,7 @@ export function GameDashboard() {
   const [editingCandidateId, setEditingCandidateId] = useState<string | null>(null)
   const [pendingCascadeRoleId, setPendingCascadeRoleId] = useState<string | null>(null)
   const [mobileNavOpen, setMobileNavOpen] = useState(false)
+  const [levelUpScreen, setLevelUpScreen] = useState<GameLevel | null>(null)
   const [navCollapsed, setNavCollapsed] = useState<boolean>(
     () => localStorage.getItem('trees_game_nav_collapsed') === '1',
   )
@@ -70,6 +72,18 @@ export function GameDashboard() {
   const selectedRecruiter = isAdmin ? adminSelection : recruiter?.email ?? ''
 
   const { stats, achievements, isLoading } = useGameStats(selectedRecruiter)
+
+  // Show a full-screen rank-up overlay when the recruiter advances a level mid-session.
+  // prevLevelRef is null until the first stats load, so initial render never triggers the overlay.
+  const prevLevelRef = useRef<number | null>(null)
+  useEffect(() => {
+    if (!stats) return
+    const curr = stats.level.level
+    if (prevLevelRef.current !== null && curr > prevLevelRef.current) {
+      setLevelUpScreen(stats.level)
+    }
+    prevLevelRef.current = curr
+  }, [stats?.level.level]) // eslint-disable-line react-hooks/exhaustive-deps
 
   // Show a score pop whenever XP increases (data-driven feedback)
   const prevXP = useRef(0)
@@ -137,6 +151,7 @@ export function GameDashboard() {
     return (
       <>
         <ScorePopOverlay pops={pops} />
+        {levelUpScreen && <LevelUpOverlay level={levelUpScreen} onDismiss={() => setLevelUpScreen(null)} />}
         <RoleEditScreen roleId={editingRoleId} onClose={handleEditClose} onSaved={handleEditSaved} />
       </>
     )
@@ -146,6 +161,7 @@ export function GameDashboard() {
     return (
       <>
         <ScorePopOverlay pops={pops} />
+        {levelUpScreen && <LevelUpOverlay level={levelUpScreen} onDismiss={() => setLevelUpScreen(null)} />}
         <NewRoleScreen
           recruiterFilter={selectedRecruiter}
           onClose={() => setCreatingRole(false)}
@@ -162,6 +178,7 @@ export function GameDashboard() {
     return (
       <>
         <ScorePopOverlay pops={pops} />
+        {levelUpScreen && <LevelUpOverlay level={levelUpScreen} onDismiss={() => setLevelUpScreen(null)} />}
         <CandidateEditScreen
           talentId={editingCandidateId}
           onClose={() => setEditingCandidateId(null)}
@@ -175,6 +192,7 @@ export function GameDashboard() {
     return (
       <>
         <ScorePopOverlay pops={pops} />
+        {levelUpScreen && <LevelUpOverlay level={levelUpScreen} onDismiss={() => setLevelUpScreen(null)} />}
         <NewCandidateScreen
           onClose={() => setCreatingCandidate(false)}
           onCreated={(talentId) => {
@@ -194,6 +212,9 @@ export function GameDashboard() {
       style={{ background: '#080615', color: 'white' }}
     >
       <ScorePopOverlay pops={pops} />
+      {levelUpScreen && (
+        <LevelUpOverlay level={levelUpScreen} onDismiss={() => setLevelUpScreen(null)} />
+      )}
 
       <GameSidebar
         navItems={GAME_NAV}

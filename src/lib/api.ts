@@ -245,6 +245,15 @@ export async function getShortlist(roleId: string): Promise<string[]> {
   return json.talent_ids
 }
 
+export async function getShortlistCount(): Promise<number> {
+  const res = await fetch(`${API_BASE}/api/shortlists/count`, {
+    headers: { ...(await authHeaders()) },
+  })
+  if (!res.ok) throw new Error(await readError(res))
+  const json = (await res.json()) as { count: number }
+  return json.count
+}
+
 export async function toggleShortlist(roleId: string, talentId: string): Promise<boolean> {
   const res = await fetch(`${API_BASE}/api/shortlists/toggle`, {
     method: 'POST',

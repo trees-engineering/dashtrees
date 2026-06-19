@@ -873,6 +873,17 @@ app.get('/api/shortlists', authMiddleware, async (req: Request, res: Response) =
   return res.json({ talent_ids: (data ?? []).map((r) => r.talent_id) });
 });
 
+// Count of unique tick-box shortlists added by the authenticated recruiter,
+// used by the game to award XP for the _shortlists table (not _matches.status).
+app.get('/api/shortlists/count', authMiddleware, async (req: Request, res: Response) => {
+  const { count, error } = await supabase
+    .from('_shortlists')
+    .select('*', { count: 'exact', head: true })
+    .eq('recruiter_id', req.auth!.recruiterId);
+  if (error) return res.status(500).json({ error: error.message });
+  return res.json({ count: count ?? 0 });
+});
+
 app.post('/api/shortlists/toggle', authMiddleware, async (req: Request, res: Response) => {
   const { role_id, talent_id } = (req.body ?? {}) as { role_id?: string; talent_id?: string };
   if (!role_id || !UUID_RE.test(role_id) || !talent_id || !UUID_RE.test(talent_id)) {
