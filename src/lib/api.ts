@@ -234,6 +234,28 @@ export interface CandidateListItem {
   notice_period_days: number | null
 }
 
+// ── Shortlists ────────────────────────────────────────────────────────────────
+
+export async function getShortlist(roleId: string): Promise<string[]> {
+  const res = await fetch(`${API_BASE}/api/shortlists?roleId=${encodeURIComponent(roleId)}`, {
+    headers: { ...(await authHeaders()) },
+  })
+  if (!res.ok) throw new Error(await readError(res))
+  const json = (await res.json()) as { talent_ids: string[] }
+  return json.talent_ids
+}
+
+export async function toggleShortlist(roleId: string, talentId: string): Promise<boolean> {
+  const res = await fetch(`${API_BASE}/api/shortlists/toggle`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...(await authHeaders()) },
+    body: JSON.stringify({ role_id: roleId, talent_id: talentId }),
+  })
+  if (!res.ok) throw new Error(await readError(res))
+  const json = (await res.json()) as { added: boolean }
+  return json.added
+}
+
 export async function getCandidatesList(): Promise<CandidateListItem[]> {
   const res = await fetch(`${API_BASE}/api/candidates`, {
     headers: { ...(await authHeaders()) },

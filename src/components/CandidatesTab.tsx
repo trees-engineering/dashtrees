@@ -2,26 +2,21 @@ import { useState, useMemo } from 'react'
 import { Search, ExternalLink } from 'lucide-react'
 import { useCandidates } from '../hooks/useCandidates'
 import { useRoles } from '../hooks/useRoles'
+import { useShortlist } from '../hooks/useShortlist'
 import { availBadgeClass, formatDate, ensureHttps } from '../lib/utils'
 import { telemetry } from '../lib/telemetry'
 
 interface CandidatesTabProps {
   recruiterFilter: string
   trackerRoleId: string
-  trackerTalentIds: Set<string>
   onTrackerRoleChange: (roleId: string) => void
-  onTrackerToggle: (talentId: string, roleId: string) => void
 }
 
-export function CandidatesTab({
-  recruiterFilter,
-  trackerRoleId,
-  trackerTalentIds,
-  onTrackerRoleChange,
-  onTrackerToggle,
-}: CandidatesTabProps) {
+export function CandidatesTab({ recruiterFilter, trackerRoleId, onTrackerRoleChange }: CandidatesTabProps) {
   const { data: candidates, isLoading } = useCandidates()
   const { data: roles } = useRoles()
+
+  const { talentIds: trackerTalentIds, toggle: toggleShortlist } = useShortlist(trackerRoleId || null)
 
   const [search, setSearch] = useState('')
   const [countryFilter, setCountryFilter] = useState('')
@@ -55,7 +50,7 @@ export function CandidatesTab({
   }, [candidates, search, countryFilter])
 
   function toggleId(id: string) {
-    onTrackerToggle(id, trackerRoleId)
+    toggleShortlist(id)
   }
 
   function handleRoleChange(roleId: string) {

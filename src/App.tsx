@@ -89,7 +89,6 @@ function Dashboard() {
   // save-fired-matching OR on back-without-save (recruiter can rerun later).
   const [pendingCascadeRoleId, setPendingCascadeRoleId] = useState<string | null>(null)
   const [trackerRoleId, setTrackerRoleId] = useState('')
-  const [trackerTalentIds, setTrackerTalentIds] = useState<Set<string>>(new Set())
   // Admins choose freely from a dropdown ("" = All recruiters); their pick
   // persists across reloads in localStorage. Non-admins don't have a
   // dropdown — their filter is always locked to their own email below.
@@ -151,25 +150,6 @@ function Dashboard() {
       from: prev || null,
       to: email || null,
     })
-  }
-
-  function handleTrackerRoleChange(roleId: string) {
-    setTrackerRoleId(roleId)
-    setTrackerTalentIds(new Set())
-  }
-
-  function handleTrackerToggle(talentId: string, forRoleId: string) {
-    if (forRoleId !== trackerRoleId) {
-      setTrackerRoleId(forRoleId)
-      setTrackerTalentIds(new Set([talentId]))
-    } else {
-      setTrackerTalentIds(prev => {
-        const next = new Set(prev)
-        if (next.has(talentId)) next.delete(talentId)
-        else next.add(talentId)
-        return next
-      })
-    }
   }
 
   const handleNavigateToRoles = (tab: string) => {
@@ -359,9 +339,7 @@ function Dashboard() {
             <CandidatesTab
               recruiterFilter={selectedRecruiter}
               trackerRoleId={trackerRoleId}
-              trackerTalentIds={trackerTalentIds}
-              onTrackerRoleChange={handleTrackerRoleChange}
-              onTrackerToggle={handleTrackerToggle}
+              onTrackerRoleChange={setTrackerRoleId}
             />
           )}
           {activeTab === 'matches' && (
@@ -369,16 +347,13 @@ function Dashboard() {
               selectedRoleId={selectedRoleId}
               onRoleChange={setSelectedRoleId}
               recruiterFilter={selectedRecruiter}
-              trackerTalentIds={trackerTalentIds}
-              onTrackerToggle={handleTrackerToggle}
             />
           )}
           {activeTab === 'tracker' && (
             <TrackerTab
               recruiterFilter={selectedRecruiter}
               trackerRoleId={trackerRoleId}
-              trackerTalentIds={trackerTalentIds}
-              onTrackerRoleChange={handleTrackerRoleChange}
+              onTrackerRoleChange={setTrackerRoleId}
             />
           )}
           {activeTab === 'intros' && (

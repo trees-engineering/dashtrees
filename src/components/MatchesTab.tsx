@@ -1,6 +1,7 @@
 import { useEffect } from 'react'
 import { useRoles } from '../hooks/useRoles'
 import { useMatches } from '../hooks/useMatches'
+import { useShortlist } from '../hooks/useShortlist'
 import { MatchCard } from './MatchCard'
 import { RerunMatchesButton } from './RerunMatchesButton'
 import { telemetry } from '../lib/telemetry'
@@ -9,13 +10,12 @@ interface MatchesTabProps {
   selectedRoleId: string | null
   onRoleChange: (id: string) => void
   recruiterFilter: string
-  trackerTalentIds: Set<string>
-  onTrackerToggle: (talentId: string, roleId: string) => void
 }
 
-export function MatchesTab({ selectedRoleId, onRoleChange, recruiterFilter, trackerTalentIds, onTrackerToggle }: MatchesTabProps) {
+export function MatchesTab({ selectedRoleId, onRoleChange, recruiterFilter }: MatchesTabProps) {
   const { data: roles, isLoading: rolesLoading } = useRoles()
   const { data: matches, isLoading: matchesLoading } = useMatches(selectedRoleId)
+  const { talentIds: trackerTalentIds, toggle: toggleTalent } = useShortlist(selectedRoleId)
 
   const visibleRoles = (roles ?? []).filter(
     (r) => !recruiterFilter || r.recruiter_email === recruiterFilter,
@@ -123,10 +123,8 @@ export function MatchesTab({ selectedRoleId, onRoleChange, recruiterFilter, trac
         <div className="space-y-3">
           <p className="text-xs text-treeTextSec">
             {matches.length} match{matches.length !== 1 ? 'es' : ''} found
-            {selectedRoleId && trackerTalentIds.size > 0 && (
-              <span className="ml-2 text-primary font-medium">
-                {matches.filter(m => trackerTalentIds.has(m.talent_id)).length} selected
-              </span>
+            {trackerTalentIds.size > 0 && (
+              <span className="ml-2 text-primary font-medium">{trackerTalentIds.size} selected</span>
             )}
           </p>
           {matches.map((match) => (
@@ -135,7 +133,7 @@ export function MatchesTab({ selectedRoleId, onRoleChange, recruiterFilter, trac
               match={match}
               roleId={selectedRoleId}
               selected={trackerTalentIds.has(match.talent_id)}
-              onSelect={selectedRoleId ? () => onTrackerToggle(match.talent_id, selectedRoleId) : undefined}
+              onSelect={() => toggleTalent(match.talent_id)}
             />
           ))}
         </div>

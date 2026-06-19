@@ -858,6 +858,44 @@ app.patch('/api/candidates/:talentId', authMiddleware, async (req: Request, res:
   res.json({ ok: true });
 });
 
+// ── Shortlists ───────────────────────────────────────────────────────────────
+// All authenticated users read all shortlists (admins see everything).
+// recruiter_id records who added the entry for audit; not used for filtering.
+
+app.get('/api/shortlists', authMiddleware, async (req: Request, res: Response) => {
+  const roleId = req.query.roleId as string | undefined;
+  if (!roleId || !UUID_RE.test(roleId)) return res.json({ talent_ids: [] });
+  const { data, error } = await supabase
+    .from('_shortlists')
+    .select('talent_id')
+    .eq('role_id', roleId);
+  if (error) return res.status(500).json({ error: error.message });
+  return res.json({ talent_ids: (data ?? []).map((r) => r.talent_id) });
+});
+
+app.post('/api/shortlists/toggle', authMiddleware, async (req: Request, res: Response) => {
+  const { role_id, talent_id } = (req.body ?? {}) as { role_id?: string; talent_id?: string };
+  if (!role_id || !UUID_RE.test(role_id) || !talent_id || !UUID_RE.test(talent_id)) {
+    return res.status(400).json({ error: 'role_id and talent_id must be valid UUIDs' });
+  }
+  const { data: existing } = await supabase
+    .from('_shortlists')
+    .select('id')
+    .eq('role_id', role_id)
+    .eq('talent_id', talent_id)
+    .maybeSingle();
+  if (existing) {
+    await supabase.from('_shortlists').delete().eq('id', existing.id);
+    return res.json({ added: false });
+  }
+  await supabase.from('_shortlists').insert({
+    role_id,
+    talent_id,
+    recruiter_id: req.auth!.recruiterId,
+  });
+  return res.json({ added: true });
+});
+
 // ── Static frontend (production) ─────────────────────────────────────────────
 const distDir = path.resolve(process.cwd(), 'dist');
 if (fs.existsSync(distDir)) {

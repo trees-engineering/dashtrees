@@ -2,12 +2,12 @@ import { useState, useMemo } from 'react'
 import { Copy, Check, ChevronDown, ChevronRight } from 'lucide-react'
 import { useCandidates } from '../hooks/useCandidates'
 import { useRoles } from '../hooks/useRoles'
+import { useShortlist } from '../hooks/useShortlist'
 import { ensureHttps } from '../lib/utils'
 
 interface TrackerTabProps {
   recruiterFilter: string
   trackerRoleId: string
-  trackerTalentIds: Set<string>
   onTrackerRoleChange: (roleId: string) => void
 }
 
@@ -46,9 +46,11 @@ const SIGNATURE_HTML = `<p style="margin:0;font-size:13px;color:#555;line-height
   Trade Reg. Nr. 202001041675 (1397996-T)
 </p>`
 
-export function TrackerTab({ recruiterFilter, trackerRoleId, trackerTalentIds, onTrackerRoleChange }: TrackerTabProps) {
-  const { data: candidates, isLoading } = useCandidates()
+export function TrackerTab({ recruiterFilter, trackerRoleId, onTrackerRoleChange }: TrackerTabProps) {
+  const { data: candidates, isLoading: candidatesLoading } = useCandidates()
   const { data: roles } = useRoles()
+  const { talentIds: trackerTalentIds, isLoading: shortlistLoading } = useShortlist(trackerRoleId || null)
+  const isLoading = candidatesLoading || shortlistLoading
 
   // Document fields
   const [clientLabel, setClientLabel] = useState('')
