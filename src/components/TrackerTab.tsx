@@ -94,7 +94,7 @@ export function TrackerTab({ recruiterFilter, trackerRoleId, trackerTalentIds, o
     }).join('')
 
     return `<div style="font-family:Arial,sans-serif;font-size:14px;color:#333;line-height:1.6;max-width:750px;">
-${clientLabel ? `<p style="margin:0 0 16px;font-weight:bold;">TREES – ${esc(clientLabel)}</p>` : ''}
+<table width="100%" cellpadding="0" cellspacing="0" style="margin:0 0 20px;"><tr><td style="padding:14px 20px;background-color:#1a2744;border-radius:6px;"><span style="color:white;font-weight:bold;font-size:14px;">TREES${clientLabel ? ` – ${esc(clientLabel)}` : ''}</span></td></tr></table>
 <p style="margin:0 0 4px;">Dear ${esc(contactName || '[Contact Name]')},</p>
 <p style="margin:0 0 16px;">${esc(introText)}</p>
 ${selectedRole ? `<p style="margin:16px 0 8px;font-weight:bold;color:#1a2744;">${esc(selectedRole.title)}</p>` : ''}
