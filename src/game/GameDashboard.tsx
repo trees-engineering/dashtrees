@@ -1,6 +1,6 @@
 import { useState, useCallback, useEffect, useRef } from 'react'
 import {
-  Home, Briefcase, Users, UserCheck, FileBarChart2, UserCircle, Menu,
+  Home, Briefcase, Users, UserCheck, FileBarChart2, UserCircle, Menu, BookUser, ClipboardList,
 } from 'lucide-react'
 import { useAuth } from '../lib/auth'
 import { useToast } from '../components/Toast'
@@ -8,6 +8,8 @@ import { startMatching } from '../lib/api'
 import { telemetry } from '../lib/telemetry'
 import { RolesTab } from '../components/RolesTab'
 import { MatchesTab } from '../components/MatchesTab'
+import { CandidatesTab } from '../components/CandidatesTab'
+import { TrackerTab } from '../components/TrackerTab'
 import { IntrosTab } from '../components/IntrosTab'
 import { ReportsTab } from '../components/ReportsTab'
 import { ProfileTab } from '../components/ProfileTab'
@@ -23,22 +25,26 @@ import { ScorePopOverlay, useScorePops } from './ScorePop'
 import { useGameStats } from './useGameStats'
 import { XP_REWARDS } from './gamification'
 
-type GameTabId = 'home' | 'roles' | 'matches' | 'intros' | 'reports' | 'profile'
+type GameTabId = 'home' | 'roles' | 'candidates' | 'matches' | 'tracker' | 'intros' | 'reports' | 'profile'
 
 const GAME_NAV: GameNavItem[] = [
-  { id: 'home',    label: 'Base Camp',  icon: Home,         emoji: '🏕️', xpHint: ''       },
-  { id: 'roles',   label: 'Missions',   icon: Briefcase,    emoji: '🎯', xpHint: '+100 XP' },
-  { id: 'matches', label: 'Candidates', icon: Users,        emoji: '🔍', xpHint: '+10 XP'  },
-  { id: 'intros',  label: 'Intros',     icon: UserCheck,    emoji: '🤝', xpHint: '+200 XP' },
-  { id: 'reports', label: 'Intel',      icon: FileBarChart2, emoji: '📊', xpHint: ''       },
-  { id: 'profile', label: 'Player',     icon: UserCircle,   emoji: '👤', xpHint: ''       },
+  { id: 'home',       label: 'Base Camp',  icon: Home,          emoji: '🏕️', xpHint: ''        },
+  { id: 'roles',      label: 'Missions',   icon: Briefcase,     emoji: '🎯', xpHint: '+100 XP' },
+  { id: 'candidates', label: 'Roster',     icon: BookUser,      emoji: '📋', xpHint: ''        },
+  { id: 'matches',    label: 'Radar',      icon: Users,         emoji: '📡', xpHint: '+10 XP'  },
+  { id: 'tracker',    label: 'Shortlist',  icon: ClipboardList, emoji: '🏆', xpHint: '+50 XP'  },
+  { id: 'intros',     label: 'Intros',     icon: UserCheck,     emoji: '🤝', xpHint: '+200 XP' },
+  { id: 'reports',    label: 'Intel',      icon: FileBarChart2, emoji: '📊', xpHint: ''        },
+  { id: 'profile',    label: 'Player',     icon: UserCircle,    emoji: '👤', xpHint: ''        },
 ]
 
 // Tab action banners shown as a thin banner above each tab's content
 const TAB_BANNERS: Partial<Record<GameTabId, { emoji: string; text: string; color: string }>> = {
-  roles:   { emoji: '🎯', text: 'Post a role to earn +100 XP • Shortlist for +50 XP',    color: '#a78bfa' },
-  matches: { emoji: '🔍', text: 'Review and shortlist candidates to earn XP rewards!',    color: '#34d399' },
-  intros:  { emoji: '🤝', text: 'Every introduction earns +200 XP + 1 💎 gem!',          color: '#60a5fa' },
+  roles:      { emoji: '🎯', text: 'Post a role to earn +100 XP • Shortlist for +50 XP',      color: '#a78bfa' },
+  candidates: { emoji: '📋', text: 'Browse the full talent roster — tick candidates to shortlist them!', color: '#34d399' },
+  matches:    { emoji: '📡', text: 'AI-matched candidates for your role — shortlist to earn +10 XP!',    color: '#34d399' },
+  tracker:    { emoji: '🏆', text: 'Your shortlist — build the client doc and copy the email draft!',     color: '#f59e0b' },
+  intros:     { emoji: '🤝', text: 'Every introduction earns +200 XP + 1 💎 gem!',                       color: '#60a5fa' },
 }
 
 export function GameDashboard() {
@@ -48,6 +54,7 @@ export function GameDashboard() {
 
   const [activeTab, setActiveTab] = useState<GameTabId>('home')
   const [selectedRoleId, setSelectedRoleId] = useState<string | null>(null)
+  const [trackerRoleId, setTrackerRoleId] = useState('')
   const [editingRoleId, setEditingRoleId] = useState<string | null>(null)
   const [creatingRole, setCreatingRole] = useState(false)
   const [creatingCandidate, setCreatingCandidate] = useState(false)
@@ -286,11 +293,25 @@ export function GameDashboard() {
                   recruiterFilter={selectedRecruiter}
                 />
               )}
+              {activeTab === 'candidates' && (
+                <CandidatesTab
+                  recruiterFilter={selectedRecruiter}
+                  trackerRoleId={trackerRoleId}
+                  onTrackerRoleChange={setTrackerRoleId}
+                />
+              )}
               {activeTab === 'matches' && (
                 <MatchesTab
                   selectedRoleId={selectedRoleId}
                   onRoleChange={setSelectedRoleId}
                   recruiterFilter={selectedRecruiter}
+                />
+              )}
+              {activeTab === 'tracker' && (
+                <TrackerTab
+                  recruiterFilter={selectedRecruiter}
+                  trackerRoleId={trackerRoleId}
+                  onTrackerRoleChange={setTrackerRoleId}
                 />
               )}
               {activeTab === 'intros' && (
