@@ -97,9 +97,10 @@ function XPPanel({ stats }: { stats: GameStats }) {
 
       <div className="space-y-1">
         {[
-          { label: '🎯 Missions',   val: stats.rolesXP,   c: '#a78bfa' },
-          { label: '📡 Scouting',   val: stats.matchesXP, c: '#34d399' },
-          { label: '🤝 Placements', val: stats.introsXP,  c: '#60a5fa' },
+          { label: '🎯 Missions',     val: stats.rolesXP,       c: '#a78bfa' },
+          { label: '📡 Scouting',     val: stats.matchesXP,     c: '#34d399' },
+          { label: '🤝 Placements',   val: stats.introsXP,      c: '#60a5fa' },
+          { label: '🏅 Achievements', val: stats.achievementXP, c: '#fbbf24' },
         ].map(({ label, val, c }) => (
           <div key={label} className="flex items-center justify-between text-[10px]">
             <span style={{ color: 'rgba(255,255,255,0.38)' }}>{label}</span>
@@ -224,7 +225,7 @@ function ShieldPanel({ stats }: { stats: GameStats }) {
           />
         </div>
         <p className="text-[9px] mt-1" style={{ color: 'rgba(255,255,255,0.28)' }}>
-          Reach 100% to gain star protection!
+          Reach {introTarget} intros to unlock the 🛡️ Shield badge!
         </p>
       </div>
 

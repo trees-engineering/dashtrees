@@ -83,6 +83,16 @@ export function GameDashboard() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [stats?.totalXP])
 
+  // Immediate shortlist pop — fires from useShortlist.onMutate without waiting
+  // for the roles refetch to propagate the XP delta.
+  useEffect(() => {
+    const handler = () =>
+      addPop(XP_REWARDS.match_shortlisted.label, XP_REWARDS.match_shortlisted.emoji, XP_REWARDS.match_shortlisted.color)
+    window.addEventListener('game:shortlist_added', handler)
+    return () => window.removeEventListener('game:shortlist_added', handler)
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [])
+
   const handleTabChange = useCallback((tab: GameTabId) => {
     setActiveTab(tab)
     setMobileNavOpen(false)

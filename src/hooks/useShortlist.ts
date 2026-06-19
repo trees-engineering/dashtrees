@@ -16,10 +16,12 @@ export function useShortlist(roleId: string | null) {
     onMutate: async (talentId) => {
       await queryClient.cancelQueries({ queryKey: ['shortlist', roleId] })
       const prev = queryClient.getQueryData<string[]>(['shortlist', roleId]) ?? []
-      const next = prev.includes(talentId)
-        ? prev.filter((id) => id !== talentId)
-        : [...prev, talentId]
+      const isAdding = !prev.includes(talentId)
+      const next = isAdding ? [...prev, talentId] : prev.filter((id) => id !== talentId)
       queryClient.setQueryData(['shortlist', roleId], next)
+      // Fire a game event so GameDashboard can pop a score animation immediately,
+      // without waiting for the roles refetch to propagate the XP change.
+      if (isAdding) window.dispatchEvent(new CustomEvent('game:shortlist_added'))
       return { prev }
     },
     onError: (_err, _talentId, ctx) => {

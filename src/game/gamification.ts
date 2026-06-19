@@ -35,6 +35,7 @@ export interface GameStats {
   rolesXP: number
   matchesXP: number
   introsXP: number
+  achievementXP: number
   rolesTotal: number
   rolesOpen: number
   matchesTotal: number
@@ -52,7 +53,11 @@ export function computeGameStats(
   const rolesXP   = rolesTotal  * 100
   const matchesXP = matchesTotal * 10 + shortlisted * 50
   const introsXP  = intros * 200
-  const totalXP   = rolesXP + matchesXP + introsXP
+  // Add XP from unlocked achievements so the displayed "+500 XP" badge actually counts
+  const achievementXP = computeAchievements(rolesTotal, matchesTotal, shortlisted, intros)
+    .filter((a) => a.unlocked)
+    .reduce((s, a) => s + a.xpReward, 0)
+  const totalXP   = rolesXP + matchesXP + introsXP + achievementXP
 
   const level = [...LEVELS].reverse().find((l) => totalXP >= l.minXP) ?? LEVELS[0]
   const levelIdx = LEVELS.indexOf(level)
@@ -68,7 +73,7 @@ export function computeGameStats(
 
   return {
     totalXP, level, nextLevel, progressPct, xpToNextLevel,
-    stars, gems, rolesXP, matchesXP, introsXP,
+    stars, gems, rolesXP, matchesXP, introsXP, achievementXP,
     rolesTotal, rolesOpen, matchesTotal, shortlisted, intros,
   }
 }
