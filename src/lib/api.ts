@@ -255,9 +255,12 @@ export interface LeaderboardEntry {
   rolesTotal: number
   shortlisted: number
   intros: number
+  monthlyXP: number
+  monthlyRoles: number
+  monthlyShortlists: number
 }
 
-export async function getLeaderboard(): Promise<{ leaderboard: LeaderboardEntry[] }> {
+export async function getLeaderboard(): Promise<{ leaderboard: LeaderboardEntry[]; monthStart: string }> {
   const res = await fetch(`${API_BASE}/api/game/leaderboard`, {
     headers: { ...(await authHeaders()) },
   })

@@ -928,10 +928,14 @@ function leaderboardAchievementXP(roles: number, matches: number, sl: number, in
 }
 
 app.get('/api/game/leaderboard', authMiddleware, async (_req: Request, res: Response) => {
+  // First day of the current calendar month (UTC) — used for monthly bonus scoring
+  const now = new Date()
+  const monthStart = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), 1)).toISOString()
+
   const [rolesRes, matchesRes, shortlistsRes, recruitersRes] = await Promise.all([
-    supabase.from('_role').select('id, created_by'),
+    supabase.from('_role').select('id, created_by, created_at'),
     supabase.from('_matches').select('role_id, status'),
-    supabase.from('_shortlists').select('recruiter_id'),
+    supabase.from('_shortlists').select('recruiter_id, created_at'),
     supabase.from('_recruiters').select('id, email, name'),
   ])
 
@@ -950,22 +954,30 @@ app.get('/api/game/leaderboard', authMiddleware, async (_req: Request, res: Resp
     matchMap.set(m.role_id, ex)
   }
 
-  // Shortlist count per recruiter
-  const shortlistMap = new Map<string, number>()
+  // Shortlist counts: all-time and this month, per recruiter
+  const shortlistAll = new Map<string, number>()
+  const shortlistMonth = new Map<string, number>()
   for (const s of (shortlistsRes.data ?? [])) {
-    if (s.recruiter_id) shortlistMap.set(s.recruiter_id, (shortlistMap.get(s.recruiter_id) ?? 0) + 1)
+    if (!s.recruiter_id) continue
+    shortlistAll.set(s.recruiter_id, (shortlistAll.get(s.recruiter_id) ?? 0) + 1)
+    if (s.created_at >= monthStart)
+      shortlistMonth.set(s.recruiter_id, (shortlistMonth.get(s.recruiter_id) ?? 0) + 1)
   }
 
   // Recruiter lookup
   const recruiterMap = new Map((recruitersRes.data ?? []).map((r) => [r.id, r]))
 
   // Aggregate per recruiter (UUID-shaped created_by only)
-  const agg = new Map<string, { rolesTotal: number; matchesTotal: number; intros: number }>()
+  const agg = new Map<string, {
+    rolesTotal: number; rolesMonth: number
+    matchesTotal: number; intros: number
+  }>()
   for (const role of (rolesRes.data ?? [])) {
     if (!role.created_by || !UUID_RE.test(role.created_by)) continue
     const mc = matchMap.get(role.id) ?? { total: 0, introduced: 0 }
-    const ex = agg.get(role.created_by) ?? { rolesTotal: 0, matchesTotal: 0, intros: 0 }
+    const ex = agg.get(role.created_by) ?? { rolesTotal: 0, rolesMonth: 0, matchesTotal: 0, intros: 0 }
     ex.rolesTotal++
+    if (role.created_at >= monthStart) ex.rolesMonth++
     ex.matchesTotal += mc.total
     ex.intros += mc.introduced
     agg.set(role.created_by, ex)
@@ -975,9 +987,13 @@ app.get('/api/game/leaderboard', authMiddleware, async (_req: Request, res: Resp
     .map(([recruiterId, s]) => {
       const rec = recruiterMap.get(recruiterId)
       if (!rec) return null
-      const shortlisted = shortlistMap.get(recruiterId) ?? 0
+      const shortlisted = shortlistAll.get(recruiterId) ?? 0
       const achievementXP = leaderboardAchievementXP(s.rolesTotal, s.matchesTotal, shortlisted, s.intros)
       const totalXP = s.rolesTotal * 100 + s.matchesTotal * 10 + shortlisted * 50 + s.intros * 200 + achievementXP
+      // Monthly XP: only roles + shortlists this calendar month (clear, auditable output metrics)
+      const monthlyRoles = s.rolesMonth
+      const monthlyShortlists = shortlistMonth.get(recruiterId) ?? 0
+      const monthlyXP = monthlyRoles * 100 + monthlyShortlists * 50
       return {
         recruiter_id: recruiterId,
         recruiter_email: rec.email as string,
@@ -986,12 +1002,16 @@ app.get('/api/game/leaderboard', authMiddleware, async (_req: Request, res: Resp
         rolesTotal: s.rolesTotal,
         shortlisted,
         intros: s.intros,
+        monthlyXP,
+        monthlyRoles,
+        monthlyShortlists,
       }
     })
     .filter(Boolean)
-    .sort((a, b) => b!.totalXP - a!.totalXP)
+    // Sort by monthly XP (bonus fairness) with total XP as tiebreaker (career standing)
+    .sort((a, b) => b!.monthlyXP - a!.monthlyXP || b!.totalXP - a!.totalXP)
 
-  return res.json({ leaderboard })
+  return res.json({ leaderboard, monthStart })
 })
 
 // ── Static frontend (production) ─────────────────────────────────────────────
