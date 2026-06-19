@@ -93,6 +93,8 @@ function CandidateEditForm({ candidate, onSaved, onDirtyChange }: CandidateEditF
   const toast = useToast()
 
   const initialSkills = candidate.skills.map((s) => s.skill_name).join(', ')
+  const initialCertifications = (candidate.certifications ?? []).join(', ')
+  const initialLanguages = (candidate.languages ?? []).join(', ')
 
   const [name, setName] = useState(candidate.name ?? '')
   const [email, setEmail] = useState(candidate.email ?? '')
@@ -101,6 +103,10 @@ function CandidateEditForm({ candidate, onSaved, onDirtyChange }: CandidateEditF
   const [country, setCountry] = useState(candidate.country ?? '')
   const [linkedinUrl, setLinkedinUrl] = useState(candidate.linkedin_url ?? '')
   const [visaStatus, setVisaStatus] = useState(candidate.visa_status ?? '')
+  const [visaExpirationDate, setVisaExpirationDate] = useState(
+    candidate.visa_expiration_date ? candidate.visa_expiration_date.slice(0, 10) : '',
+  )
+  const [workRights, setWorkRights] = useState(candidate.work_rights ?? '')
   const [availability, setAvailability] = useState(candidate.availability_status ?? '')
   const [availableFrom, setAvailableFrom] = useState(
     candidate.available_from ? candidate.available_from.slice(0, 10) : '',
@@ -113,6 +119,8 @@ function CandidateEditForm({ candidate, onSaved, onDirtyChange }: CandidateEditF
   const [currency, setCurrency] = useState(candidate.currency ?? '')
   const [rotation, setRotation] = useState(candidate.rotation_preference ?? '')
   const [skills, setSkills] = useState(initialSkills)
+  const [certifications, setCertifications] = useState(initialCertifications)
+  const [languages, setLanguages] = useState(initialLanguages)
 
   const [saving, setSaving] = useState(false)
   const [error, setError] = useState<string | null>(null)
@@ -125,6 +133,8 @@ function CandidateEditForm({ candidate, onSaved, onDirtyChange }: CandidateEditF
     country !== (candidate.country ?? '') ||
     linkedinUrl !== (candidate.linkedin_url ?? '') ||
     visaStatus !== (candidate.visa_status ?? '') ||
+    visaExpirationDate !== (candidate.visa_expiration_date ? candidate.visa_expiration_date.slice(0, 10) : '') ||
+    workRights !== (candidate.work_rights ?? '') ||
     availability !== (candidate.availability_status ?? '') ||
     availableFrom !== (candidate.available_from ? candidate.available_from.slice(0, 10) : '') ||
     noticeDays !== (candidate.notice_period_days != null ? String(candidate.notice_period_days) : '') ||
@@ -132,11 +142,14 @@ function CandidateEditForm({ candidate, onSaved, onDirtyChange }: CandidateEditF
     rateType !== (candidate.rate_type ?? '') ||
     currency !== (candidate.currency ?? '') ||
     rotation !== (candidate.rotation_preference ?? '') ||
-    skills !== initialSkills
+    skills !== initialSkills ||
+    certifications !== initialCertifications ||
+    languages !== initialLanguages
   ), [
     candidate, name, email, phone, city, country, linkedinUrl, visaStatus,
-    availability, availableFrom, noticeDays, rate, rateType, currency, rotation,
-    skills, initialSkills,
+    visaExpirationDate, workRights, availability, availableFrom, noticeDays,
+    rate, rateType, currency, rotation, skills, certifications, languages,
+    initialSkills, initialCertifications, initialLanguages,
   ])
 
   useEffect(() => { onDirtyChange(isDirty) }, [isDirty, onDirtyChange])
@@ -155,6 +168,8 @@ function CandidateEditForm({ candidate, onSaved, onDirtyChange }: CandidateEditF
     }
 
     const skillList = skills.split(',').map((s) => s.trim()).filter(Boolean)
+    const certList = certifications.split(',').map((s) => s.trim()).filter(Boolean)
+    const langList = languages.split(',').map((s) => s.trim()).filter(Boolean)
 
     const patch: CandidatePatch = {
       name: name.trim() || null,
@@ -164,6 +179,8 @@ function CandidateEditForm({ candidate, onSaved, onDirtyChange }: CandidateEditF
       country: country.trim() || null,
       linkedin_url: linkedinUrl.trim() || null,
       visa_status: visaStatus || null,
+      visa_expiration_date: visaExpirationDate || null,
+      work_rights: workRights.trim() || null,
       availability_status: availability || null,
       available_from: availableFrom || null,
       notice_period_days: noticeDaysNum,
@@ -172,6 +189,8 @@ function CandidateEditForm({ candidate, onSaved, onDirtyChange }: CandidateEditF
       currency: currency.trim() || null,
       rotation_preference: rotation || null,
       skills: skillList,
+      certifications: certList,
+      languages: langList,
     }
 
     setSaving(true)
@@ -233,6 +252,16 @@ function CandidateEditForm({ candidate, onSaved, onDirtyChange }: CandidateEditF
             <option value="sponsorship_needed">Sponsorship needed</option>
           </select>
         </Field>
+        <Field label="Visa expiry date">
+          <input type="date" value={visaExpirationDate} onChange={(e) => setVisaExpirationDate(e.target.value)} className={inputClass} />
+        </Field>
+      </div>
+
+      <Field label="Work rights" hint="e.g. Malaysian PR, eligible to work in MY/SG without sponsorship">
+        <input type="text" value={workRights} onChange={(e) => setWorkRights(e.target.value)} className={inputClass} />
+      </Field>
+
+      <div className="grid grid-cols-2 gap-3">
         <Field label="Rotation preference">
           <select value={rotation} onChange={(e) => setRotation(e.target.value)} className={inputClass}>
             <option value="">Unspecified</option>
@@ -240,6 +269,9 @@ function CandidateEditForm({ candidate, onSaved, onDirtyChange }: CandidateEditF
             <option value="hybrid">Hybrid</option>
             <option value="onsite">Onsite</option>
           </select>
+        </Field>
+        <Field label="Languages" hint="Comma-separated, e.g. English, Malay, French">
+          <input type="text" value={languages} onChange={(e) => setLanguages(e.target.value)} className={inputClass} />
         </Field>
       </div>
 
@@ -305,6 +337,16 @@ function CandidateEditForm({ candidate, onSaved, onDirtyChange }: CandidateEditF
           onChange={(e) => setSkills(e.target.value)}
           rows={3}
           placeholder="Python, Reservoir engineering, Petrel, …"
+          className={`${inputClass} resize-y`}
+        />
+      </Field>
+
+      <Field label="Certifications" hint="Comma-separated list of certifications.">
+        <textarea
+          value={certifications}
+          onChange={(e) => setCertifications(e.target.value)}
+          rows={2}
+          placeholder="BOSIET, H2S, PMP, …"
           className={`${inputClass} resize-y`}
         />
       </Field>

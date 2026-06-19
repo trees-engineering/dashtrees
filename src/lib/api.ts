@@ -237,6 +237,10 @@ export interface CandidateDetail {
   rate_type: string | null
   currency: string | null
   rotation_preference: string | null
+  work_rights: string | null
+  visa_expiration_date: string | null
+  certifications: string[]
+  languages: string[]
   skills: CandidateSkill[]
 }
 
@@ -255,6 +259,10 @@ export interface CandidatePatch {
   rate_type?: string | null
   currency?: string | null
   rotation_preference?: string | null
+  work_rights?: string | null
+  visa_expiration_date?: string | null
+  certifications?: string[]
+  languages?: string[]
   skills?: string[]
 }
 

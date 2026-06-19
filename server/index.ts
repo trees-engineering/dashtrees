@@ -807,7 +807,7 @@ app.get('/api/candidates/:talentId', authMiddleware, async (req: Request, res: R
   const { talentId } = req.params;
   const [talentRes, skillsRes] = await Promise.all([
     supabase.from('_talent')
-      .select('id,name,email,phone,city,country,linkedin_url,visa_status,availability_status,available_from,notice_period_days,rate,rate_type,currency,rotation_preference')
+      .select('id,name,email,phone,city,country,linkedin_url,visa_status,availability_status,available_from,notice_period_days,rate,rate_type,currency,rotation_preference,work_rights,visa_expiration_date,certifications,languages')
       .eq('id', talentId).single(),
     supabase.from('_talent_skills').select('skill_name,years_experience').eq('talent_id', talentId),
   ]);
@@ -825,7 +825,8 @@ app.patch('/api/candidates/:talentId', authMiddleware, async (req: Request, res:
   const ALLOWED = new Set([
     'name','email','phone','city','country','linkedin_url','visa_status',
     'availability_status','available_from','notice_period_days','rate','rate_type',
-    'currency','rotation_preference',
+    'currency','rotation_preference','work_rights','visa_expiration_date',
+    'certifications','languages',
   ]);
   const safeFields: Record<string, unknown> = {};
   for (const [k, v] of Object.entries(rawFields)) {
