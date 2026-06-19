@@ -246,7 +246,7 @@ function ShieldPanel({ stats }: { stats: GameStats }) {
 }
 
 // ── Daily objectives ──────────────────────────────────────────────
-type DailyStat = 'shortlists' | 'roles'
+type DailyStat = 'shortlists' | 'roles' | 'intros'
 interface DailyObjective { id: string; text: string; icon: string; target: number; stat: DailyStat }
 
 const OBJECTIVE_POOL: DailyObjective[] = [
@@ -255,6 +255,7 @@ const OBJECTIVE_POOL: DailyObjective[] = [
   { id: 'short_5', text: 'Shortlist 5 candidates today', icon: '⭐', target: 5, stat: 'shortlists' },
   { id: 'role_1',  text: 'Post a new role today',        icon: '🎯', target: 1, stat: 'roles'      },
   { id: 'role_2',  text: 'Post 2 roles today',           icon: '🎯', target: 2, stat: 'roles'      },
+  { id: 'intro_1', text: 'Make an introduction today',   icon: '🤝', target: 1, stat: 'intros'     },
 ]
 
 function hashStr(s: string): number {
@@ -276,7 +277,7 @@ function getDailyObjectives(email: string): DailyObjective[] {
   return picked
 }
 
-interface DailyData { date: string; shortlists: number; roles: number }
+interface DailyData { date: string; shortlists: number; roles: number; intros: number }
 
 function loadDailyData(email: string): DailyData {
   const today = new Date().toISOString().slice(0, 10)
@@ -287,7 +288,7 @@ function loadDailyData(email: string): DailyData {
       if (d.date === today) return d
     }
   } catch { /* ignore */ }
-  return { date: today, shortlists: 0, roles: 0 }
+  return { date: today, shortlists: 0, roles: 0, intros: 0 }
 }
 
 function saveDailyData(email: string, data: DailyData) {
@@ -307,11 +308,21 @@ function DailyObjectives({ recruiterEmail }: { recruiterEmail: string }) {
       })
     const bumpShortlist = bump('shortlists')
     const bumpRole = bump('roles')
+    const bumpIntro = (e: Event) => {
+      const n = (e as CustomEvent<{ count: number }>).detail?.count ?? 1
+      setDaily((prev) => {
+        const next = { ...prev, intros: prev.intros + n }
+        saveDailyData(recruiterEmail, next)
+        return next
+      })
+    }
     window.addEventListener('game:shortlist_added', bumpShortlist)
     window.addEventListener('game:role_created', bumpRole)
+    window.addEventListener('game:intro_made', bumpIntro)
     return () => {
       window.removeEventListener('game:shortlist_added', bumpShortlist)
       window.removeEventListener('game:role_created', bumpRole)
+      window.removeEventListener('game:intro_made', bumpIntro)
     }
   }, [recruiterEmail])
 

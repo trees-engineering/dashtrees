@@ -91,6 +91,28 @@ export function GameDashboard() {
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [achievements])
 
+  // When the intro count increases (detected on useRoles refetch), fire a specific
+  // 🤝 pop per new intro and dispatch game:intro_made so daily objectives update.
+  // Intros are set by the AI pipeline so there's no UI action to hook — this is
+  // the best available signal for "an introduction happened."
+  const prevIntrosRef = useRef<number | null>(null)
+  useEffect(() => {
+    if (!stats) return
+    const curr = stats.intros
+    if (prevIntrosRef.current !== null && curr > prevIntrosRef.current) {
+      const n = curr - prevIntrosRef.current
+      for (let i = 0; i < n; i++) {
+        setTimeout(
+          () => addPop(XP_REWARDS.introduction_made.label, XP_REWARDS.introduction_made.emoji, XP_REWARDS.introduction_made.color),
+          i * 400,
+        )
+      }
+      window.dispatchEvent(new CustomEvent('game:intro_made', { detail: { count: n } }))
+    }
+    prevIntrosRef.current = curr
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [stats?.intros])
+
   // Show a full-screen rank-up overlay when the recruiter advances a level mid-session.
   // prevLevelRef is null until the first stats load, so initial render never triggers the overlay.
   const prevLevelRef = useRef<number | null>(null)

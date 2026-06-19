@@ -29,6 +29,8 @@ export function useShortlist(roleId: string | null) {
     },
     onSettled: () => {
       queryClient.invalidateQueries({ queryKey: ['shortlist', roleId] })
+      // Also refresh the game XP total so it reflects the new shortlist count promptly.
+      queryClient.invalidateQueries({ queryKey: ['shortlistCount'] })
     },
   })
 
