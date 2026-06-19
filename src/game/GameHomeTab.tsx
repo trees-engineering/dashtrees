@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useMemo } from 'react'
 import { ChevronRight } from 'lucide-react'
 import { useAuth } from '../lib/auth'
 import { AnimatedNumber } from './AnimatedNumber'
@@ -240,6 +240,133 @@ function ShieldPanel({ stats }: { stats: GameStats }) {
             <span style={{ color: c, fontWeight: 800 }}>{val.toLocaleString()}</span>
           </div>
         ))}
+      </div>
+    </div>
+  )
+}
+
+// ── Daily objectives ──────────────────────────────────────────────
+type DailyStat = 'shortlists' | 'roles'
+interface DailyObjective { id: string; text: string; icon: string; target: number; stat: DailyStat }
+
+const OBJECTIVE_POOL: DailyObjective[] = [
+  { id: 'short_1', text: 'Shortlist 1 candidate today',  icon: '⭐', target: 1, stat: 'shortlists' },
+  { id: 'short_3', text: 'Shortlist 3 candidates today', icon: '⭐', target: 3, stat: 'shortlists' },
+  { id: 'short_5', text: 'Shortlist 5 candidates today', icon: '⭐', target: 5, stat: 'shortlists' },
+  { id: 'role_1',  text: 'Post a new role today',        icon: '🎯', target: 1, stat: 'roles'      },
+  { id: 'role_2',  text: 'Post 2 roles today',           icon: '🎯', target: 2, stat: 'roles'      },
+]
+
+function hashStr(s: string): number {
+  let h = 5381
+  for (const c of s) h = ((h << 5) + h + c.charCodeAt(0)) & 0x7fffffff
+  return h >>> 0
+}
+
+function getDailyObjectives(email: string): DailyObjective[] {
+  const today = new Date().toISOString().slice(0, 10)
+  let n = hashStr(today + email)
+  const used = new Set<number>()
+  const picked: DailyObjective[] = []
+  while (picked.length < 3) {
+    n = (n * 1664525 + 1013904223) >>> 0
+    const idx = n % OBJECTIVE_POOL.length
+    if (!used.has(idx)) { used.add(idx); picked.push(OBJECTIVE_POOL[idx]) }
+  }
+  return picked
+}
+
+interface DailyData { date: string; shortlists: number; roles: number }
+
+function loadDailyData(email: string): DailyData {
+  const today = new Date().toISOString().slice(0, 10)
+  try {
+    const raw = localStorage.getItem(`dt_daily_${email}`)
+    if (raw) {
+      const d = JSON.parse(raw) as DailyData
+      if (d.date === today) return d
+    }
+  } catch { /* ignore */ }
+  return { date: today, shortlists: 0, roles: 0 }
+}
+
+function saveDailyData(email: string, data: DailyData) {
+  try { localStorage.setItem(`dt_daily_${email}`, JSON.stringify(data)) } catch { /* ignore */ }
+}
+
+function DailyObjectives({ recruiterEmail }: { recruiterEmail: string }) {
+  const objectives = useMemo(() => getDailyObjectives(recruiterEmail), [recruiterEmail])
+  const [daily, setDaily] = useState<DailyData>(() => loadDailyData(recruiterEmail))
+
+  useEffect(() => {
+    const bump = (stat: DailyStat) => () =>
+      setDaily((prev) => {
+        const next = { ...prev, [stat]: prev[stat] + 1 }
+        saveDailyData(recruiterEmail, next)
+        return next
+      })
+    const bumpShortlist = bump('shortlists')
+    const bumpRole = bump('roles')
+    window.addEventListener('game:shortlist_added', bumpShortlist)
+    window.addEventListener('game:role_created', bumpRole)
+    return () => {
+      window.removeEventListener('game:shortlist_added', bumpShortlist)
+      window.removeEventListener('game:role_created', bumpRole)
+    }
+  }, [recruiterEmail])
+
+  const completedCount = objectives.filter((o) => daily[o.stat] >= o.target).length
+
+  return (
+    <div>
+      <SectionLabel>
+        ⚡ Daily Objectives
+        <span className="ml-auto text-[9px] font-bold normal-case tracking-normal" style={{ color: 'rgba(251,191,36,0.45)' }}>
+          Resets midnight · {completedCount}/3
+        </span>
+      </SectionLabel>
+      <div className="space-y-2">
+        {objectives.map((obj) => {
+          const progress = daily[obj.stat]
+          const pct = Math.min(100, Math.round((progress / obj.target) * 100))
+          const done = progress >= obj.target
+          return (
+            <div
+              key={obj.id}
+              className="rounded-xl px-3 py-2.5 flex items-center gap-3"
+              style={{
+                background: done ? 'rgba(52,211,153,0.08)' : 'rgba(3,16,45,0.70)',
+                border: `1px solid ${done ? 'rgba(52,211,153,0.30)' : 'rgba(100,160,255,0.14)'}`,
+              }}
+            >
+              <span className="text-xl flex-shrink-0" style={{ opacity: done ? 1 : 0.65 }}>{obj.icon}</span>
+              <div className="flex-1 min-w-0">
+                <div
+                  className={`text-xs font-bold ${done ? 'line-through' : ''}`}
+                  style={{ color: done ? '#34d399' : 'white' }}
+                >
+                  {obj.text}
+                </div>
+                <div className="flex items-center gap-2 mt-1">
+                  <div className="flex-1 h-1 rounded-full overflow-hidden" style={{ background: 'rgba(255,255,255,0.08)' }}>
+                    <div
+                      style={{
+                        width: `${pct}%`, height: '100%',
+                        background: done ? 'linear-gradient(90deg, #34d399, #10b981)' : 'linear-gradient(90deg, #60a5fa, #3b82f6)',
+                        borderRadius: 999,
+                        transition: 'width 0.4s ease',
+                      }}
+                    />
+                  </div>
+                  <span className="text-[9px] font-bold flex-shrink-0" style={{ color: done ? '#34d399' : 'rgba(255,255,255,0.38)' }}>
+                    {progress}/{obj.target}
+                  </span>
+                  {done && <span className="text-[11px]" style={{ color: '#34d399' }}>✓</span>}
+                </div>
+              </div>
+            </div>
+          )
+        })}
       </div>
     </div>
   )
@@ -495,6 +622,7 @@ export function GameHomeTab({
 
       {/* ── Below-fold content ────────────────────────────────── */}
       <div className="px-4 pb-8 space-y-5">
+        <DailyObjectives recruiterEmail={recruiter.email} />
         <QuestLog stats={stats} onNavigate={onNavigate} onPostRole={onPostRole} />
         <AchievementsGrid achievements={achievements} />
         <div className="h-4" />

@@ -73,6 +73,24 @@ export function GameDashboard() {
 
   const { stats, achievements, isLoading } = useGameStats(selectedRecruiter)
 
+  // Fire a score pop when an achievement unlocks mid-session (not on initial load).
+  const prevAchievementsRef = useRef<Set<string>>(new Set())
+  useEffect(() => {
+    if (!achievements.length) return
+    const unlocked = new Set(achievements.filter((a) => a.unlocked).map((a) => a.id))
+    if (prevAchievementsRef.current.size === 0) {
+      prevAchievementsRef.current = unlocked
+      return
+    }
+    for (const a of achievements) {
+      if (a.unlocked && !prevAchievementsRef.current.has(a.id)) {
+        addPop(`${a.icon} ${a.title}!`, '🏅', '#fbbf24')
+      }
+    }
+    prevAchievementsRef.current = unlocked
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [achievements])
+
   // Show a full-screen rank-up overlay when the recruiter advances a level mid-session.
   // prevLevelRef is null until the first stats load, so initial render never triggers the overlay.
   const prevLevelRef = useRef<number | null>(null)
@@ -141,8 +159,9 @@ export function GameDashboard() {
       startMatching(roleId).catch((err) => console.error('[GameDash] start-matching:', err))
       toast.show('success', 'Matching started — candidates appear in ~1 min.')
       setPendingCascadeRoleId(null)
-      // Immediate score pop for the role creation
+      // Immediate score pop for the role creation + daily objectives counter
       addPop(XP_REWARDS.role_created.label, XP_REWARDS.role_created.emoji, XP_REWARDS.role_created.color)
+      window.dispatchEvent(new CustomEvent('game:role_created'))
     }
     setEditingRoleId(null)
   }
