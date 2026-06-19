@@ -147,6 +147,18 @@ export function GameDashboard() {
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 
+  // Celebrate completing all 3 daily objectives — fires once per session from DailyObjectives.
+  useEffect(() => {
+    const handler = (e: Event) => {
+      const streak = (e as CustomEvent<{ streak: number }>).detail?.streak ?? 0
+      addPop('⚡ Daily Complete!', '🎯', '#34d399')
+      if (streak >= 7) setTimeout(() => addPop(`🔥 ${streak} day streak!`, '🔥', '#f97316'), 600)
+    }
+    window.addEventListener('game:daily_complete', handler)
+    return () => window.removeEventListener('game:daily_complete', handler)
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [])
+
   const handleTabChange = useCallback((tab: GameTabId) => {
     setActiveTab(tab)
     setMobileNavOpen(false)

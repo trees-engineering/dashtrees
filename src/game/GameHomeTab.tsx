@@ -295,9 +295,35 @@ function saveDailyData(email: string, data: DailyData) {
   try { localStorage.setItem(`dt_daily_${email}`, JSON.stringify(data)) } catch { /* ignore */ }
 }
 
+// ── Streak helpers ────────────────────────────────────────────────
+interface StreakData { lastComplete: string; streak: number }
+
+function loadStreak(email: string): StreakData {
+  try {
+    const raw = localStorage.getItem(`dt_streak_${email}`)
+    if (raw) return JSON.parse(raw) as StreakData
+  } catch { /* ignore */ }
+  return { lastComplete: '', streak: 0 }
+}
+
+function markStreakComplete(email: string): number {
+  const today = new Date().toISOString().slice(0, 10)
+  const yesterday = new Date(Date.now() - 86_400_000).toISOString().slice(0, 10)
+  const cur = loadStreak(email)
+  if (cur.lastComplete === today) return cur.streak
+  const next: StreakData = {
+    lastComplete: today,
+    streak: cur.lastComplete === yesterday ? cur.streak + 1 : 1,
+  }
+  try { localStorage.setItem(`dt_streak_${email}`, JSON.stringify(next)) } catch { /* ignore */ }
+  return next.streak
+}
+
 function DailyObjectives({ recruiterEmail }: { recruiterEmail: string }) {
   const objectives = useMemo(() => getDailyObjectives(recruiterEmail), [recruiterEmail])
   const [daily, setDaily] = useState<DailyData>(() => loadDailyData(recruiterEmail))
+  const [streak, setStreak] = useState<number>(() => loadStreak(recruiterEmail).streak)
+  const completionFiredRef = useRef(false)
 
   useEffect(() => {
     const bump = (stat: DailyStat) => () =>
@@ -328,11 +354,24 @@ function DailyObjectives({ recruiterEmail }: { recruiterEmail: string }) {
 
   const completedCount = objectives.filter((o) => daily[o.stat] >= o.target).length
 
+  // Fire the daily-complete event exactly once per session when 3/3 is reached
+  useEffect(() => {
+    if (completedCount === 3 && !completionFiredRef.current) {
+      completionFiredRef.current = true
+      const newStreak = markStreakComplete(recruiterEmail)
+      setStreak(newStreak)
+      window.dispatchEvent(new CustomEvent('game:daily_complete', { detail: { streak: newStreak } }))
+    }
+  }, [completedCount, recruiterEmail])
+
   return (
     <div>
       <SectionLabel>
         ⚡ Daily Objectives
-        <span className="ml-auto text-[9px] font-bold normal-case tracking-normal" style={{ color: 'rgba(251,191,36,0.45)' }}>
+        <span className="ml-auto flex items-center gap-2 text-[9px] font-bold normal-case tracking-normal" style={{ color: 'rgba(251,191,36,0.45)' }}>
+          {streak > 0 && (
+            <span style={{ color: streak >= 7 ? '#f97316' : '#fbbf24' }}>🔥 {streak}d</span>
+          )}
           Resets midnight · {completedCount}/3
         </span>
       </SectionLabel>
@@ -405,6 +444,11 @@ function QuestLog({
     { id: 'intro',      title: 'Make an Introduction',   description: 'Connect a top candidate with a client',                  emoji: '🤝', reward: '+200 XP',  rewardColor: '#60a5fa', action: 'View Intros', tab: 'intros',      completed: stats.intros      >  0, completedLabel: `${stats.intros} made`            },
     { id: 'five_roles', title: 'Reach 5 Missions',       description: 'Post 5 roles to earn the Opportunity Maker badge',       emoji: '📋', reward: '+500 XP',  rewardColor: '#a78bfa', action: 'Post Role',   tab: '__post_role', completed: stats.rolesTotal  >= 5, completedLabel: `${stats.rolesTotal}/5`           },
     { id: 'ten_intros', title: 'Power Broker Goal',      description: 'Make 10 introductions for the Power Broker badge',       emoji: '💼', reward: '+1000 XP', rewardColor: '#60a5fa', action: 'View Intros', tab: 'intros',      completed: stats.intros      >= 10, completedLabel: `${stats.intros}/10`             },
+    // Tier-2 quests — only visible once tier-1 is done
+    ...(stats.rolesTotal  >= 5  ? [{ id: 'ten_roles',     title: '10 Missions Filed',     description: 'Post 10 total roles — you\'re building a full pipeline', emoji: '🚀', reward: '+1000 XP', rewardColor: '#a78bfa', action: 'Post Role',   tab: '__post_role', completed: stats.rolesTotal  >= 10, completedLabel: `${stats.rolesTotal}/10`  }] : []),
+    ...(stats.shortlisted >= 10 ? [{ id: 'twenty_sl',     title: 'Elite Scouter',          description: 'Shortlist 25 candidates across your roles',                emoji: '🌟', reward: '+750 XP',  rewardColor: '#fbbf24', action: 'View Roster', tab: 'candidates',  completed: stats.shortlisted >= 25, completedLabel: `${stats.shortlisted}/25` }] : []),
+    ...(stats.intros      >= 10 ? [{ id: 'twenty_intros', title: 'Connector Status',       description: 'Make 20 introductions — you\'re the go-to closer',         emoji: '💫', reward: '+2000 XP', rewardColor: '#60a5fa', action: 'View Intros', tab: 'intros',      completed: stats.intros      >= 20, completedLabel: `${stats.intros}/20`      }] : []),
+    ...(stats.intros      >= 20 ? [{ id: 'fifty_intros',  title: 'Legend Closer',          description: '50 introductions — legendary placement record',             emoji: '🏆', reward: '+5000 XP', rewardColor: '#f97316', action: 'View Intros', tab: 'intros',      completed: stats.intros      >= 50, completedLabel: `${stats.intros}/50`      }] : []),
   ]
   const active = quests.filter((q) => !q.completed)
   const done   = quests.filter((q) => q.completed)
