@@ -24,13 +24,17 @@ function BonusPreview({
   const myMonthlyXP = myEntry?.monthlyXP ?? 0
   const sharePct = teamMonthlyXP > 0 ? ((myMonthlyXP / teamMonthlyXP) * 100).toFixed(1) : '0.0'
 
+  const now = new Date()
+  const daysLeft = new Date(now.getFullYear(), now.getMonth() + 1, 0).getDate() - now.getDate()
+  const urgent = daysLeft <= 5
+
   return (
     <div
       className="rounded-2xl p-4"
       style={{
         background: 'rgba(3,16,45,0.85)',
-        border: '1px solid rgba(251,191,36,0.28)',
-        boxShadow: '0 0 24px rgba(251,191,36,0.08)',
+        border: `1px solid ${urgent ? 'rgba(249,115,22,0.35)' : 'rgba(251,191,36,0.28)'}`,
+        boxShadow: `0 0 24px ${urgent ? 'rgba(249,115,22,0.10)' : 'rgba(251,191,36,0.08)'}`,
       }}
     >
       <div className="flex items-center justify-between mb-3">
@@ -40,8 +44,11 @@ function BonusPreview({
         >
           📅 {month} Bonus
         </h3>
-        <span className="text-[9px] font-semibold" style={{ color: 'rgba(255,255,255,0.30)' }}>
-          Resets on the 1st
+        <span
+          className="text-[9px] font-semibold"
+          style={{ color: urgent ? '#f97316' : 'rgba(255,255,255,0.30)' }}
+        >
+          {urgent ? `⏳ ${daysLeft} days left!` : `${daysLeft} days left · Resets 1st`}
         </span>
       </div>
 

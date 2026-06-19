@@ -1,6 +1,8 @@
-import { useState, useEffect, useMemo } from 'react'
+import { useState, useEffect, useMemo, useRef } from 'react'
+import { useQuery } from '@tanstack/react-query'
 import { ChevronRight } from 'lucide-react'
 import { useAuth } from '../lib/auth'
+import { getLeaderboard } from '../lib/api'
 import { AnimatedNumber } from './AnimatedNumber'
 import type { GameStats, Achievement } from './gamification'
 
@@ -422,6 +424,84 @@ function DailyObjectives({ recruiterEmail }: { recruiterEmail: string }) {
   )
 }
 
+// ── Monthly bonus strip ───────────────────────────────────────────
+function MonthlyStrip({ recruiterEmail, onNavigate }: { recruiterEmail: string; onNavigate: (tab: string) => void }) {
+  const { data, isLoading } = useQuery({
+    queryKey: ['gameLeaderboard'],
+    queryFn: getLeaderboard,
+    staleTime: 60_000,
+  })
+
+  const now = new Date()
+  const daysLeft = new Date(now.getFullYear(), now.getMonth() + 1, 0).getDate() - now.getDate()
+  const urgent = daysLeft <= 5
+
+  const leaderboard = data?.leaderboard ?? []
+  const myRank = leaderboard.findIndex((e) => e.recruiter_email === recruiterEmail) + 1
+  const myEntry = leaderboard.find((e) => e.recruiter_email === recruiterEmail)
+
+  if (isLoading || !myEntry) return null
+
+  const noActivity = myEntry.monthlyXP === 0
+  const teamTotal = leaderboard.reduce((s, e) => s + e.monthlyXP, 0)
+  const sharePct = teamTotal > 0 ? ((myEntry.monthlyXP / teamTotal) * 100).toFixed(1) : '0.0'
+
+  return (
+    <button
+      onClick={() => onNavigate('profile')}
+      className="w-full text-left rounded-2xl px-4 py-3 transition-all duration-200 hover:brightness-110 active:scale-[0.99]"
+      style={{
+        background: urgent && !noActivity ? 'rgba(249,115,22,0.08)' : 'rgba(251,191,36,0.06)',
+        border: `1px solid ${urgent && !noActivity ? 'rgba(249,115,22,0.28)' : 'rgba(251,191,36,0.18)'}`,
+      }}
+    >
+      {noActivity ? (
+        <div className="flex items-center justify-between">
+          <span className="text-[11px] font-bold" style={{ color: 'rgba(255,255,255,0.45)' }}>
+            📅 No activity this month yet
+          </span>
+          <span className="text-[9px]" style={{ color: 'rgba(255,255,255,0.28)' }}>
+            Post a role or shortlist to earn your bonus share →
+          </span>
+        </div>
+      ) : (
+        <div className="flex items-center gap-4">
+          <div className="text-center flex-shrink-0">
+            <div className="text-xl font-black" style={{ color: '#fbbf24' }}>
+              #{myRank}
+            </div>
+            <div className="text-[8px]" style={{ color: 'rgba(255,255,255,0.30)' }}>this month</div>
+          </div>
+          <div className="w-px self-stretch" style={{ background: 'rgba(255,255,255,0.08)' }} />
+          <div className="text-center flex-shrink-0">
+            <div className="text-xl font-black" style={{ color: '#34d399' }}>
+              {myEntry.monthlyXP.toLocaleString()}
+            </div>
+            <div className="text-[8px]" style={{ color: 'rgba(255,255,255,0.30)' }}>monthly XP</div>
+          </div>
+          <div className="w-px self-stretch" style={{ background: 'rgba(255,255,255,0.08)' }} />
+          <div className="text-center flex-shrink-0">
+            <div className="text-xl font-black" style={{ color: '#60a5fa' }}>
+              {sharePct}%
+            </div>
+            <div className="text-[8px]" style={{ color: 'rgba(255,255,255,0.30)' }}>bonus share</div>
+          </div>
+          <div className="flex-1" />
+          <div className="text-right flex-shrink-0">
+            <div
+              className="text-[10px] font-black"
+              style={{ color: urgent ? '#f97316' : 'rgba(255,255,255,0.30)' }}
+            >
+              {urgent ? `⏳ ${daysLeft}d left!` : `${daysLeft} days left`}
+            </div>
+            <div className="text-[8px]" style={{ color: 'rgba(255,255,255,0.20)' }}>Tap for bonus →</div>
+          </div>
+        </div>
+      )}
+    </button>
+  )
+}
+
 // ── Quest log ─────────────────────────────────────────────────────
 interface Quest {
   id: string; title: string; description: string; emoji: string
@@ -677,6 +757,7 @@ export function GameHomeTab({
 
       {/* ── Below-fold content ────────────────────────────────── */}
       <div className="px-4 pb-8 space-y-5">
+        <MonthlyStrip recruiterEmail={recruiter.email} onNavigate={onNavigate} />
         <DailyObjectives recruiterEmail={recruiter.email} />
         <QuestLog stats={stats} onNavigate={onNavigate} onPostRole={onPostRole} />
         <AchievementsGrid achievements={achievements} />
