@@ -74,7 +74,7 @@ export function GameSidebar({
 
         {/* Nav items */}
         <nav className="flex-1 overflow-y-auto py-3 space-y-0.5 px-2">
-          {navItems.map(({ id, label, icon: Icon, emoji, xpHint }) => {
+          {navItems.map(({ id, label, emoji, xpHint }) => {
             const active = activeTab === id
             return (
               <button
