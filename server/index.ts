@@ -806,7 +806,7 @@ app.get('/api/candidates', authMiddleware, async (req: Request, res: Response) =
   if (!supabase) { res.status(500).json({ error: 'database not configured' }); return; }
   const { data, error } = await supabase
     .from('_talent')
-    .select('id,name,linkedin_url,city,country,availability_status,available_from,rate,rate_type,currency,email,visa_status,headline,lifecycle_state')
+    .select('id,name,linkedin_url,city,country,availability_status,available_from,rate,rate_type,currency,email,visa_status,headline,lifecycle_state,notice_period_days')
     .not('name', 'is', null)
     .order('name', { ascending: true });
   if (error) { res.status(500).json({ error: error.message }); return; }

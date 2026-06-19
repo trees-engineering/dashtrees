@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useEffect } from 'react'
 import { useRoles } from '../hooks/useRoles'
 import { useMatches } from '../hooks/useMatches'
 import { MatchCard } from './MatchCard'
@@ -9,24 +9,13 @@ interface MatchesTabProps {
   selectedRoleId: string | null
   onRoleChange: (id: string) => void
   recruiterFilter: string
+  trackerTalentIds: Set<string>
+  onTrackerToggle: (talentId: string, roleId: string) => void
 }
 
-export function MatchesTab({ selectedRoleId, onRoleChange, recruiterFilter }: MatchesTabProps) {
+export function MatchesTab({ selectedRoleId, onRoleChange, recruiterFilter, trackerTalentIds, onTrackerToggle }: MatchesTabProps) {
   const { data: roles, isLoading: rolesLoading } = useRoles()
   const { data: matches, isLoading: matchesLoading } = useMatches(selectedRoleId)
-  const [selectedTalentIds, setSelectedTalentIds] = useState<Set<string>>(new Set())
-
-  // Clear selection whenever the role changes
-  useEffect(() => { setSelectedTalentIds(new Set()) }, [selectedRoleId])
-
-  function toggleTalent(talentId: string) {
-    setSelectedTalentIds((prev) => {
-      const next = new Set(prev)
-      if (next.has(talentId)) next.delete(talentId)
-      else next.add(talentId)
-      return next
-    })
-  }
 
   const visibleRoles = (roles ?? []).filter(
     (r) => !recruiterFilter || r.recruiter_email === recruiterFilter,
@@ -134,8 +123,10 @@ export function MatchesTab({ selectedRoleId, onRoleChange, recruiterFilter }: Ma
         <div className="space-y-3">
           <p className="text-xs text-treeTextSec">
             {matches.length} match{matches.length !== 1 ? 'es' : ''} found
-            {selectedTalentIds.size > 0 && (
-              <span className="ml-2 text-primary font-medium">{selectedTalentIds.size} selected</span>
+            {selectedRoleId && trackerTalentIds.size > 0 && (
+              <span className="ml-2 text-primary font-medium">
+                {matches.filter(m => trackerTalentIds.has(m.talent_id)).length} selected
+              </span>
             )}
           </p>
           {matches.map((match) => (
@@ -143,8 +134,8 @@ export function MatchesTab({ selectedRoleId, onRoleChange, recruiterFilter }: Ma
               key={match.id}
               match={match}
               roleId={selectedRoleId}
-              selected={selectedTalentIds.has(match.talent_id)}
-              onSelect={() => toggleTalent(match.talent_id)}
+              selected={trackerTalentIds.has(match.talent_id)}
+              onSelect={selectedRoleId ? () => onTrackerToggle(match.talent_id, selectedRoleId) : undefined}
             />
           ))}
         </div>

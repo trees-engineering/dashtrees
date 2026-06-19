@@ -1,5 +1,5 @@
 import { useState, useCallback, useEffect } from 'react'
-import { Home, Briefcase, Users, UserCheck, FileBarChart2, BarChart3, UserCircle, Menu, BookUser, type LucideIcon } from 'lucide-react'
+import { Home, Briefcase, Users, UserCheck, FileBarChart2, BarChart3, UserCircle, Menu, BookUser, ClipboardList, type LucideIcon } from 'lucide-react'
 import { useRecruiters } from './hooks/useRecruiters'
 import { Sidebar } from './components/Sidebar'
 import { HomeTab } from './components/HomeTab'
@@ -16,6 +16,7 @@ import { NewRoleScreen } from './components/NewRoleScreen'
 import { CandidateEditScreen } from './components/CandidateEditScreen'
 import { NewCandidateScreen } from './components/NewCandidateScreen'
 import { CandidatesTab } from './components/CandidatesTab'
+import { TrackerTab } from './components/TrackerTab'
 import { UserMenu } from './components/UserMenu'
 import { useToast } from './components/Toast'
 import { useAuth } from './lib/auth'
@@ -25,7 +26,7 @@ import { GameDashboard } from './game/GameDashboard'
 
 const IS_GAME_ROUTE = window.location.pathname.startsWith('/game')
 
-type TabId = 'home' | 'roles' | 'candidates' | 'matches' | 'intros' | 'reports' | 'analytics' | 'profile'
+type TabId = 'home' | 'roles' | 'candidates' | 'matches' | 'tracker' | 'intros' | 'reports' | 'analytics' | 'profile'
 
 const FOOTER_QUOTES = [
   '"Oil is found in the minds of men." — Wallace Pratt',
@@ -46,6 +47,7 @@ const NAV_ITEMS: { id: TabId; label: string; icon: LucideIcon; adminOnly?: boole
   { id: 'roles', label: 'Roles', icon: Briefcase },
   { id: 'candidates', label: 'Candidates', icon: BookUser },
   { id: 'matches', label: 'Matches', icon: Users },
+  { id: 'tracker', label: 'Tracker', icon: ClipboardList },
   { id: 'intros', label: 'Intros', icon: UserCheck },
   { id: 'reports', label: 'Reports', icon: FileBarChart2 },
   { id: 'analytics', label: 'Analytics', icon: BarChart3, adminOnly: true },
@@ -86,6 +88,8 @@ function Dashboard() {
   // recruiter saves the edit, this tells us to kick off matching. Cleared on
   // save-fired-matching OR on back-without-save (recruiter can rerun later).
   const [pendingCascadeRoleId, setPendingCascadeRoleId] = useState<string | null>(null)
+  const [trackerRoleId, setTrackerRoleId] = useState('')
+  const [trackerTalentIds, setTrackerTalentIds] = useState<Set<string>>(new Set())
   // Admins choose freely from a dropdown ("" = All recruiters); their pick
   // persists across reloads in localStorage. Non-admins don't have a
   // dropdown — their filter is always locked to their own email below.
@@ -147,6 +151,25 @@ function Dashboard() {
       from: prev || null,
       to: email || null,
     })
+  }
+
+  function handleTrackerRoleChange(roleId: string) {
+    setTrackerRoleId(roleId)
+    setTrackerTalentIds(new Set())
+  }
+
+  function handleTrackerToggle(talentId: string, forRoleId: string) {
+    if (forRoleId !== trackerRoleId) {
+      setTrackerRoleId(forRoleId)
+      setTrackerTalentIds(new Set([talentId]))
+    } else {
+      setTrackerTalentIds(prev => {
+        const next = new Set(prev)
+        if (next.has(talentId)) next.delete(talentId)
+        else next.add(talentId)
+        return next
+      })
+    }
   }
 
   const handleNavigateToRoles = (tab: string) => {
@@ -333,13 +356,29 @@ function Dashboard() {
             />
           )}
           {activeTab === 'candidates' && (
-            <CandidatesTab recruiterFilter={selectedRecruiter} />
+            <CandidatesTab
+              recruiterFilter={selectedRecruiter}
+              trackerRoleId={trackerRoleId}
+              trackerTalentIds={trackerTalentIds}
+              onTrackerRoleChange={handleTrackerRoleChange}
+              onTrackerToggle={handleTrackerToggle}
+            />
           )}
           {activeTab === 'matches' && (
             <MatchesTab
               selectedRoleId={selectedRoleId}
               onRoleChange={setSelectedRoleId}
               recruiterFilter={selectedRecruiter}
+              trackerTalentIds={trackerTalentIds}
+              onTrackerToggle={handleTrackerToggle}
+            />
+          )}
+          {activeTab === 'tracker' && (
+            <TrackerTab
+              recruiterFilter={selectedRecruiter}
+              trackerRoleId={trackerRoleId}
+              trackerTalentIds={trackerTalentIds}
+              onTrackerRoleChange={handleTrackerRoleChange}
             />
           )}
           {activeTab === 'intros' && (

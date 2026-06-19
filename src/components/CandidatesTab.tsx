@@ -7,16 +7,24 @@ import { telemetry } from '../lib/telemetry'
 
 interface CandidatesTabProps {
   recruiterFilter: string
+  trackerRoleId: string
+  trackerTalentIds: Set<string>
+  onTrackerRoleChange: (roleId: string) => void
+  onTrackerToggle: (talentId: string, roleId: string) => void
 }
 
-export function CandidatesTab({ recruiterFilter }: CandidatesTabProps) {
+export function CandidatesTab({
+  recruiterFilter,
+  trackerRoleId,
+  trackerTalentIds,
+  onTrackerRoleChange,
+  onTrackerToggle,
+}: CandidatesTabProps) {
   const { data: candidates, isLoading } = useCandidates()
   const { data: roles } = useRoles()
 
   const [search, setSearch] = useState('')
   const [countryFilter, setCountryFilter] = useState('')
-  const [selectedRoleId, setSelectedRoleId] = useState('')
-  const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set())
 
   const countries = useMemo(() => {
     const seen = new Set<string>()
@@ -47,21 +55,15 @@ export function CandidatesTab({ recruiterFilter }: CandidatesTabProps) {
   }, [candidates, search, countryFilter])
 
   function toggleId(id: string) {
-    setSelectedIds((prev) => {
-      const next = new Set(prev)
-      if (next.has(id)) next.delete(id)
-      else next.add(id)
-      return next
-    })
+    onTrackerToggle(id, trackerRoleId)
   }
 
   function handleRoleChange(roleId: string) {
-    setSelectedRoleId(roleId)
-    setSelectedIds(new Set())
+    onTrackerRoleChange(roleId)
     telemetry.capture('candidates_role_selected', { role_id: roleId || null })
   }
 
-  const showCheckboxes = Boolean(selectedRoleId)
+  const showCheckboxes = Boolean(trackerRoleId)
   const colSpan = showCheckboxes ? 8 : 7
 
   return (
@@ -94,7 +96,7 @@ export function CandidatesTab({ recruiterFilter }: CandidatesTabProps) {
           ))}
         </select>
         <select
-          value={selectedRoleId}
+          value={trackerRoleId}
           onChange={(e) => handleRoleChange(e.target.value)}
           className="h-9 px-3 text-sm rounded-lg border border-treeBorder bg-treeSurface text-treeText focus:outline-none appearance-none"
         >
@@ -117,8 +119,8 @@ export function CandidatesTab({ recruiterFilter }: CandidatesTabProps) {
         <>
           <p className="text-xs text-treeTextSec">
             {filtered.length} candidate{filtered.length !== 1 ? 's' : ''}
-            {showCheckboxes && selectedIds.size > 0 && (
-              <span className="ml-2 text-primary font-medium">{selectedIds.size} selected</span>
+            {showCheckboxes && trackerTalentIds.size > 0 && (
+              <span className="ml-2 text-primary font-medium">{trackerTalentIds.size} selected</span>
             )}
           </p>
 
@@ -159,7 +161,7 @@ export function CandidatesTab({ recruiterFilter }: CandidatesTabProps) {
                   </tr>
                 ) : (
                   filtered.map((c, i) => {
-                    const isSelected = selectedIds.has(c.id)
+                    const isSelected = trackerTalentIds.has(c.id)
                     return (
                       <tr
                         key={c.id}

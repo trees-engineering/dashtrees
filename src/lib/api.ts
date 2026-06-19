@@ -231,6 +231,7 @@ export interface CandidateListItem {
   visa_status: string | null
   headline: string | null
   lifecycle_state: string | null
+  notice_period_days: number | null
 }
 
 export async function getCandidatesList(): Promise<CandidateListItem[]> {
