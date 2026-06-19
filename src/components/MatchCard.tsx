@@ -17,6 +17,8 @@ import { telemetry } from '../lib/telemetry'
 interface MatchCardProps {
   match: MatchWithTalent
   roleId: string
+  selected?: boolean
+  onSelect?: () => void
 }
 
 function ScoreBar({ score, label }: { score: number; label: string }) {
@@ -59,7 +61,7 @@ function ProfileRow({ label, value }: { label: string; value: React.ReactNode })
   )
 }
 
-export function MatchCard({ match, roleId }: MatchCardProps) {
+export function MatchCard({ match, roleId, selected, onSelect }: MatchCardProps) {
   const [expanded, setExpanded] = useState(false)
   const [showExport, setShowExport] = useState(false)
   const [showCv, setShowCv] = useState(false)
@@ -96,7 +98,19 @@ export function MatchCard({ match, roleId }: MatchCardProps) {
 
   return (
     <>
-    <div className="flex flex-col sm:flex-row sm:items-start gap-3">
+    <div className="flex items-start gap-2">
+      {onSelect && (
+        <div className="flex-shrink-0 pt-[22px]">
+          <input
+            type="checkbox"
+            checked={selected ?? false}
+            onChange={onSelect}
+            className="w-4 h-4 accent-primary cursor-pointer"
+          />
+        </div>
+      )}
+      <div className="flex-1 min-w-0">
+      <div className="flex flex-col sm:flex-row sm:items-start gap-3">
       <div className="flex-1 min-w-0 bg-treeSurface border border-treeBorder rounded-xl overflow-hidden shadow-sm">
       {/* Summary row */}
       <button
@@ -383,6 +397,8 @@ export function MatchCard({ match, roleId }: MatchCardProps) {
           onClose={() => setShowCv(false)}
         />
       )}
+    </div>
+    </div>
     </div>
     {showExport && talent && (
       <ExportDocumentPanel

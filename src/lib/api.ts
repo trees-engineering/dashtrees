@@ -216,6 +216,32 @@ export async function importCandidateText(text: string): Promise<CvUploadResult>
   return postJson<CvUploadResult>('/api/candidates/import-text', { text })
 }
 
+export interface CandidateListItem {
+  id: string
+  name: string | null
+  linkedin_url: string | null
+  city: string | null
+  country: string | null
+  availability_status: string | null
+  available_from: string | null
+  rate: number | null
+  rate_type: string | null
+  currency: string | null
+  email: string | null
+  work_rights: string | null
+  headline: string | null
+  lifecycle_state: string | null
+}
+
+export async function getCandidatesList(): Promise<CandidateListItem[]> {
+  const res = await fetch(`${API_BASE}/api/candidates`, {
+    headers: { ...(await authHeaders()) },
+  })
+  if (!res.ok) throw new Error(await readError(res))
+  const json = (await res.json()) as { candidates: CandidateListItem[] }
+  return json.candidates
+}
+
 export interface CandidateSkill {
   skill_name: string
   years_experience: number | null

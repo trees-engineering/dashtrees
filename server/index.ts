@@ -801,6 +801,18 @@ app.post('/api/candidates/import-text', authMiddleware, async (req: Request, res
   }
 });
 
+// ── List all candidates ────────────────────────────────────────────────────────
+app.get('/api/candidates', authMiddleware, async (req: Request, res: Response) => {
+  if (!supabase) { res.status(500).json({ error: 'database not configured' }); return; }
+  const { data, error } = await supabase
+    .from('_talent')
+    .select('id,name,linkedin_url,city,country,availability_status,available_from,rate,rate_type,currency,email,work_rights,headline,lifecycle_state')
+    .not('name', 'is', null)
+    .order('name', { ascending: true });
+  if (error) { res.status(500).json({ error: error.message }); return; }
+  res.json({ candidates: data ?? [] });
+});
+
 // ── Fetch a single candidate + skills ─────────────────────────────────────────
 app.get('/api/candidates/:talentId', authMiddleware, async (req: Request, res: Response) => {
   if (!supabase) { res.status(500).json({ error: 'database not configured' }); return; }

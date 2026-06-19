@@ -1,5 +1,5 @@
 import { useState, useCallback, useEffect } from 'react'
-import { Home, Briefcase, Users, UserCheck, FileBarChart2, BarChart3, UserCircle, Menu, type LucideIcon } from 'lucide-react'
+import { Home, Briefcase, Users, UserCheck, FileBarChart2, BarChart3, UserCircle, Menu, BookUser, type LucideIcon } from 'lucide-react'
 import { useRecruiters } from './hooks/useRecruiters'
 import { Sidebar } from './components/Sidebar'
 import { HomeTab } from './components/HomeTab'
@@ -15,6 +15,7 @@ import { RoleEditScreen } from './components/RoleEditScreen'
 import { NewRoleScreen } from './components/NewRoleScreen'
 import { CandidateEditScreen } from './components/CandidateEditScreen'
 import { NewCandidateScreen } from './components/NewCandidateScreen'
+import { CandidatesTab } from './components/CandidatesTab'
 import { UserMenu } from './components/UserMenu'
 import { useToast } from './components/Toast'
 import { useAuth } from './lib/auth'
@@ -24,7 +25,7 @@ import { GameDashboard } from './game/GameDashboard'
 
 const IS_GAME_ROUTE = window.location.pathname.startsWith('/game')
 
-type TabId = 'home' | 'roles' | 'matches' | 'intros' | 'reports' | 'analytics' | 'profile'
+type TabId = 'home' | 'roles' | 'candidates' | 'matches' | 'intros' | 'reports' | 'analytics' | 'profile'
 
 const FOOTER_QUOTES = [
   '"Oil is found in the minds of men." — Wallace Pratt',
@@ -43,6 +44,7 @@ const RECRUITER_STORAGE_KEY = 'trees_recruiter'
 const NAV_ITEMS: { id: TabId; label: string; icon: LucideIcon; adminOnly?: boolean }[] = [
   { id: 'home', label: 'Home', icon: Home },
   { id: 'roles', label: 'Roles', icon: Briefcase },
+  { id: 'candidates', label: 'Candidates', icon: BookUser },
   { id: 'matches', label: 'Matches', icon: Users },
   { id: 'intros', label: 'Intros', icon: UserCheck },
   { id: 'reports', label: 'Reports', icon: FileBarChart2 },
@@ -329,6 +331,9 @@ function Dashboard() {
               onAddCandidate={() => setCreatingCandidate(true)}
               recruiterFilter={selectedRecruiter}
             />
+          )}
+          {activeTab === 'candidates' && (
+            <CandidatesTab recruiterFilter={selectedRecruiter} />
           )}
           {activeTab === 'matches' && (
             <MatchesTab
