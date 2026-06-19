@@ -245,6 +245,28 @@ export async function getShortlist(roleId: string): Promise<string[]> {
   return json.talent_ids
 }
 
+// ── Game leaderboard ─────────────────────────────────────────────────────────
+
+export interface LeaderboardEntry {
+  recruiter_id: string
+  recruiter_email: string
+  recruiter_name: string | null
+  totalXP: number
+  rolesTotal: number
+  shortlisted: number
+  intros: number
+}
+
+export async function getLeaderboard(): Promise<{ leaderboard: LeaderboardEntry[] }> {
+  const res = await fetch(`${API_BASE}/api/game/leaderboard`, {
+    headers: { ...(await authHeaders()) },
+  })
+  if (!res.ok) throw new Error(await readError(res))
+  return res.json() as Promise<{ leaderboard: LeaderboardEntry[] }>
+}
+
+// ── Shortlists ────────────────────────────────────────────────────────────────
+
 export async function getShortlistCount(): Promise<number> {
   const res = await fetch(`${API_BASE}/api/shortlists/count`, {
     headers: { ...(await authHeaders()) },

@@ -12,7 +12,6 @@ import { CandidatesTab } from '../components/CandidatesTab'
 import { TrackerTab } from '../components/TrackerTab'
 import { IntrosTab } from '../components/IntrosTab'
 import { ReportsTab } from '../components/ReportsTab'
-import { ProfileTab } from '../components/ProfileTab'
 import { RoleEditScreen } from '../components/RoleEditScreen'
 import { NewRoleScreen } from '../components/NewRoleScreen'
 import { CandidateEditScreen } from '../components/CandidateEditScreen'
@@ -21,6 +20,7 @@ import { UserMenu } from '../components/UserMenu'
 import { GameHUD } from './GameHUD'
 import { GameSidebar, type GameNavItem } from './GameSidebar'
 import { GameHomeTab } from './GameHomeTab'
+import { GamePlayerTab } from './GamePlayerTab'
 import { LevelUpOverlay } from './LevelUpOverlay'
 import { ScorePopOverlay, useScorePops } from './ScorePop'
 import { useGameStats } from './useGameStats'
@@ -373,7 +373,7 @@ export function GameDashboard() {
             </div>
           )}
 
-          {activeTab === 'profile' && <ProfileTab />}
+          {activeTab === 'profile' && <GamePlayerTab stats={stats} />}
         </main>
       </div>
     </div>

@@ -907,6 +907,93 @@ app.post('/api/shortlists/toggle', authMiddleware, async (req: Request, res: Res
   return res.json({ added: true });
 });
 
+// ── Game leaderboard ─────────────────────────────────────────────────────────
+// Aggregates XP across all recruiters server-side (requires service-role key so
+// non-admin users can't fetch each other's individual role data, only the summary).
+function leaderboardAchievementXP(roles: number, matches: number, sl: number, intros: number): number {
+  let xp = 0
+  if (roles   >= 1)  xp += 100
+  if (roles   >= 5)  xp += 500
+  if (roles   >= 10) xp += 1000
+  if (matches >= 1)  xp += 50
+  if (matches >= 10) xp += 200
+  if (matches >= 50) xp += 500
+  if (sl      >= 1)  xp += 75
+  if (sl      >= 10) xp += 300
+  if (intros  >= 1)  xp += 200
+  if (intros  >= 5)  xp += 500
+  if (intros  >= 10) xp += 1000
+  if (intros  >= 20) xp += 2000
+  return xp
+}
+
+app.get('/api/game/leaderboard', authMiddleware, async (_req: Request, res: Response) => {
+  const [rolesRes, matchesRes, shortlistsRes, recruitersRes] = await Promise.all([
+    supabase.from('_role').select('id, created_by'),
+    supabase.from('_matches').select('role_id, status'),
+    supabase.from('_shortlists').select('recruiter_id'),
+    supabase.from('_recruiters').select('id, email, name'),
+  ])
+
+  if (rolesRes.error)      return res.status(500).json({ error: rolesRes.error.message })
+  if (matchesRes.error)    return res.status(500).json({ error: matchesRes.error.message })
+  if (shortlistsRes.error) return res.status(500).json({ error: shortlistsRes.error.message })
+  if (recruitersRes.error) return res.status(500).json({ error: recruitersRes.error.message })
+
+  // Match counts per role
+  const matchMap = new Map<string, { total: number; introduced: number }>()
+  for (const m of (matchesRes.data ?? [])) {
+    if (m.status === 'screened_out') continue
+    const ex = matchMap.get(m.role_id) ?? { total: 0, introduced: 0 }
+    ex.total++
+    if (m.status === 'introduced') ex.introduced++
+    matchMap.set(m.role_id, ex)
+  }
+
+  // Shortlist count per recruiter
+  const shortlistMap = new Map<string, number>()
+  for (const s of (shortlistsRes.data ?? [])) {
+    if (s.recruiter_id) shortlistMap.set(s.recruiter_id, (shortlistMap.get(s.recruiter_id) ?? 0) + 1)
+  }
+
+  // Recruiter lookup
+  const recruiterMap = new Map((recruitersRes.data ?? []).map((r) => [r.id, r]))
+
+  // Aggregate per recruiter (UUID-shaped created_by only)
+  const agg = new Map<string, { rolesTotal: number; matchesTotal: number; intros: number }>()
+  for (const role of (rolesRes.data ?? [])) {
+    if (!role.created_by || !UUID_RE.test(role.created_by)) continue
+    const mc = matchMap.get(role.id) ?? { total: 0, introduced: 0 }
+    const ex = agg.get(role.created_by) ?? { rolesTotal: 0, matchesTotal: 0, intros: 0 }
+    ex.rolesTotal++
+    ex.matchesTotal += mc.total
+    ex.intros += mc.introduced
+    agg.set(role.created_by, ex)
+  }
+
+  const leaderboard = [...agg.entries()]
+    .map(([recruiterId, s]) => {
+      const rec = recruiterMap.get(recruiterId)
+      if (!rec) return null
+      const shortlisted = shortlistMap.get(recruiterId) ?? 0
+      const achievementXP = leaderboardAchievementXP(s.rolesTotal, s.matchesTotal, shortlisted, s.intros)
+      const totalXP = s.rolesTotal * 100 + s.matchesTotal * 10 + shortlisted * 50 + s.intros * 200 + achievementXP
+      return {
+        recruiter_id: recruiterId,
+        recruiter_email: rec.email as string,
+        recruiter_name: (rec.name as string | null) ?? null,
+        totalXP,
+        rolesTotal: s.rolesTotal,
+        shortlisted,
+        intros: s.intros,
+      }
+    })
+    .filter(Boolean)
+    .sort((a, b) => b!.totalXP - a!.totalXP)
+
+  return res.json({ leaderboard })
+})
+
 // ── Static frontend (production) ─────────────────────────────────────────────
 const distDir = path.resolve(process.cwd(), 'dist');
 if (fs.existsSync(distDir)) {
