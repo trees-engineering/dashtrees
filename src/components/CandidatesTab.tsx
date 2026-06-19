@@ -262,11 +262,10 @@ export function CandidatesTab({ recruiterFilter }: CandidatesTabProps) {
                         </td>
 
                         {/* Work auth */}
-                        <td
-                          className="px-3 py-2 max-w-[140px] truncate text-treeTextSec"
-                          title={c.work_rights ?? undefined}
-                        >
-                          {c.work_rights || '—'}
+                        <td className="px-3 py-2 whitespace-nowrap text-treeTextSec">
+                          {c.visa_status
+                            ? c.visa_status.replace(/_/g, ' ')
+                            : '—'}
                         </td>
 
                         {/* Headline */}

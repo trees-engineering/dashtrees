@@ -228,7 +228,7 @@ export interface CandidateListItem {
   rate_type: string | null
   currency: string | null
   email: string | null
-  work_rights: string | null
+  visa_status: string | null
   headline: string | null
   lifecycle_state: string | null
 }
