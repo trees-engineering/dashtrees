@@ -863,6 +863,7 @@ app.patch('/api/candidates/:talentId', authMiddleware, async (req: Request, res:
 // recruiter_id records who added the entry for audit; not used for filtering.
 
 app.get('/api/shortlists', authMiddleware, async (req: Request, res: Response) => {
+  if (!supabase) { res.status(500).json({ error: 'database not configured' }); return; }
   const roleId = req.query.roleId as string | undefined;
   if (!roleId || !UUID_RE.test(roleId)) return res.json({ talent_ids: [] });
   const { data, error } = await supabase
@@ -876,6 +877,7 @@ app.get('/api/shortlists', authMiddleware, async (req: Request, res: Response) =
 // Count of unique tick-box shortlists added by the authenticated recruiter,
 // used by the game to award XP for the _shortlists table (not _matches.status).
 app.get('/api/shortlists/count', authMiddleware, async (req: Request, res: Response) => {
+  if (!supabase) { res.status(500).json({ error: 'database not configured' }); return; }
   const { count, error } = await supabase
     .from('_shortlists')
     .select('*', { count: 'exact', head: true })
@@ -885,6 +887,7 @@ app.get('/api/shortlists/count', authMiddleware, async (req: Request, res: Respo
 });
 
 app.post('/api/shortlists/toggle', authMiddleware, async (req: Request, res: Response) => {
+  if (!supabase) { res.status(500).json({ error: 'database not configured' }); return; }
   const { role_id, talent_id } = (req.body ?? {}) as { role_id?: string; talent_id?: string };
   if (!role_id || !UUID_RE.test(role_id) || !talent_id || !UUID_RE.test(talent_id)) {
     return res.status(400).json({ error: 'role_id and talent_id must be valid UUIDs' });
@@ -928,6 +931,7 @@ function leaderboardAchievementXP(roles: number, matches: number, sl: number, in
 }
 
 app.get('/api/game/leaderboard', authMiddleware, async (_req: Request, res: Response) => {
+  if (!supabase) { res.status(500).json({ error: 'database not configured' }); return; }
   // First day of the current calendar month (UTC) — used for monthly bonus scoring
   const now = new Date()
   const monthStart = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), 1)).toISOString()
