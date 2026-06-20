@@ -267,7 +267,7 @@ export async function getLeaderboard(): Promise<{ leaderboard: LeaderboardEntry[
     headers: { ...(await authHeaders()) },
   })
   if (!res.ok) throw new Error(await readError(res))
-  return res.json() as Promise<{ leaderboard: LeaderboardEntry[] }>
+  return res.json() as Promise<{ leaderboard: LeaderboardEntry[]; monthStart: string }>
 }
 
 // ── Shortlists ────────────────────────────────────────────────────────────────
