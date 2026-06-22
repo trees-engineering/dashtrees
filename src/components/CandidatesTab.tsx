@@ -1,10 +1,11 @@
 import { useState, useMemo } from 'react'
-import { Search, ExternalLink } from 'lucide-react'
+import { Search, ExternalLink, FileDown } from 'lucide-react'
 import { useCandidates } from '../hooks/useCandidates'
 import { useRoles } from '../hooks/useRoles'
 import { useShortlist } from '../hooks/useShortlist'
 import { availBadgeClass, formatDate, ensureHttps } from '../lib/utils'
 import { telemetry } from '../lib/telemetry'
+import { ExportDocumentPanel } from './ExportDocumentPanel'
 
 interface CandidatesTabProps {
   recruiterFilter: string
@@ -20,14 +21,22 @@ export function CandidatesTab({ recruiterFilter, trackerRoleId, onTrackerRoleCha
 
   const [search, setSearch] = useState('')
   const [countryFilter, setCountryFilter] = useState('')
+  const [exportTarget, setExportTarget] = useState<{ id: string; name: string } | null>(null)
+
+  // Show every lifecycle state except `pending` (started bot onboarding but
+  // never submitted a CV — too thin to surface). null/unknown states are kept.
+  const baseCandidates = useMemo(
+    () => (candidates ?? []).filter((c) => c.lifecycle_state !== 'pending'),
+    [candidates],
+  )
 
   const countries = useMemo(() => {
     const seen = new Set<string>()
-    for (const c of candidates ?? []) {
+    for (const c of baseCandidates) {
       if (c.country) seen.add(c.country)
     }
     return [...seen].sort()
-  }, [candidates])
+  }, [baseCandidates])
 
   const visibleRoles = useMemo(
     () =>
@@ -39,7 +48,7 @@ export function CandidatesTab({ recruiterFilter, trackerRoleId, onTrackerRoleCha
 
   const filtered = useMemo(() => {
     const q = search.trim().toLowerCase()
-    return (candidates ?? []).filter((c) => {
+    return baseCandidates.filter((c) => {
       if (countryFilter && c.country !== countryFilter) return false
       if (q) {
         const haystack = [c.name, c.email, c.headline].filter(Boolean).join(' ').toLowerCase()
@@ -47,7 +56,7 @@ export function CandidatesTab({ recruiterFilter, trackerRoleId, onTrackerRoleCha
       }
       return true
     })
-  }, [candidates, search, countryFilter])
+  }, [baseCandidates, search, countryFilter])
 
   function toggleId(id: string) {
     toggleShortlist(id)
@@ -186,22 +195,37 @@ export function CandidatesTab({ recruiterFilter, trackerRoleId, onTrackerRoleCha
                           </td>
                         )}
 
-                        {/* Name + LinkedIn */}
+                        {/* Name + LinkedIn + CV / dossier action */}
                         <td className="px-3 py-2 whitespace-nowrap">
-                          {c.linkedin_url ? (
-                            <a
-                              href={ensureHttps(c.linkedin_url) ?? '#'}
-                              target="_blank"
-                              rel="noopener noreferrer"
-                              onClick={(e) => e.stopPropagation()}
-                              className="text-primary hover:underline font-medium inline-flex items-center gap-1"
+                          <div className="flex items-center gap-2">
+                            {c.linkedin_url ? (
+                              <a
+                                href={ensureHttps(c.linkedin_url) ?? '#'}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                onClick={(e) => e.stopPropagation()}
+                                className="text-primary hover:underline font-medium inline-flex items-center gap-1"
+                              >
+                                {c.name ?? '—'}
+                                <ExternalLink size={10} className="opacity-50 flex-shrink-0" />
+                              </a>
+                            ) : (
+                              <span className="font-medium text-treeText">{c.name ?? '—'}</span>
+                            )}
+                            <button
+                              type="button"
+                              onClick={(e) => {
+                                e.stopPropagation()
+                                setExportTarget({ id: c.id, name: c.name ?? 'Candidate' })
+                                telemetry.capture('candidates_export_opened', { talent_id: c.id })
+                              }}
+                              title="Download / reformat CV"
+                              aria-label="Download / reformat CV"
+                              className="text-treeTextSec hover:text-primary flex-shrink-0"
                             >
-                              {c.name ?? '—'}
-                              <ExternalLink size={10} className="opacity-50 flex-shrink-0" />
-                            </a>
-                          ) : (
-                            <span className="font-medium text-treeText">{c.name ?? '—'}</span>
-                          )}
+                              <FileDown size={13} />
+                            </button>
+                          </div>
                         </td>
 
                         {/* Location */}
@@ -280,6 +304,14 @@ export function CandidatesTab({ recruiterFilter, trackerRoleId, onTrackerRoleCha
             </table>
           </div>
         </>
+      )}
+
+      {exportTarget && (
+        <ExportDocumentPanel
+          talentId={exportTarget.id}
+          talentName={exportTarget.name}
+          onClose={() => setExportTarget(null)}
+        />
       )}
     </div>
   )

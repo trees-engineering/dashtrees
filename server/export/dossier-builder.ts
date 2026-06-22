@@ -541,9 +541,12 @@ function nextStepsSection(cfg: DossierConfig): Paragraph[] {
 
 function docHeader(cfg: DossierConfig): Header {
   const name = cfg.candidate.full_name || cfg.candidate.initials;
+  // "for {client}" only when tailored to a client — a plain CV has none.
+  const client = cfg.mission.client;
+  const forClient = client && client !== '—' ? `  |  for ${client}` : '';
   return new Header({ children: [
     para([run(
-      `${name}  |  ${cfg.candidate.position}  |  for ${cfg.mission.client}`,
+      `${name}  |  ${cfg.candidate.position}${forClient}`,
       { italic: true, color: GRAY, size: 20 }
     )]),
   ]});

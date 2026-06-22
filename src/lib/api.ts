@@ -187,7 +187,8 @@ export async function updateRole(roleId: string, patch: RolePatch): Promise<{ ok
 
 // ── Feature C: configurable export ────────────────────────────────────────────
 export interface ExportRequest {
-  roleId: string
+  /** Omit for an untailored "plain CV" — a role is only needed to tailor to its JD. */
+  roleId?: string
   format: 'docx' | 'pdf'
   tailorToJd: boolean
   appendCv: boolean

@@ -572,21 +572,22 @@ app.post('/api/talent/:talentId/export', authMiddleware, async (req: Request, re
     includeInterview?: boolean;
     transcript?: string;
   };
-  if (!body.roleId) {
-    res.status(400).json({ error: 'roleId is required' });
-    return;
+  // roleId is optional: without it we produce an untailored "plain CV" (no JD,
+  // no mission / pitch / needs-matrix). A role is only needed to tailor to its
+  // JD — so it's validated + ownership-checked only when supplied.
+  if (body.roleId) {
+    if (!UUID_RE.test(body.roleId)) {
+      res.status(400).json({ error: 'invalid role id' });
+      return;
+    }
+    // Non-admins can only export for roles they own.
+    if (!(await checkRoleOwnership(req, res, body.roleId))) return;
   }
-  if (!UUID_RE.test(body.roleId)) {
-    res.status(400).json({ error: 'invalid role id' });
-    return;
-  }
-  // Non-admins can only export for roles they own.
-  if (!(await checkRoleOwnership(req, res, body.roleId))) return;
 
   try {
     const result = await buildExport({
       talentId: req.params.talentId,
-      roleId: body.roleId,
+      roleId: body.roleId ?? null,
       recruiterId: req.auth!.recruiterId,
       format: body.format === 'pdf' ? 'pdf' : 'docx',
       tailorToJd: Boolean(body.tailorToJd),

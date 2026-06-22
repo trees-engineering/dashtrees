@@ -1,12 +1,16 @@
-import { useEffect, useRef, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import { X, FileDown, Loader2, Upload } from 'lucide-react'
 import { exportDocument, fileToText, type ExportRequest } from '../lib/api'
+import { useRoles } from '../hooks/useRoles'
+import { useAuth } from '../lib/auth'
 import { useToast } from './Toast'
 import { telemetry } from '../lib/telemetry'
 
 interface ExportDocumentPanelProps {
   talentId: string
-  roleId: string
+  /** Fixed target role (e.g. from the Matches tab). Omit to let the user pick
+   *  a client/role inside the panel (e.g. from the Candidates tab). */
+  roleId?: string
   talentName: string
   onClose: () => void
 }
@@ -52,22 +56,45 @@ export function ExportDocumentPanel({ talentId, roleId, talentName, onClose }: E
   const [includeInterview, setIncludeInterview] = useState(false)
   const [transcriptFile, setTranscriptFile] = useState<File | null>(null)
   const [busy, setBusy] = useState(false)
+  // When opened without a fixed role (Candidates tab), the user picks the
+  // target client/role here — the export endpoint always requires one.
+  const [selectedRoleId, setSelectedRoleId] = useState(roleId ?? '')
   const transcriptInputRef = useRef<HTMLInputElement>(null)
   const toast = useToast()
+
+  const showRolePicker = !roleId
+  const { recruiter } = useAuth()
+  const { data: roles } = useRoles()
+  // List only the logged-in recruiter's own roles. useRoles already scopes this
+  // for non-admins; this narrows it for admins too (who otherwise see everyone's).
+  const myEmail = recruiter?.email ?? null
+  const roleOptions = useMemo(
+    () =>
+      (roles ?? [])
+        .filter((r) => myEmail != null && r.recruiter_email === myEmail)
+        .sort((a, b) => (a.title ?? '').localeCompare(b.title ?? '')),
+    [roles, myEmail],
+  )
+  const effectiveRoleId = roleId ?? selectedRoleId
 
   // Appending the original CV merges PDFs — output is forced to PDF.
   const effectiveFormat: 'docx' | 'pdf' = appendCv ? 'pdf' : format
   const missingTranscript = includeInterview && !transcriptFile
+  // A role is only needed to tailor to its JD — a plain CV download doesn't need one.
+  const missingRole = tailorToJd && !effectiveRoleId
 
+  // Capture the role at close even if it changed while the panel was open.
+  const roleIdRef = useRef(effectiveRoleId)
+  roleIdRef.current = effectiveRoleId
   useEffect(() => {
     return () => {
-      telemetry.capture('export_panel_closed', { role_id: roleId, talent_id: talentId })
+      telemetry.capture('export_panel_closed', { role_id: roleIdRef.current || null, talent_id: talentId })
     }
-  }, [roleId, talentId])
+  }, [talentId])
 
   function handleOptionToggle(option: string, value: boolean) {
     telemetry.capture('export_options_changed', {
-      role_id: roleId,
+      role_id: effectiveRoleId || null,
       talent_id: talentId,
       option,
       value,
@@ -75,10 +102,10 @@ export function ExportDocumentPanel({ talentId, roleId, talentName, onClose }: E
   }
 
   async function handleGenerate() {
-    if (busy || missingTranscript) return
+    if (busy || missingTranscript || missingRole) return
     setBusy(true)
     telemetry.capture('dossier_export_started', {
-      role_id: roleId,
+      role_id: effectiveRoleId,
       talent_id: talentId,
       format: effectiveFormat,
       tailor_to_jd: tailorToJd,
@@ -92,7 +119,7 @@ export function ExportDocumentPanel({ talentId, roleId, talentName, onClose }: E
         transcript = await fileToText(transcriptFile)
       }
       const req: ExportRequest = {
-        roleId,
+        roleId: effectiveRoleId || undefined,
         format: effectiveFormat,
         tailorToJd,
         appendCv,
@@ -102,10 +129,10 @@ export function ExportDocumentPanel({ talentId, roleId, talentName, onClose }: E
       const filename = await telemetry.timed(
         'dossier_export',
         () => exportDocument(talentId, req),
-        { thresholdMs: 15_000, props: { role_id: roleId, talent_id: talentId } },
+        { thresholdMs: 15_000, props: { role_id: effectiveRoleId, talent_id: talentId } },
       )
       telemetry.capture('dossier_export_completed', {
-        role_id: roleId,
+        role_id: effectiveRoleId,
         talent_id: talentId,
         format: effectiveFormat,
         filename,
@@ -114,7 +141,7 @@ export function ExportDocumentPanel({ talentId, roleId, talentName, onClose }: E
       onClose()
     } catch (err) {
       telemetry.capture('dossier_export_failed', {
-        role_id: roleId,
+        role_id: effectiveRoleId,
         talent_id: talentId,
         format: effectiveFormat,
         error_message: (err as Error).message?.slice(0, 200),
@@ -143,6 +170,28 @@ export function ExportDocumentPanel({ talentId, roleId, talentName, onClose }: E
 
         <div className="p-4 space-y-3">
           <p className="text-xs text-treeTextSec">{talentName}</p>
+
+          {/* Client / role — shown only when no role was supplied by the caller.
+              Optional: a role is needed only to tailor to its JD. */}
+          {showRolePicker && (
+            <div>
+              <p className="text-xs font-semibold text-treeTextSec uppercase tracking-wider mb-1.5">
+                Client / role <span className="font-normal normal-case tracking-normal text-treeTextSec">(optional)</span>
+              </p>
+              <select
+                value={selectedRoleId}
+                onChange={(e) => setSelectedRoleId(e.target.value)}
+                className="w-full h-9 px-3 text-sm rounded-lg border border-treeBorder bg-treeSurface text-treeText focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary appearance-none"
+              >
+                <option value="">No role — plain CV</option>
+                {roleOptions.map((r) => (
+                  <option key={r.id} value={r.id}>
+                    {r.title}
+                  </option>
+                ))}
+              </select>
+            </div>
+          )}
 
           {/* Output format */}
           <div>
@@ -226,12 +275,17 @@ export function ExportDocumentPanel({ talentId, roleId, talentName, onClose }: E
           {/* Generate */}
           <button
             onClick={handleGenerate}
-            disabled={busy || missingTranscript}
+            disabled={busy || missingTranscript || missingRole}
             className="w-full flex items-center justify-center gap-2 py-2.5 rounded-lg bg-primary text-white text-sm font-semibold active:bg-primaryDark transition-colors disabled:opacity-50"
           >
             {busy ? <Loader2 size={16} className="animate-spin" /> : <FileDown size={16} />}
             {busy ? 'Generating…' : `Generate ${effectiveFormat.toUpperCase()}`}
           </button>
+          {missingRole && (
+            <p className="text-xs text-treeTextSec text-center">
+              Select a client / role to tailor to its JD, or uncheck "Tailor to this role's JD".
+            </p>
+          )}
           {missingTranscript && (
             <p className="text-xs text-treeTextSec text-center">
               Choose a transcript file, or uncheck "Include interview insights".
