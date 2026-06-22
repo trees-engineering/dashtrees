@@ -1,0 +1,8 @@
+{
+  "name": "prospect-demo",
+  "version": "1.0.0",
+  "private": true,
+  "type": "commonjs",
+  "description": "Generate a branded, standalone AI-ATS demo for a Trees OS / Treelance prospect.",
+  "bin": { "build-demo": "build_demo.js" }
+}

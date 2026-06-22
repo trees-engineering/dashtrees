@@ -1,0 +1,45 @@
+{
+  "clientName": "MHB",
+  "clientUrl": "https://mhb.com.my",
+  "contactName": "Talent Team",
+  "logo": "logo_mhb.svg",
+  "theme": { "primary": "#0083C2", "primaryDark": "#002F49", "primaryLight": "#4faedb", "accent": "#00a0d8" },
+  "font": { "family": "Mulish", "googleUrl": "https://fonts.googleapis.com/css2?family=Mulish:wght@400;600;700;800&display=swap" },
+  "output": "Demo_MHB.html",
+  "projectName": "demomhbtreelance",
+  "deploy": true,
+  "data": {
+    "pool": { "total": 7240, "talked30d": 1180 },
+    "defaultSource": "share",
+    "first": ["Ahmad","Nurul","Wei Jie","Siti","Arif","Mei Ling","Faizal","Hafiz","Aisyah","Farah","Hakim","Ravi","Kumar","Suresh","Lim","Tan","Chong","Idris","Zainal","Haziq"],
+    "last": ["bin Abdullah","Tan","Lim","Wong","Ismail","Hassan","Rahman","Lee","Nair","Yusof","Idris","Pillai","Menon","Chin","Abu Bakar","Salleh","Ng","Subramaniam","Kaur","Othman"],
+    "titles": ["Piping Engineer","Structural Engineer","Electrical & Instrumentation Engineer","Process Engineer","Construction Supervisor","Structural Fitter / Welder","Rigging Supervisor","QA/QC Inspector","Procurement Engineer","Buyer / Expeditor","Commissioning Engineer","Pre-Commissioning Technician"],
+    "disc": {"Piping Engineer":"Engineering","Structural Engineer":"Engineering","Electrical & Instrumentation Engineer":"Engineering","Process Engineer":"Engineering","Construction Supervisor":"Construction","Structural Fitter / Welder":"Construction","Rigging Supervisor":"Construction","QA/QC Inspector":"HSE / QA-QC","Procurement Engineer":"Procurement","Buyer / Expeditor":"Procurement","Commissioning Engineer":"Commissioning","Pre-Commissioning Technician":"Commissioning"},
+    "locs": ["Pasir Gudang, Johor","Kuala Lumpur, MY","Johor Bahru, MY","Pasir Gudang, Johor","Kuala Lumpur, MY","Johor Bahru, MY"],
+    "nats": ["Malaysian","Malaysian","Malaysian","Malaysian","Malaysian (East MY)","Malaysian"],
+    "certs": ["CIDB Green Card","CSWIP 3.1","NDT Level II","Confined Space","Working at Height","Rigging","Scaffolding","BOSIET","NEBOSH IGC","DOSH"],
+    "skills": ["AVEVA E3D","SACS","STAAD.Pro","Piping","Structural Fabrication","Welding","Commissioning","Procurement","EPCC","Heavy Lift","QA/QC","AutoCAD"],
+    "avail": ["Available now","Within 1 month","Within 2 months","On project"],
+    "sources": ["SharePoint","Company portal","WhatsApp group","Referral"],
+    "waDates": ["16 Jun 2026","12 Jun 2026","06 Jun 2026","30 May 2026"],
+    "waNotes": [
+      "Confirmed available, Johor-based. Valid CIDB Green Card + CSWIP. Can start at the yard immediately.",
+      "Rolling off an EPCC piping scope in 2 weeks. KL-based, open to a Pasir Gudang rotation.",
+      "Commissioning engineer with offshore module experience. Available now, Malaysian citizen.",
+      "Procurement engineer, strong local vendor network in Johor. Available within 1 month."
+    ],
+    "notes": ["Yard fabrication & EPCC background.","Offshore module construction experience.","Strong commissioning track record.","Procurement & expediting for heavy engineering."],
+    "roles": [
+      {"id":"r1","title":"Piping Engineer — EPCC Project","loc":"Kuala Lumpur, MY","status":"open","contract":"Contract · 12 mo","created":"2026-06-12","matches":9},
+      {"id":"r2","title":"Construction Supervisor — Pasir Gudang Yard","loc":"Pasir Gudang, Johor","status":"open","contract":"Contract · 9 mo","created":"2026-06-06","matches":7},
+      {"id":"r3","title":"Commissioning Engineer — Offshore Module","loc":"Pasir Gudang, Johor","status":"paused","contract":"Contract · 6 mo","created":"2026-05-24","matches":6}
+    ],
+    "taxonomy": {
+      "disciplines": [["Engineering",0.34],["Construction",0.30],["Procurement",0.14],["Commissioning",0.12],["HSE / QA-QC",0.10]],
+      "availability": [["Available now",0.19],["Within 1 month",0.24],["Within 2 months",0.20],["On project / placed",0.37]],
+      "workauth": [["Malaysian citizen",0.78],["Malaysian PR",0.07],["Foreign worker — valid permit",0.10],["Foreign worker — permit required",0.05]],
+      "seniority": [["Junior (0–3y)",0.24],["Mid (4–7y)",0.35],["Senior (8–14y)",0.29],["Lead / Principal (15y+)",0.12]],
+      "certs": [["CIDB Green Card",0.62],["CSWIP / NDT",0.28],["Confined Space / WAH",0.41],["BOSIET",0.19],["NEBOSH / IOSH",0.16]]
+    }
+  }
+}

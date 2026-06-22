@@ -1,0 +1,1065 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>__CLIENT_NAME__ · Trees OS — powered by Treelance</title>
+<style>
+/* ============================================================================
+   THEME TOKENS — only the CONFIG block (bottom) changes per client. Everything
+   reads from CSS variables so one primary colour cascades through the UI.
+   ========================================================================== */
+:root{
+  --c-primary:#4888f8;--c-primary-dark:#2f6fe0;--c-primary-light:#6ea8fa;--c-accent:#48c8f8;
+  --c-bg:#e9eff9;--c-bg2:#e0e8f6;--c-surface:#ffffff;--c-surface2:#f3f7fd;
+  --c-border:#d4ddee;--c-border-light:#e8eefa;
+  --c-text:#16263f;--c-text-sec:#5a6b89;--c-text-muted:#8b99b3;
+  --green:#16a34a;--blue:#4888f8;--orange:#ea7a1e;--pink:#ec4899;
+  --red:#f04857;--purple:#7c5cf0;--yellow:#d99e00;--wa:#25d366;
+  --radius:14px;--radius-sm:10px;
+  --shadow:0 1px 2px rgba(16,38,63,.06),0 4px 16px rgba(16,38,63,.06);
+  --shadow-lg:0 12px 40px rgba(16,38,63,.16);
+}
+*{box-sizing:border-box;margin:0;padding:0}
+html,body{height:100%}
+body{font-family:var(--font-sans,-apple-system,BlinkMacSystemFont,"Segoe UI",Inter,system-ui,sans-serif);
+  background:var(--c-bg);color:var(--c-text);-webkit-font-smoothing:antialiased;font-size:14px;line-height:1.5}
+button{font-family:inherit;cursor:pointer;border:none;background:none}
+a{color:inherit;text-decoration:none}
+::-webkit-scrollbar{width:9px;height:9px}
+::-webkit-scrollbar-thumb{background:var(--c-border);border-radius:6px}
+.hidden{display:none!important}
+
+.btn{display:inline-flex;align-items:center;gap:7px;font-size:13px;font-weight:600;
+  padding:9px 15px;border-radius:var(--radius-sm);transition:.15s;white-space:nowrap}
+.btn-primary{background:var(--c-primary);color:#fff;box-shadow:0 1px 2px rgba(0,0,0,.08)}
+.btn-primary:hover{background:var(--c-primary-dark)}
+.btn-ghost{background:var(--c-surface);color:var(--c-text-sec);border:1px solid var(--c-border)}
+.btn-ghost:hover{background:var(--c-surface2);color:var(--c-text)}
+.btn-soft{background:color-mix(in srgb,var(--c-primary) 12%,#fff);color:var(--c-primary-dark);
+  border:1px solid color-mix(in srgb,var(--c-primary) 30%,#fff)}
+.btn-soft:hover{background:color-mix(in srgb,var(--c-primary) 18%,#fff)}
+.btn-wa{background:var(--wa);color:#fff}.btn-wa:hover{filter:brightness(.94)}
+.btn-lg{padding:13px 24px;font-size:15px;border-radius:12px}
+.btn-xl{padding:17px 32px;font-size:17px;border-radius:13px;font-weight:700}
+.btn-block{width:100%;justify-content:center}
+
+.pill{display:inline-flex;align-items:center;gap:5px;font-size:11px;font-weight:600;
+  padding:3px 10px;border-radius:999px;border:1px solid transparent}
+.pill-open{background:#e7f8ee;color:#0f7a37;border-color:#bdeccf}
+.pill-paused{background:#fff3e0;color:#b9650f;border-color:#ffd9a8}
+.pill-closed{background:#f0f1f4;color:#6b7488;border-color:#dfe2e9}
+.pill-blue{background:#e8f0ff;color:#2f6fe0;border-color:#c7dbff}
+.pill-primary{background:color-mix(in srgb,var(--c-primary) 12%,#fff);color:var(--c-primary-dark);
+  border-color:color-mix(in srgb,var(--c-primary) 30%,#fff)}
+.tag{display:inline-block;font-size:11px;background:var(--c-bg);border:1px solid var(--c-border);
+  color:var(--c-text-sec);padding:2px 9px;border-radius:999px}
+
+/* ============================ LANDING (persuasion page, light) ======== */
+#landing{position:fixed;inset:0;z-index:50;overflow-y:auto;color:var(--c-text);
+  background:radial-gradient(1100px 520px at 88% -8%,color-mix(in srgb,var(--c-primary) 9%,transparent),transparent),
+    radial-gradient(900px 480px at -8% 8%,color-mix(in srgb,var(--c-accent) 8%,transparent),transparent),
+    #ffffff}
+.lwrap{max-width:1100px;margin:0 auto;padding:0 34px}
+.landing-top{display:flex;align-items:center;justify-content:space-between;padding:20px 34px;border-bottom:1px solid var(--c-border-light)}
+.landing-brand{display:flex;align-items:center;gap:12px}
+.landing-brand .logo-box{height:38px}
+.landing-brand .nm{font-weight:700;font-size:15.5px;letter-spacing:.2px;line-height:1.2;color:var(--c-text)}
+.landing-brand .clarifier{font-size:11px;color:var(--c-text-muted);font-weight:500}
+.powered{font-size:11.5px;color:var(--c-text-muted);display:flex;align-items:center;gap:7px}
+.powered img{height:19px;width:auto}.powered b{color:var(--c-text-sec);font-weight:600}
+
+/* hero */
+.hero{display:grid;grid-template-columns:1.05fr .95fr;gap:46px;align-items:center;padding:46px 0 56px}
+.eyebrow{display:inline-flex;align-items:center;gap:8px;font-size:12px;font-weight:700;
+  letter-spacing:.5px;text-transform:uppercase;color:var(--c-primary-dark);margin-bottom:18px;
+  background:color-mix(in srgb,var(--c-primary) 9%,#fff);border:1px solid color-mix(in srgb,var(--c-primary) 22%,#fff);
+  padding:6px 12px;border-radius:999px}
+.eyebrow .dot{width:7px;height:7px;border-radius:50%;background:var(--c-primary);
+  box-shadow:0 0 0 4px color-mix(in srgb,var(--c-primary) 22%,transparent)}
+.hero h1{font-size:clamp(32px,4.4vw,52px);line-height:1.04;font-weight:800;letter-spacing:-1.2px;color:var(--c-text)}
+.hero h1 .hl{background:linear-gradient(90deg,var(--c-primary),var(--c-accent));
+  -webkit-background-clip:text;background-clip:text;-webkit-text-fill-color:transparent}
+.hero p.sub{font-size:clamp(15px,1.6vw,18px);color:var(--c-text-sec);margin-top:20px;line-height:1.6}
+.hero p.sub b{color:var(--c-text)}
+.landing-cta{display:flex;gap:12px;margin-top:30px;flex-wrap:wrap;align-items:center}
+.cta-primary{background:linear-gradient(90deg,var(--c-primary),var(--c-primary-dark));color:#fff;
+  box-shadow:0 8px 22px color-mix(in srgb,var(--c-primary) 32%,transparent)}
+.cta-primary:hover{filter:brightness(1.06)}
+/* high-contrast solid "Enter the live demo" — the most visible action */
+.cta-second{background:var(--c-text);color:#fff;border:1px solid var(--c-text);box-shadow:0 8px 22px rgba(16,38,63,.22)}
+.cta-second:hover{filter:brightness(1.12)}
+.cta-text{color:var(--c-primary-dark);font-size:13px;font-weight:600;text-decoration:underline;text-underline-offset:3px}
+.cta-text:hover{color:var(--c-primary)}
+/* inline Treelance / WhatsApp links woven into body copy */
+.tl-link{color:var(--c-primary-dark);font-weight:600;text-decoration:none;
+  border-bottom:1px solid color-mix(in srgb,var(--c-primary) 38%,transparent)}
+.tl-link:hover{border-bottom-color:var(--c-primary)}
+
+/* hero product mock */
+.mock{background:#fff;border:1px solid var(--c-border);border-radius:16px;
+  box-shadow:0 24px 60px rgba(16,38,63,.16);overflow:hidden;transform:perspective(1400px) rotateY(-6deg) rotateX(2deg)}
+.mock-bar{display:flex;align-items:center;gap:6px;padding:11px 14px;background:var(--c-surface2);border-bottom:1px solid var(--c-border-light)}
+.mock-bar i{width:10px;height:10px;border-radius:50%;background:var(--c-border)}
+.mock-bar span{margin-left:10px;font-size:11px;color:var(--c-text-muted)}
+.mock-body{background:var(--c-surface2);padding:14px}
+.mock-row{display:flex;align-items:center;gap:11px;background:#fff;border:1px solid var(--c-border-light);border-radius:10px;padding:10px 12px;margin-bottom:9px}
+.mock-row:last-child{margin-bottom:0}
+.mock-ring{width:38px;height:38px;border-radius:50%;flex-shrink:0;display:flex;align-items:center;justify-content:center;
+  font-size:12px;font-weight:800;color:#fff}
+.mock-row .nm{font-size:12.5px;font-weight:700;color:#16263f}
+.mock-row .mt{font-size:10.5px;color:#5a6b89}
+.mock-pill{margin-left:auto;font-size:10px;font-weight:700;padding:3px 9px;border-radius:999px;background:#e7f8ee;color:#0f7a37;flex-shrink:0}
+
+/* proof strip */
+.proof{border-top:1px solid var(--c-border-light);border-bottom:1px solid var(--c-border-light);
+  padding:18px 0;display:flex;flex-wrap:wrap;gap:14px 36px;align-items:center;justify-content:center}
+.proof .pl{font-size:12px;color:var(--c-text-muted);font-weight:600}
+.proof .pi{font-size:13.5px;color:var(--c-text);font-weight:700;display:flex;align-items:center;gap:8px}
+.proof .pi b{color:var(--c-primary)}
+
+/* generic landing section */
+.lsec{padding:58px 0}
+.lsec .kicker{text-align:center;font-size:12px;font-weight:700;letter-spacing:.5px;text-transform:uppercase;color:var(--c-primary);margin-bottom:10px}
+.lsec h2{text-align:center;font-size:clamp(24px,3vw,34px);font-weight:800;letter-spacing:-.6px;max-width:18ch;margin:0 auto;color:var(--c-text)}
+.lsec .lead{text-align:center;color:var(--c-text-sec);max-width:60ch;margin:14px auto 0;font-size:15px;line-height:1.6}
+.lgrid{display:grid;grid-template-columns:repeat(auto-fit,minmax(230px,1fr));gap:18px;margin-top:38px}
+.pcard{background:#fff5f5;border:1px solid #f6d4d6;border-radius:14px;padding:22px}
+.pcard .ic{font-size:22px;margin-bottom:12px}
+.pcard h3{font-size:15.5px;font-weight:700;margin-bottom:6px;color:var(--c-text)}
+.pcard p{font-size:13px;color:var(--c-text-sec);line-height:1.55}
+.scard{background:#fff;border:1px solid var(--c-border);border-radius:14px;padding:22px;position:relative;box-shadow:var(--shadow)}
+.scard .num{position:absolute;top:18px;right:20px;font-size:13px;font-weight:800;color:var(--c-primary);opacity:.45}
+.scard .ic{width:40px;height:40px;border-radius:11px;display:flex;align-items:center;justify-content:center;
+  background:color-mix(in srgb,var(--c-primary) 12%,#fff);margin-bottom:14px;color:var(--c-primary)}
+.scard h3{font-size:15.5px;font-weight:700;margin-bottom:6px;color:var(--c-text)}
+.scard p{font-size:13px;color:var(--c-text-sec);line-height:1.55}
+
+/* compliance band */
+.compliance{background:linear-gradient(120deg,color-mix(in srgb,var(--c-primary) 7%,#fff),color-mix(in srgb,var(--c-accent) 7%,#fff));
+  border:1px solid color-mix(in srgb,var(--c-primary) 20%,var(--c-border));border-radius:18px;
+  padding:30px 34px;display:flex;gap:22px;align-items:center;flex-wrap:wrap}
+.compliance .shield{font-size:38px;flex-shrink:0}
+.compliance h3{font-size:19px;font-weight:800;margin-bottom:6px;color:var(--c-text)}
+.compliance p{font-size:14px;color:var(--c-text-sec);line-height:1.6;max-width:70ch}
+
+/* final CTA + footer */
+.finalcta{text-align:center;padding:60px 0 30px}
+.finalcta h2{font-size:clamp(26px,3.4vw,40px);font-weight:800;letter-spacing:-.8px;color:var(--c-text)}
+.finalcta p{color:var(--c-text-sec);margin:14px auto 28px;max-width:50ch;font-size:16px}
+.lfooter{border-top:1px solid var(--c-border-light);padding:28px 0 40px;display:flex;justify-content:space-between;
+  gap:20px;flex-wrap:wrap;color:var(--c-text-sec);font-size:12.5px}
+.lfooter b{color:var(--c-text)}.lfooter a{color:var(--c-primary-dark);font-weight:600}
+.lfooter .ft-brand{display:flex;align-items:center;gap:9px}.lfooter .ft-brand img{height:20px}
+
+/* ============================ APP SHELL ================================ */
+#app{display:flex;height:100dvh;overflow:hidden}
+.sidebar{width:234px;flex-shrink:0;background:var(--c-surface);border-right:1px solid var(--c-border);
+  display:flex;flex-direction:column;transition:width .18s}
+.sidebar.collapsed{width:68px}
+.sb-brand{height:60px;display:flex;align-items:center;gap:11px;padding:0 18px;border-bottom:1px solid var(--c-border-light)}
+.sb-brand .logo-box{height:32px;flex-shrink:0}
+.sb-brand .t{font-weight:700;font-size:14.5px;white-space:nowrap;overflow:hidden}
+.sb-brand .t small{display:block;font-size:10px;font-weight:600;color:var(--c-text-muted);text-transform:uppercase;letter-spacing:.5px}
+.sidebar.collapsed .sb-brand .t,.sidebar.collapsed .nav-lbl,.sidebar.collapsed .sb-foot-txt{display:none}
+.nav{flex:1;padding:14px 12px;overflow-y:auto}
+.nav-sec{font-size:10px;font-weight:700;letter-spacing:.6px;text-transform:uppercase;color:var(--c-text-muted);padding:14px 10px 7px}
+.sidebar.collapsed .nav-sec{text-align:center;font-size:8px}
+.nav-item{display:flex;align-items:center;gap:12px;width:100%;text-align:left;padding:10px 11px;
+  border-radius:10px;color:var(--c-text-sec);font-size:13.5px;font-weight:500;margin-bottom:2px;transition:.12s}
+.nav-item:hover{background:var(--c-surface2);color:var(--c-text)}
+.nav-item.active{background:color-mix(in srgb,var(--c-primary) 12%,#fff);color:var(--c-primary-dark);font-weight:600}
+.nav-item.active svg{color:var(--c-primary)}
+.nav-item svg{width:19px;height:19px;flex-shrink:0}
+.sidebar.collapsed .nav-item{justify-content:center}
+.sb-foot{padding:14px;border-top:1px solid var(--c-border-light);font-size:11px;color:var(--c-text-muted);display:flex;align-items:center;gap:8px}
+.sb-foot img{height:18px}
+
+.main{flex:1;display:flex;flex-direction:column;min-width:0}
+.topbar{height:60px;flex-shrink:0;background:var(--c-surface);border-bottom:1px solid var(--c-border);
+  display:flex;align-items:center;gap:14px;padding:0 20px;z-index:5}
+.icon-btn{width:38px;height:38px;border-radius:10px;display:flex;align-items:center;justify-content:center;color:var(--c-text-sec)}
+.icon-btn:hover{background:var(--c-surface2);color:var(--c-text)}
+.topbar .crumb{font-weight:700;font-size:16px}.topbar .spacer{flex:1}
+.search{display:flex;align-items:center;gap:8px;background:var(--c-bg);border:1px solid var(--c-border);
+  border-radius:10px;padding:8px 13px;width:280px;color:var(--c-text-muted)}
+.search input{border:none;background:none;outline:none;flex:1;font-size:13px;color:var(--c-text)}
+.avatar{width:34px;height:34px;border-radius:50%;background:var(--c-primary);color:#fff;display:flex;
+  align-items:center;justify-content:center;font-weight:700;font-size:13px;flex-shrink:0}
+.content{flex:1;overflow-y:auto;padding:24px}
+.page{max-width:1080px;margin:0 auto}
+.page-head{margin-bottom:22px}
+.page-head h1{font-size:23px;font-weight:800;letter-spacing:-.4px}
+.page-head p{color:var(--c-text-sec);margin-top:4px;font-size:13.5px}
+.row{display:flex;align-items:center;gap:10px}
+.between{display:flex;align-items:center;justify-content:space-between;gap:12px}
+.muted{color:var(--c-text-sec)}
+.sec-title{font-size:11px;font-weight:700;letter-spacing:.6px;text-transform:uppercase;color:var(--c-text-sec);margin-bottom:12px}
+
+.card{background:var(--c-surface);border:1px solid var(--c-border);border-radius:var(--radius);box-shadow:var(--shadow)}
+.card-p{padding:18px}
+.grid{display:grid;gap:16px}
+.stats{grid-template-columns:repeat(4,1fr)}
+.stat{background:var(--c-surface);border:1px solid var(--c-border);border-radius:var(--radius);padding:18px;
+  box-shadow:var(--shadow);position:relative;overflow:hidden}
+.stat .v{font-size:28px;font-weight:800;letter-spacing:-1px}
+.stat .l{font-size:12px;color:var(--c-text-sec);margin-top:3px;font-weight:500}
+.stat .ic{position:absolute;top:16px;right:16px;width:36px;height:36px;border-radius:10px;display:flex;
+  align-items:center;justify-content:center;background:color-mix(in srgb,var(--c-primary) 12%,#fff);color:var(--c-primary)}
+.stat .trend{font-size:11px;font-weight:600;color:var(--green);margin-top:7px}
+
+.list .li{display:flex;align-items:center;gap:14px;padding:14px 18px;border-bottom:1px solid var(--c-border-light);transition:.12s}
+.list .li:last-child{border-bottom:none}
+.list .li:hover{background:var(--c-surface2)}
+.li .ttl{font-weight:600;font-size:14px}.li .meta{font-size:12px;color:var(--c-text-sec);margin-top:2px}
+
+.actions{display:grid;grid-template-columns:repeat(3,1fr);gap:14px;margin-bottom:24px}
+.action{background:var(--c-surface);border:1px solid var(--c-border);border-radius:var(--radius);padding:18px;
+  text-align:left;box-shadow:var(--shadow);transition:.15s;display:flex;gap:14px}
+.action:hover{transform:translateY(-2px);box-shadow:var(--shadow-lg);border-color:color-mix(in srgb,var(--c-primary) 40%,var(--c-border))}
+.action .ic{width:44px;height:44px;border-radius:12px;display:flex;align-items:center;justify-content:center;
+  flex-shrink:0;background:color-mix(in srgb,var(--c-primary) 12%,#fff);color:var(--c-primary)}
+.action .ic img{height:26px}
+.action h3{font-size:14.5px;font-weight:700}
+.action p{font-size:12.5px;color:var(--c-text-sec);margin-top:3px;line-height:1.45}
+
+.field{margin-bottom:16px}
+.field label{display:block;font-size:12.5px;font-weight:600;color:var(--c-text-sec);margin-bottom:6px}
+.field input,.field select,.field textarea{width:100%;padding:10px 13px;border:1px solid var(--c-border);
+  border-radius:10px;font-size:14px;font-family:inherit;background:var(--c-surface);color:var(--c-text);outline:none;transition:.12s}
+.field input:focus,.field select:focus,.field textarea:focus{border-color:var(--c-primary);
+  box-shadow:0 0 0 3px color-mix(in srgb,var(--c-primary) 18%,transparent)}
+.field textarea{resize:vertical;min-height:100px;line-height:1.55}
+.field-row{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+
+.match{background:var(--c-surface);border:1px solid var(--c-border);border-radius:var(--radius);margin-bottom:12px;box-shadow:var(--shadow);overflow:hidden}
+.match-head{display:flex;align-items:center;gap:14px;padding:16px 18px;cursor:pointer}
+.match-head:hover{background:var(--c-surface2)}
+.score-ring{width:54px;height:54px;flex-shrink:0;position:relative;display:flex;align-items:center;justify-content:center}
+.score-ring .num{font-size:15px;font-weight:800}
+.cand-name{font-weight:700;font-size:15px}.cand-title{font-size:12.5px;color:var(--c-text-sec);margin-top:1px}
+.bars{flex:1;max-width:280px;display:flex;flex-direction:column;gap:8px}
+.bar-row .bl{display:flex;justify-content:space-between;font-size:11px;margin-bottom:3px}
+.bar{height:6px;border-radius:6px;background:var(--c-border-light);overflow:hidden}
+.bar i{display:block;height:100%;border-radius:6px;transition:width .9s cubic-bezier(.2,.8,.2,1)}
+.match-body{padding:0 18px 18px;border-top:1px solid var(--c-border-light)}
+.detail-grid{display:grid;grid-template-columns:1fr 1fr;gap:18px;margin-top:16px}
+.dl{font-size:13px;margin-bottom:9px}
+.dl .k{color:var(--c-text-sec);font-size:11px;text-transform:uppercase;letter-spacing:.4px;display:block;margin-bottom:2px}
+.wa-note{background:#eafbf0;border:1px solid #bfe9cd;border-radius:10px;padding:11px 13px;font-size:12.5px;margin-top:6px}
+.wa-note .h{display:flex;align-items:center;gap:6px;font-weight:700;color:#0f7a37;margin-bottom:3px}
+
+/* Flow explainer */
+.flow{display:flex;gap:10px;flex-wrap:wrap}
+.flow .step{flex:1;min-width:150px;background:var(--c-surface2);border:1px solid var(--c-border-light);border-radius:12px;padding:13px}
+.flow .step .n{width:22px;height:22px;border-radius:50%;background:var(--c-primary);color:#fff;font-size:12px;
+  font-weight:700;display:flex;align-items:center;justify-content:center;margin-bottom:8px}
+.flow .step h4{font-size:13px;font-weight:700;margin-bottom:3px}
+.flow .step p{font-size:11.5px;color:var(--c-text-sec);line-height:1.45}
+
+/* Email preview */
+.email{border:1px solid var(--c-border);border-radius:12px;overflow:hidden;font-size:13px}
+.email .eh{background:var(--c-surface2);padding:12px 16px;border-bottom:1px solid var(--c-border-light)}
+.email .eh .erow{display:flex;gap:8px;margin-bottom:3px}.email .eh .erow b{color:var(--c-text-sec);width:54px;font-size:12px}
+.email .eb{padding:16px;line-height:1.6}.email .eb p{margin-bottom:10px}
+
+/* Dropzone / pipeline */
+.dropzone{border:2px dashed var(--c-border);border-radius:var(--radius);padding:30px;text-align:center;
+  background:var(--c-surface2);transition:.15s;cursor:pointer}
+.dropzone:hover,.dropzone.drag{border-color:var(--c-primary);background:color-mix(in srgb,var(--c-primary) 6%,var(--c-surface2))}
+.dz-ic{width:54px;height:54px;border-radius:16px;margin:0 auto 12px;display:flex;align-items:center;justify-content:center;
+  background:color-mix(in srgb,var(--c-primary) 12%,#fff);color:var(--c-primary)}
+.source-tabs{display:flex;gap:8px;margin-bottom:14px;flex-wrap:wrap}
+.src-btn{display:flex;align-items:center;gap:7px;padding:9px 13px;border:1px solid var(--c-border);border-radius:10px;
+  font-size:12.5px;font-weight:600;color:var(--c-text-sec);background:var(--c-surface)}
+.src-btn.active{border-color:var(--c-primary);color:var(--c-primary-dark);background:color-mix(in srgb,var(--c-primary) 8%,#fff)}
+.connect-row{display:flex;gap:10px}
+.connect-row input{flex:1}
+.pipe{display:flex;align-items:center;gap:0;margin:18px 0 6px}
+.pstep{flex:1;text-align:center;position:relative}
+.pstep .c{width:34px;height:34px;border-radius:50%;margin:0 auto 7px;display:flex;align-items:center;justify-content:center;
+  background:var(--c-bg);border:2px solid var(--c-border);color:var(--c-text-muted);font-weight:700;font-size:13px;transition:.3s;z-index:2;position:relative}
+.pstep .lbl{font-size:10.5px;color:var(--c-text-muted);font-weight:600}
+.pstep.done .c{background:var(--green);border-color:var(--green);color:#fff}
+.pstep.active .c{background:var(--c-primary);border-color:var(--c-primary);color:#fff;box-shadow:0 0 0 5px color-mix(in srgb,var(--c-primary) 22%,transparent)}
+.pstep.done .lbl,.pstep.active .lbl{color:var(--c-text)}
+.pstep::before{content:"";position:absolute;top:17px;left:-50%;width:100%;height:2px;background:var(--c-border);z-index:1}
+.pstep:first-child::before{display:none}
+.pstep.done::before,.pstep.active::before{background:var(--green)}
+
+.spin{width:18px;height:18px;border:2px solid currentColor;border-top-color:transparent;border-radius:50%;animation:sp .7s linear infinite;display:inline-block}
+@keyframes sp{to{transform:rotate(360deg)}}
+.fade-in{animation:fi .4s ease both}
+@keyframes fi{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:none}}
+
+.overlay{position:fixed;inset:0;background:rgba(12,24,48,.5);z-index:60;display:flex;align-items:center;justify-content:center;padding:20px;backdrop-filter:blur(3px)}
+.modal{background:var(--c-surface);border-radius:18px;box-shadow:var(--shadow-lg);width:100%;max-width:580px;max-height:88vh;overflow-y:auto}
+.modal-head{padding:20px 22px;border-bottom:1px solid var(--c-border-light);display:flex;align-items:center;justify-content:space-between}
+.modal-head h2{font-size:18px;font-weight:800;display:flex;align-items:center;gap:9px}
+.modal-head h2 img{height:22px}
+.modal-body{padding:22px}
+.modal-foot{padding:16px 22px;border-top:1px solid var(--c-border-light);display:flex;justify-content:flex-end;gap:10px}
+
+#toast{position:fixed;bottom:24px;left:50%;transform:translateX(-50%) translateY(120px);background:#16263f;color:#fff;
+  padding:13px 20px;border-radius:12px;font-size:13.5px;font-weight:600;box-shadow:var(--shadow-lg);z-index:80;transition:.3s;display:flex;align-items:center;gap:10px;opacity:0}
+#toast.show{transform:translateX(-50%) translateY(0);opacity:1}
+
+/* bar chart */
+.dist{display:flex;flex-direction:column;gap:11px}
+.drow .dl2{display:flex;justify-content:space-between;font-size:12.5px;margin-bottom:4px}
+.drow .dl2 b{font-weight:700}
+.dbar{height:9px;border-radius:6px;background:var(--c-border-light);overflow:hidden}
+.dbar i{display:block;height:100%;border-radius:6px;background:var(--c-primary);transition:width .9s}
+.gauge{width:120px;height:120px;border-radius:50%;display:flex;align-items:center;justify-content:center;position:relative;flex-shrink:0}
+.gauge .inner{position:absolute;inset:12px;background:var(--c-surface);border-radius:50%;display:flex;flex-direction:column;align-items:center;justify-content:center}
+.gauge .inner .g{font-size:26px;font-weight:800}.gauge .inner small{font-size:10px;color:var(--c-text-sec)}
+
+@media(max-width:920px){
+  .stats{grid-template-columns:repeat(2,1fr)}
+  .actions{grid-template-columns:1fr}
+  .sidebar{position:fixed;z-index:40;height:100%;transform:translateX(-100%);box-shadow:var(--shadow-lg)}
+  .sidebar.mobile-open{transform:none}
+  .field-row,.detail-grid{grid-template-columns:1fr}
+  .search{display:none}
+}
+</style>
+</head>
+<body>
+
+<!-- ============================ LANDING ================================== -->
+<div id="landing">
+  <div class="landing-top">
+    <div class="landing-brand"><span id="land-logo" class="logo-box"></span>
+      <div><div class="nm" id="land-name">Client</div>
+        <div class="clarifier" id="land-clarifier">AI recruitment infrastructure · built by Trees OS</div></div></div>
+    <div class="powered">Powered by <img id="land-tl-logo" alt="Treelance"/> <b>· Trees OS</b></div>
+  </div>
+
+  <!-- HERO -->
+  <div class="lwrap">
+    <div class="hero">
+      <div>
+        <div class="eyebrow"><span class="dot"></span> <span id="land-eyebrow">The database problem</span></div>
+        <h1>Your candidate database<br/>is <span class="hl">fast asleep.</span></h1>
+        <p class="sub" id="land-sub"></p>
+        <div class="landing-cta">
+          <button class="btn btn-xl cta-second" onclick="enterApp()">▶&nbsp; Enter the live demo</button>
+          <a class="btn btn-xl cta-primary" id="land-book" target="_blank" rel="noopener">Book a 15-min call →</a>
+          <a class="cta-text" id="land-site" target="_blank" rel="noopener">Visit Trees OS ↗</a>
+        </div>
+      </div>
+      <div class="mock" id="land-mock"></div>
+    </div>
+
+    <!-- PROOF -->
+    <div class="proof" id="land-proof"></div>
+
+    <!-- PROBLEM -->
+    <div class="lsec">
+      <div class="kicker">Sound familiar?</div>
+      <h2>You're sitting on gold you can't dig up.</h2>
+      <p class="lead">Every CV you've ever received is a candidate you already paid to find. But once it lands in SharePoint, it's gone.</p>
+      <div class="lgrid">
+        <div class="pcard"><div class="ic">🪦</div><h3>Your database is a graveyard</h3>
+          <p>CVs pile up in SharePoint, inboxes and WhatsApp groups. An AI can't read them, and a human can't either — so they rot.</p></div>
+        <div class="pcard"><div class="ic">🤷</div><h3>You never know who's available</h3>
+          <p>Availability changes every week. You blast WhatsApp groups and hope the right person happens to reply in time.</p></div>
+        <div class="pcard"><div class="ic">🌍</div><h3>Hiring abroad takes months</h3>
+          <p>Different languages, time zones and dead leads. A single overseas role can take 8 weeks — while the project waits.</p></div>
+      </div>
+    </div>
+
+    <!-- SOLUTION -->
+    <div class="lsec">
+      <div class="kicker">Here's how we fix it</div>
+      <h2>We bring your database back to life.</h2>
+      <p class="lead">Treelance reactivates the data you already own, keeps it live, and puts the right person in front of you the moment you need them.</p>
+      <div class="lgrid">
+        <div class="scard"><span class="num">01</span><div class="ic">📥</div><h3>Reactivate your database</h3>
+          <p>Connect SharePoint, Drive or a CV dump. Treelance parses, structures and enriches every profile into a searchable pool.</p></div>
+        <div class="scard"><span class="num">02</span><div class="ic">💬</div><h3>Keep it live on WhatsApp</h3>
+          <p>An AI agent messages your candidates on a schedule to confirm who's available, where, and at what rate — automatically.</p></div>
+        <div class="scard"><span class="num">03</span><div class="ic">⚡</div><h3>Match the moment you post</h3>
+          <p>Post a role and the engine ranks your whole pool on fit, certifications and availability in seconds — not weeks.</p></div>
+        <div class="scard"><span class="num">04</span><div class="ic">🚀</div><h3>Prequalify &amp; deploy</h3>
+          <p>Treelance prequalifies on WhatsApp; you approve; it introduces the candidate and books the call. You just build the relationship.</p></div>
+      </div>
+    </div>
+
+    <!-- COMPLIANCE -->
+    <div class="lsec" style="padding-top:10px">
+      <div class="compliance">
+        <div class="shield">🛡️</div>
+        <div><h3>Built to stay legal</h3>
+          <p>AI-hiring regulation is coming. Filtering CVs on keywords won't be defensible. Treelance matches on a proper energy-industry <b>taxonomy</b> — and we help you build <b>your own taxonomy</b>, tailored to your disciplines, so every match is accurate, explainable, and ready for the rules before they land.</p></div>
+      </div>
+    </div>
+
+    <!-- FINAL CTA -->
+    <div class="finalcta">
+      <h2 id="land-final">Let's wake up your database.</h2>
+      <p>See exactly what an AI-activated talent pool looks like — then talk to the team that builds them.</p>
+      <div class="landing-cta" style="justify-content:center">
+        <button class="btn btn-xl cta-second" onclick="enterApp()">▶&nbsp; Enter the live demo</button>
+        <a class="btn btn-xl cta-primary" id="land-book2" target="_blank" rel="noopener">Book a 15-min call →</a>
+      </div>
+    </div>
+
+    <!-- FOOTER -->
+    <div class="lfooter">
+      <div class="ft-brand"><img id="land-tl-foot" alt="Treelance"/>
+        <span><b>Trees OS</b> is the platform · <b>Treelance</b> is the AI recruiter that runs on it.</span></div>
+      <div id="land-contact"></div>
+    </div>
+  </div>
+</div>
+
+<!-- ============================ APP ====================================== -->
+<div id="app" class="hidden">
+  <aside class="sidebar" id="sidebar">
+    <div class="sb-brand"><span id="sb-logo" class="logo-box"></span>
+      <div class="t"><span id="sb-name">Client</span><small>Trees OS</small></div></div>
+    <nav class="nav" id="nav"></nav>
+    <div class="sb-foot"><span class="sb-foot-txt">Powered by</span> <img id="sb-tl-logo" alt="Treelance"/></div>
+  </aside>
+  <div class="main">
+    <header class="topbar">
+      <button class="icon-btn" onclick="toggleSidebar()" aria-label="menu">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="20"><path d="M3 12h18M3 6h18M3 18h18"/></svg></button>
+      <span class="crumb" id="crumb">Home</span>
+      <div class="spacer"></div>
+      <div class="search"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16"><circle cx="11" cy="11" r="7"/><path d="m21 21-4.3-4.3"/></svg>
+        <input placeholder="Search candidates, roles…"/></div>
+      <div class="avatar" id="user-avatar">QC</div>
+    </header>
+    <main class="content"><div class="page" id="view"></div></main>
+  </div>
+</div>
+
+<div id="modal-root"></div>
+<div id="toast"></div>
+
+<script>
+/* ============================================================================
+   CONFIG — the skill rewrites everything between the markers below.
+   ========================================================================== */
+/*CONFIG_START*/
+window.DEMO_CONFIG = {
+  clientName: "__CLIENT_NAME__",
+  clientUrl: "https://example.com",
+  contactName: "Account Manager",
+  logo: "",                       // prospect logo (data-URI/URL) — falls back to initials
+  treelanceLogo: "https://ucarecdn.com/29ae850e-91d6-443b-b8d1-f1da777aab43/treelance_logo_transparent.png",
+  treelanceWhatsapp: "http://wa.me/60122421849",
+  bookingLink: "https://calendar.app.google/HLfcvtmSVVJjtb7n7",
+  contactEmail: "quentin@trees-engineering.com",
+  proof: ["Trusted by energy teams like TOTALEnergies","35,000+ professionals sourced","5 years building AI recruitment"],
+  font: null,                     // { family:"Inter", googleUrl:"https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800&display=swap" }
+  ,theme: { primary:"#4888f8", primaryDark:"#2f6fe0", primaryLight:"#6ea8fa", accent:"#48c8f8" }
+};
+/*CONFIG_END*/
+
+const CFG=window.DEMO_CONFIG;
+
+/* ---- icons ---- */
+const I={
+  home:'<path d="M3 11.5 12 4l9 7.5"/><path d="M5 10v10h14V10"/>',
+  job:'<rect x="3" y="7" width="18" height="13" rx="2"/><path d="M8 7V5a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/>',
+  db:'<ellipse cx="12" cy="5" rx="8" ry="3"/><path d="M4 5v6c0 1.7 3.6 3 8 3s8-1.3 8-3V5"/><path d="M4 11v6c0 1.7 3.6 3 8 3s8-1.3 8-3v-6"/>',
+  match:'<circle cx="9" cy="7" r="3"/><path d="M3 21v-1a6 6 0 0 1 6-6"/><path d="m15 11 2 2 4-4"/>',
+  intro:'<path d="M4 4h16v12H5.2L4 17.2z"/><path d="M8 9h8M8 12h5"/>',
+  report:'<path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6"/><path d="M8 13h8M8 17h5"/>',
+  chart:'<path d="M3 3v18h18"/><rect x="7" y="11" width="3" height="6"/><rect x="12" y="7" width="3" height="10"/><rect x="17" y="13" width="3" height="4"/>',
+  upload:'<path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><path d="M7 10l5-5 5 5"/><path d="M12 5v12"/>',
+  bolt:'<path d="M13 2 3 14h7l-1 8 10-12h-7z"/>',
+  doc:'<path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6"/>',
+  check:'<path d="M20 6 9 17l-5-5"/>',
+  x:'<path d="M18 6 6 18M6 6l12 12"/>',
+  chevron:'<path d="m9 18 6-6-6-6"/>',
+  clock:'<circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/>',
+  wa:'<path d="M12 3a9 9 0 0 0-7.7 13.6L3 21l4.5-1.2A9 9 0 1 0 12 3Z"/><path d="M8.5 8.5c0 4 3 7 7 7"/>',
+  drive:'<path d="m8 3 8 14M3 17 11 3M21 17H5l3 5h10z"/>',
+  share:'<path d="M4 4h16v16H4z"/><path d="M8 12h8M8 16h8M8 8h5"/>',
+  globe:'<circle cx="12" cy="12" r="9"/><path d="M3 12h18M12 3a14 14 0 0 1 0 18 14 14 0 0 1 0-18Z"/>'
+};
+const svg=(p,w=19)=>`<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="${w}" height="${w}">${p}</svg>`;
+
+/* ============================================================================
+   MOCK DATA — Malaysia / Indonesia energy & engineering talent pool.
+   The big pool (35,393) is the pitch; sample rows + roles are local.
+   ========================================================================== */
+/* ----------------------------------------------------------------------------
+   All sector data is config-driven via CFG.data (see SKILL.md). The defaults
+   below (Malaysia/Indonesia energy) apply when no data block is supplied.
+   -------------------------------------------------------------------------- */
+const D = CFG.data || {};
+const FIRST = D.first || ["Ahmad","Nurul","Wei Jie","Siti","Arif","Putri","Budi","Mei Ling","Faizal","Dewi","Hafiz","Rizki","Aisyah","Bayu","Farah","Hakim","Indah","Ravi","Chong","Lim"];
+const LAST = D.last || ["bin Abdullah","Tan","Lim","Wong","Ismail","Hassan","Suharto","Wijaya","Pratama","Rahman","Lee","Kaur","Nair","Putra","Sari","Halim","Yusof","Lestari","Chin","Idris"];
+const TITLES = D.titles || ["Process Engineer","Mechanical Engineer","Piping Designer","Project Manager","HSE Officer","Offshore Crew / Rigger","Commissioning Engineer","NDT Inspector","Structural Designer","Drilling Supervisor","Electrical Engineer","Instrument Technician"];
+const DISC = D.disc || {"Process Engineer":"Engineering","Mechanical Engineer":"Engineering","Electrical Engineer":"Engineering","Commissioning Engineer":"Commissioning","Piping Designer":"Design & Drafting","Structural Designer":"Design & Drafting","Project Manager":"Project Management","HSE Officer":"HSE","Offshore Crew / Rigger":"Offshore Crew","Drilling Supervisor":"Offshore Crew","NDT Inspector":"Inspection / QA-QC","Instrument Technician":"Engineering"};
+const LOCS = D.locs || ["Kuala Lumpur, MY","Jakarta, ID","Johor Bahru, MY","Surabaya, ID","Bintulu, MY","Balikpapan, ID","Kota Kinabalu, MY","Batam, ID","Miri, MY","Cikarang, ID"];
+const NATS = D.nats || ["Malaysian","Indonesian","Indonesian","Malaysian","Malaysian","Singaporean","Filipino","Indian (work permit)"];
+const CERTS = D.certs || ["BOSIET","HUET","OPITO","NEBOSH IGC","API 570","API 510","CSWIP 3.1","PMP","Confined Space","Working at Height"];
+const SKILLS = D.skills || ["HYSYS","AVEVA E3D","STAAD.Pro","AutoCAD","HAZOP","Primavera P6","FEED","Brownfield","LNG","Offshore","Commissioning","SAP PM"];
+const AVAIL = D.avail || ["Available now","Within 1 month","Within 2 months","3+ months"];
+const SOURCES = D.sources || ["SharePoint","Company portal","WhatsApp group","Referral"];
+const WADATES = D.waDates || ["16 Jun 2026","12 Jun 2026","06 Jun 2026","30 May 2026"];
+const WANOTES = D.waNotes || ["Confirmed available, offshore-ready. Valid BOSIET + HUET. Day rate aligned.",
+  "Currently on notice (3 weeks). Keen on the scope. Mobile regionally.",
+  "Strong track record with major operators. Available now.",
+  "Available immediately, looking for a 12-month contract. Asked about start date."];
+const NOTES = D.notes || ["Strong APAC energy background.","Multiple offshore rotations.","Led brownfield revamps.","Deep commissioning experience."];
+const MSTAT=["prequalified","proposed","introduced"];
+const seedRnd=s=>()=>(s=(s*1103515245+12345)&0x7fffffff)/0x7fffffff;
+const rnd=seedRnd(42);
+const pick=a=>a[Math.floor(rnd()*a.length)];
+const pickN=(a,n)=>{const c=[...a],o=[];while(o.length<n&&c.length)o.push(c.splice(Math.floor(rnd()*c.length),1)[0]);return o;};
+const fmtN=n=>n.toLocaleString('en-US');
+
+function makeCandidate(i){
+  const skill=42+Math.floor(rnd()*56), exp=42+Math.floor(rnd()*56);
+  const title=pick(TITLES);
+  return {id:"c"+i,name:pick(FIRST)+" "+pick(LAST),title,discipline:DISC[title]||"Engineering",location:pick(LOCS),
+    nationality:pick(NATS),years:3+Math.floor(rnd()*22),avail:pick(AVAIL),
+    skills:pickN(SKILLS,3+Math.floor(rnd()*2)),certs:pickN(CERTS,2+Math.floor(rnd()*2)),
+    overall:Math.round(skill*.55+exp*.45),skill,exp,status:pick(MSTAT),
+    source:pick(SOURCES),waDate:pick(WADATES),waNote:pick(WANOTES),note:pick(NOTES)};
+}
+const DB={
+  candidates:Array.from({length:14},(_,i)=>makeCandidate(i+1)),
+  roles: D.roles || [
+    {id:"r1",title:"Senior Process Engineer — Brownfield",loc:"Bintulu, MY",status:"open",contract:"Contract · 12 mo",created:"2026-06-09",matches:9},
+    {id:"r2",title:"Offshore Commissioning Lead",loc:"Balikpapan, ID",status:"open",contract:"Contract · 6 mo",created:"2026-06-04",matches:7},
+    {id:"r3",title:"HSE Officer — Offshore",loc:"Kerteh, MY",status:"paused",contract:"Permanent",created:"2026-05-21",matches:6},
+  ],
+  matchesByRole:{}, intros:[]
+};
+DB.roles.forEach(r=>{
+  DB.matchesByRole[r.id]=[...DB.candidates].sort((a,b)=>b.overall-a.overall).slice(0,r.matches)
+    .map((c,i)=>({...c,status:i===0?'introduced':i<3?'proposed':'prequalified'}));
+});
+// pre-seed a couple of introductions with dates (first match of the first two roles)
+DB.intros=[
+  {cand:DB.matchesByRole[DB.roles[0].id][0], role:DB.roles[0], date:"2026-06-13"},
+  {cand:DB.matchesByRole[DB.roles[1].id][0], role:DB.roles[1], date:"2026-06-10"}
+].filter(x=>x.cand);
+
+/* ---- Aggregate pool stats (the "live database") ------------------------- */
+const TAX = D.taxonomy || {
+  disciplines:[["Engineering",.38],["Design & Drafting",.16],["Offshore Crew",.14],["Project Management",.11],["HSE",.09],["Inspection / QA-QC",.07],["Commissioning",.05]],
+  availability:[["Available now",.18],["Within 1 month",.24],["Within 2 months",.21],["3+ months / placed",.37]],
+  workauth:[["Malaysian",.46],["Indonesian",.31],["Other ASEAN",.12],["Expat — valid work permit",.08],["Expat — permit required",.03]],
+  seniority:[["Junior (0–3y)",.22],["Mid (4–7y)",.34],["Senior (8–14y)",.31],["Lead / Principal (15y+)",.13]],
+  certs:[["BOSIET / HUET",.41],["NEBOSH / IOSH",.27],["API (570/510/653)",.19],["CSWIP / NDT",.14],["PMP / Prince2",.11]]};
+const POOL = Object.assign({ total:(D.pool&&D.pool.total)||35393, talked30d:(D.pool&&D.pool.talked30d)||1284 }, TAX);
+const pc=p=>Math.round(POOL.total*p);
+POOL.availableNow=pc(POOL.availability[0][1]);
+
+/* ============================================================================
+   BRAND
+   ========================================================================== */
+function initials(name){return name.split(/\s+/).map(w=>w[0]).join("").slice(0,2).toUpperCase();}
+function logoEl(size){
+  if(CFG.logo){const i=document.createElement('img');i.src=CFG.logo;i.alt=CFG.clientName;
+    i.style.cssText=`height:${size}px;width:auto;border-radius:7px;display:block`;return i;}
+  const d=document.createElement('div');
+  d.style.cssText=`width:${size}px;height:${size}px;border-radius:9px;background:var(--c-primary);color:#fff;
+    font-weight:800;display:flex;align-items:center;justify-content:center;font-size:${size*.4}px;flex-shrink:0`;
+  d.textContent=initials(CFG.clientName);return d;
+}
+const TL_WA=CFG.treelanceWhatsapp||"http://wa.me/60122421849";
+function applyBrand(){
+  const t=CFG.theme,root=document.documentElement.style;
+  root.setProperty('--c-primary',t.primary);root.setProperty('--c-primary-dark',t.primaryDark);
+  root.setProperty('--c-primary-light',t.primaryLight);root.setProperty('--c-accent',t.accent);
+
+  // Client website font — load it and apply, so the demo feels like *their* site.
+  if(CFG.font&&CFG.font.family){
+    if(CFG.font.googleUrl){const fl=document.createElement('link');fl.rel='stylesheet';fl.href=CFG.font.googleUrl;document.head.appendChild(fl);}
+    root.setProperty('--font-sans',`"${CFG.font.family}",-apple-system,BlinkMacSystemFont,"Segoe UI",Inter,system-ui,sans-serif`);
+  }
+  document.getElementById('land-name').textContent=CFG.clientName;
+  document.getElementById('land-logo').appendChild(logoEl(40));
+  document.getElementById('sb-logo').appendChild(logoEl(32));
+  document.getElementById('sb-name').textContent=CFG.clientName;
+  document.getElementById('land-tl-logo').src=CFG.treelanceLogo;
+  document.getElementById('sb-tl-logo').src=CFG.treelanceLogo;
+  document.getElementById('land-tl-foot').src=CFG.treelanceLogo;
+  // Treelance logos link to the Treelance WhatsApp.
+  ['land-tl-logo','sb-tl-logo','land-tl-foot'].forEach(id=>{
+    const img=document.getElementById(id); if(!img||img.closest('a'))return;
+    const a=document.createElement('a');a.href=TL_WA;a.target="_blank";a.rel="noopener";a.style.display="inline-flex";
+    img.parentNode.insertBefore(a,img);a.appendChild(img);
+  });
+
+  // Clarifier — kills the "is this our own tool?" confusion.
+  document.getElementById('land-clarifier').textContent=
+    `AI recruitment infrastructure · built for ${CFG.clientName} by Trees OS`;
+  document.getElementById('land-eyebrow').textContent=`The ${CFG.clientName} talent problem`;
+
+  // Pain-first hero subhead, anchored on THEIR database size.
+  document.getElementById('land-sub').innerHTML=
+    `<b>${CFG.clientName}</b> has <b>thousands of</b> CVs scattered across SharePoint, inboxes and WhatsApp `+
+    `groups — and an AI can't read a single one. Treelance reactivates your database, messages every candidate to `+
+    `keep their availability live, and ranks them the second you post a role.`;
+  document.getElementById('land-final').textContent=`Let's wake up ${CFG.clientName}'s database.`;
+
+  // CTAs
+  const tos="https://treesoswebsite.vercel.app/";
+  const book=CFG.bookingLink||tos;
+  document.getElementById('land-book').href=book;
+  document.getElementById('land-book2').href=book;
+  const s=document.getElementById('land-site');s.href=tos;s.target="_blank";s.textContent="Visit Trees OS ↗";
+
+  // Proof strip
+  const proof=CFG.proof||["Trusted by energy teams like TOTALEnergies","35,000+ professionals sourced","5 years building AI recruitment"];
+  document.getElementById('land-proof').innerHTML=
+    `<span class="pl">Why teams trust us</span>`+
+    proof.map(p=>`<span class="pi"><b>✦</b> ${p}</span>`).join('');
+
+  // Footer contact
+  const email=CFG.contactEmail||"hello@trees-engineering.com";
+  document.getElementById('land-contact').innerHTML=
+    `Talk to us: <a href="mailto:${email}">${email}</a> · <a href="${book}" target="_blank">Book a call ↗</a>`;
+
+  // Hero product mock — a glimpse of the live dashboard
+  renderHeroMock();
+
+  document.getElementById('user-avatar').textContent=initials(CFG.contactName);
+  document.title=`${CFG.clientName} · Trees OS — powered by Treelance`;
+  linkifyBrand(document.getElementById('landing'));
+}
+/* Wrap every plain-text "Treelance" / "WhatsApp" mention in a link to the
+   Treelance WhatsApp — skipping anything already inside a link or a button. */
+function linkifyBrand(root){
+  if(!root) return;
+  const walker=document.createTreeWalker(root,NodeFilter.SHOW_TEXT,{acceptNode(n){
+    if(!n.nodeValue||!/Treelance|WhatsApp/.test(n.nodeValue)) return NodeFilter.FILTER_REJECT;
+    const p=n.parentElement;
+    if(!p||p.closest('a,button,.btn,script,style')) return NodeFilter.FILTER_REJECT;
+    return NodeFilter.FILTER_ACCEPT;
+  }});
+  const nodes=[];let n;while(n=walker.nextNode())nodes.push(n);
+  nodes.forEach(node=>{
+    const parts=node.nodeValue.split(/(Treelance|WhatsApp)/g);
+    if(parts.length<2)return;
+    const frag=document.createDocumentFragment();
+    parts.forEach(part=>{
+      if(part==='Treelance'||part==='WhatsApp'){
+        const a=document.createElement('a');a.href=TL_WA;a.target="_blank";a.rel="noopener";
+        a.className="tl-link";a.textContent=part;frag.appendChild(a);
+      } else if(part) frag.appendChild(document.createTextNode(part));
+    });
+    node.parentNode.replaceChild(frag,node);
+  });
+}
+function renderHeroMock(){
+  const m=document.getElementById('land-mock'); if(!m)return;
+  const rows=[["Available now",91],["Available now",84],["On project",73]];
+  const sample=DB.candidates.slice(0,3);
+  const col=s=>s>=80?'#16a34a':s>=65?'var(--c-primary)':'#ea7a1e';
+  m.innerHTML=
+    `<div class="mock-bar"><i></i><i></i><i></i><span>${CFG.clientName} · Matches — ${(DB.roles[0]&&DB.roles[0].title.split(' — ')[0])||'Matches'}</span></div>
+     <div class="mock-body">${sample.map((c,i)=>{
+       const sc=[91,84,73][i], av=rows[i][0];
+       return `<div class="mock-row">
+         <div class="mock-ring" style="background:conic-gradient(${col(sc)} ${sc*3.6}deg,#e4ebf6 ${sc*3.6}deg)">
+           <span style="background:#fff;width:26px;height:26px;border-radius:50%;display:flex;align-items:center;justify-content:center;color:${col(sc)}">${sc}</span></div>
+         <div><div class="nm">${c.name}</div><div class="mt">${c.title} · ${c.location}</div></div>
+         <span class="mock-pill" style="${av!=='Available now'?'background:#fff3e0;color:#b9650f':''}">${av}</span></div>`;
+     }).join('')}</div>`;
+}
+const tlImg=(h)=>`<img src="${CFG.treelanceLogo}" alt="Treelance" style="height:${h}px;width:auto;vertical-align:middle"/>`;
+
+/* ============================================================================
+   NAV + ROUTER
+   ========================================================================== */
+const NAV=[{id:"home",label:"Home",icon:"home"},{id:"post",label:"Post a Job",icon:"job"},
+  {id:"database",label:"Candidate Database",icon:"db"},{id:"matches",label:"Matches",icon:"match"},
+  {id:"intros",label:"Introductions",icon:"intro"},{id:"reports",label:"Reports",icon:"report"},
+  {id:"analytics",label:"Talent Taxonomy",icon:"chart"}];
+let route="home", selectedRole="r1";
+function renderNav(){
+  document.getElementById('nav').innerHTML=`<div class="nav-sec">Workspace</div>`+
+    NAV.map(n=>`<button class="nav-item ${route===n.id?'active':''}" onclick="go('${n.id}')">
+      ${svg(I[n.icon])}<span class="nav-lbl">${n.label}</span></button>`).join('');
+}
+function go(r){route=r;renderNav();document.getElementById('crumb').textContent=NAV.find(n=>n.id===r).label;render();
+  if(window.innerWidth<=920)document.getElementById('sidebar').classList.remove('mobile-open');}
+function render(){const v=document.getElementById('view');v.className="page fade-in";
+  ({home:viewHome,post:viewPost,database:viewDatabase,matches:viewMatches,intros:viewIntros,reports:viewReports,analytics:viewAnalytics}[route]||viewHome)(v);
+  linkifyBrand(v);}
+
+/* ============================================================================
+   VIEWS
+   ========================================================================== */
+function viewHome(v){
+  const openRoles=DB.roles.filter(r=>r.status==='open').length;
+  v.innerHTML=`
+    <div class="page-head"><h1>Welcome back, ${CFG.contactName.split(' ')[0]} 👋</h1>
+      <p>Treelance has been sourcing for ${CFG.clientName} while you were away. Here's your pipeline.</p></div>
+    <div class="actions">
+      <button class="action" onclick="go('post')"><div class="ic">${svg(I.bolt,22)}</div>
+        <div><h3>Post a new job</h3><p>Match it against your pool in seconds.</p></div></button>
+      <button class="action" onclick="go('database')"><div class="ic">${svg(I.upload,22)}</div>
+        <div><h3>Reactivate your database</h3><p>Connect Drive / SharePoint or upload CVs.</p></div></button>
+      <button class="action" onclick="talkTreelance()"><div class="ic">${tlImg(26)}</div>
+        <div><h3>Talk to Treelance</h3><p>Ask your AI recruiter about your pipeline.</p></div></button>
+    </div>
+    <div class="sec-title">Overview</div>
+    <div class="grid stats" style="margin-bottom:24px">
+      ${stat(openRoles,"Open Roles",I.job,"+1 this week")}
+      ${stat(fmtN(POOL.total),"Candidates in pool",I.db,"+248 this week")}
+      ${stat(fmtN(POOL.availableNow),"Available candidates",I.check,fmtN(pc(.06))+" new this week")}
+      ${stat(DB.intros.length,"Introductions",I.intro,"+1 this week")}
+    </div>
+    <div class="between" style="margin-bottom:12px"><div class="sec-title" style="margin:0">Recent Roles</div>
+      <button class="btn btn-ghost" onclick="go('matches')">View matches ${svg(I.chevron,14)}</button></div>
+    <div class="card list">
+      ${DB.roles.map(r=>`<div class="li" onclick="selectedRole='${r.id}';go('matches')" style="cursor:pointer">
+        <div style="flex:1"><div class="ttl">${r.title}</div>
+          <div class="meta">${r.loc} · ${r.contract} · ${fmtDate(r.created)}</div></div>
+        <span class="tag">${r.matches} matches</span>${pill(r.status)}${svg(I.chevron,16)}</div>`).join('')}
+    </div>`;
+}
+
+function viewPost(v){
+  v.innerHTML=`
+    <div class="page-head"><h1>Post a Job</h1>
+      <p>Describe the role. Treelance instantly matches it against ${fmtN(POOL.total)} candidates in your pool.</p></div>
+    <div class="card card-p" style="max-width:720px">
+      <div class="field"><label>Job title</label><input id="f-title" placeholder="e.g. Senior Process Engineer — Brownfield"/></div>
+      <div class="field-row">
+        <div class="field"><label>Location</label><input id="f-loc" placeholder="e.g. Bintulu, MY"/></div>
+        <div class="field"><label>Contract type</label>
+          <select id="f-contract" onchange="toggleDuration()"><option>Permanent</option><option selected>Contract</option><option>Freelance</option></select></div>
+      </div>
+      <div class="field-row" id="dur-row">
+        <div class="field"><label>Duration</label>
+          <select id="f-dur"><option>3 months</option><option selected>6 months</option><option>12 months</option><option>12 months, renewable</option></select></div>
+        <div class="field"><label>Start date</label><input id="f-start" type="date"/></div>
+      </div>
+      <div class="field-row">
+        <div class="field"><label>Seniority</label>
+          <select id="f-sen"><option>Senior (8–14 yrs)</option><option>Mid (4–7 yrs)</option><option>Lead / Principal</option><option>Junior (0–3 yrs)</option></select></div>
+        <div class="field"><label>Nationality / work authorization</label>
+          <input id="f-nat" placeholder="e.g. Malaysian, Indonesian, or valid MY work permit"/></div>
+      </div>
+      <div class="field"><label>Certifications required</label>
+        <input id="f-certs" placeholder="e.g. BOSIET, HUET, NEBOSH IGC, API 570"/></div>
+      <div class="field"><label>Description</label>
+        <textarea id="f-desc" placeholder="Paste the JD or describe the mission. Treelance extracts requirements automatically."></textarea></div>
+      <button class="btn btn-primary btn-block btn-lg" onclick="submitJob()">${svg(I.bolt,18)} Match against my talent pool</button>
+      <p class="muted" style="text-align:center;font-size:12px;margin-top:12px">Powered by ${tlImg(13)} matching engine</p>
+    </div>`;
+}
+function toggleDuration(){
+  const isContract=['Contract','Freelance'].includes(document.getElementById('f-contract').value);
+  document.getElementById('dur-row').style.display=isContract?'grid':'none';
+}
+function submitJob(){
+  const title=val('f-title')||"Untitled Role", loc=val('f-loc')||"Kuala Lumpur, MY", contract=val('f-contract');
+  const dur=['Contract','Freelance'].includes(contract)?` · ${val('f-dur')}`:'';
+  showMatchingOverlay(title,()=>{
+    const id="r"+(DB.roles.length+1), n=6+Math.floor(rnd()*5);
+    DB.roles.unshift({id,title,loc,status:"open",contract:contract+dur,created:"2026-06-16",matches:n});
+    DB.matchesByRole[id]=[...DB.candidates].sort((a,b)=>b.overall-a.overall).slice(0,n)
+      .map((c,i)=>({...c,status:i<3?'proposed':'prequalified'}));
+    selectedRole=id;toast(`${n} prequalified candidates matched for "${title}"`);go('matches');
+  });
+}
+function showMatchingOverlay(title,done){
+  const steps=["Reading the job description","Querying "+fmtN(POOL.total)+" candidates on Treelance","Scoring on certs, experience & availability","Ranking WhatsApp-prequalified matches"];
+  modal(`<div class="modal-head"><h2>Matching in progress</h2></div>
+    <div class="modal-body" style="text-align:center">
+      <div class="dz-ic" style="margin-bottom:18px">${svg(I.bolt,26)}</div>
+      <p class="muted" style="margin-bottom:6px">Matching <b>${title}</b> against</p>
+      <p style="font-weight:700;margin-bottom:22px">${fmtN(POOL.total)} candidates on Treelance Infrastructure</p>
+      <div id="match-steps" style="text-align:left;max-width:360px;margin:0 auto"></div></div>`,false);
+  const box=document.getElementById('match-steps');
+  box.innerHTML=steps.map((s,i)=>`<div id="ms${i}" class="row" style="padding:9px 0;color:var(--c-text-muted)"><span id="msi${i}" style="width:20px">○</span><span>${s}</span></div>`).join('');
+  let i=0;const tick=()=>{
+    if(i>0){document.getElementById('msi'+(i-1)).innerHTML='<span style="color:var(--green)">'+svg(I.check,16)+'</span>';document.getElementById('ms'+(i-1)).style.color='var(--c-text)';}
+    if(i<steps.length){document.getElementById('msi'+i).innerHTML='<span class="spin" style="color:var(--c-primary)"></span>';document.getElementById('ms'+i).style.color='var(--c-text)';i++;setTimeout(tick,720);}
+    else{closeModal();done();}};tick();
+}
+
+let dbSource=(window.DEMO_CONFIG.data&&window.DEMO_CONFIG.data.defaultSource)||'share';
+function viewDatabase(v){
+  v.innerHTML=`
+    <div class="page-head"><h1>Candidate Database</h1>
+      <p>Your private talent pool on Treelance Infrastructure — ${fmtN(POOL.total)} candidates. Reactivate older CVs by connecting a source.</p></div>
+    <div class="card card-p" style="margin-bottom:22px">
+      <div class="between" style="margin-bottom:14px">
+        <div><div style="font-weight:700;font-size:15px">Reactivate your database</div>
+          <div class="muted" style="font-size:12.5px">Connect where your old CVs live — Treelance parses, structures & enriches each profile.</div></div>
+        <span class="pill pill-primary">${tlImg(13)} AI parsing</span></div>
+      <div class="source-tabs">
+        <button class="src-btn ${dbSource==='drive'?'active':''}" id="src-drive" onclick="setSource('drive')">${svg(I.drive,16)} Google Drive</button>
+        <button class="src-btn ${dbSource==='share'?'active':''}" id="src-share" onclick="setSource('share')">${svg(I.share,16)} SharePoint</button>
+        <button class="src-btn ${dbSource==='upload'?'active':''}" id="src-upload" onclick="setSource('upload')">${svg(I.upload,16)} Upload CVs</button>
+      </div>
+      <div id="src-body"></div>
+      <div id="parse-zone"></div>
+    </div>
+    <div class="between" style="margin-bottom:12px">
+      <div class="sec-title" style="margin:0">Recently added · showing ${DB.candidates.length} of ${fmtN(POOL.total)}</div>
+      <span class="tag">Synced with Treelance</span></div>
+    <div class="card list" id="cand-list">${DB.candidates.map(candRow).join('')}</div>`;
+  renderSourceBody();
+}
+function setSource(s){dbSource=s;['drive','share','upload'].forEach(k=>document.getElementById('src-'+k).classList.toggle('active',k===s));renderSourceBody();}
+function renderSourceBody(){
+  const b=document.getElementById('src-body');
+  if(dbSource==='upload'){
+    b.innerHTML=`<div class="dropzone" onclick="reactivate('upload')"><div class="dz-ic">${svg(I.upload,24)}</div>
+      <div style="font-weight:700;font-size:15px;margin-bottom:4px">Drop CVs here or click to upload</div>
+      <div class="muted" style="font-size:12.5px">Bulk upload · PDF, DOCX · parsed in seconds</div></div>`;
+  }else{
+    const label=dbSource==='drive'?'Google Drive':'SharePoint';
+    const ph=dbSource==='drive'?'https://drive.google.com/drive/folders/…':'https://company.sharepoint.com/sites/HR/CVs';
+    b.innerHTML=`<div class="connect-row">
+      <input id="src-link" placeholder="Paste your ${label} folder link — ${ph}"/>
+      <button class="btn btn-primary" onclick="reactivate('${dbSource}')">${svg(I.bolt,16)} Connect & parse</button></div>
+      <p class="muted" style="font-size:12px;margin-top:8px">Treelance scans the folder and ingests every CV into your pool.</p>`;
+  }
+}
+function candRow(c){
+  return `<div class="li">
+    <div class="avatar" style="background:color-mix(in srgb,var(--c-primary) 14%,#fff);color:var(--c-primary-dark)">${initials(c.name)}</div>
+    <div style="flex:1;min-width:0"><div class="ttl">${c.name}</div>
+      <div class="meta">${c.title} · ${c.location} · ${c.nationality} · ${c.years} yrs</div></div>
+    <div class="row" style="gap:6px;flex-wrap:wrap;max-width:230px;justify-content:flex-end">${c.certs.slice(0,2).map(s=>`<span class="tag">${s}</span>`).join('')}</div>
+    <a class="tag" style="display:inline-flex;align-items:center;gap:4px" title="Source">${c.source==='Google Drive'?svg(I.drive,11):c.source==='SharePoint'?svg(I.share,11):c.source==='WhatsApp'?svg(I.wa,11):svg(I.globe,11)} ${c.source}</a>
+    <span class="pill ${c.avail==='Available now'?'pill-open':'pill-paused'}">${c.avail}</span></div>`;
+}
+function reactivate(kind){
+  if(kind!=='upload'){const l=document.getElementById('src-link'); if(l&&!l.value.trim()){l.focus();l.style.borderColor='var(--red)';return;}}
+  const z=document.getElementById('parse-zone');
+  const steps=kind==='upload'?["Uploading","Parsing in Treelance","Extracting skills","Enriching","Indexed"]
+    :["Connecting","Scanning folder","Parsing in Treelance","Extracting & enriching","Indexed"];
+  const newCount=18+Math.floor(rnd()*40);
+  z.innerHTML=`<div class="card-p fade-in" style="background:var(--c-surface2);border-radius:12px;margin-top:16px">
+    <div class="row" style="margin-bottom:2px"><b>${newCount} CVs</b><span class="muted">being processed by Treelance Infrastructure…</span></div>
+    <div class="pipe">${steps.map((s,i)=>`<div class="pstep" id="ps${i}"><div class="c">${i+1}</div><div class="lbl">${s}</div></div>`).join('')}</div>
+    <div id="parse-status" class="muted" style="font-size:12.5px"></div></div>`;
+  let i=0;const adv=()=>{
+    if(i>0)document.getElementById('ps'+(i-1)).classList.replace('active','done');
+    if(i<steps.length){const el=document.getElementById('ps'+i);el.classList.add('active');
+      el.querySelector('.c').innerHTML=i===steps.length-1?steps.length:'<span class="spin"></span>';
+      document.getElementById('parse-status').textContent=steps[i]+"…";i++;setTimeout(adv,820);}
+    else{document.getElementById('ps'+(steps.length-1)).classList.add('done');
+      document.getElementById('parse-status').innerHTML=`<span style="color:var(--green);font-weight:600">✓ ${newCount} profiles parsed & added to your pool.</span>`;
+      for(let k=0;k<6;k++)DB.candidates.unshift(makeCandidate(200+DB.candidates.length+k));
+      POOL.total+=newCount;document.getElementById('cand-list').innerHTML=DB.candidates.map(candRow).join('');
+      toast(`${newCount} candidates parsed & added by Treelance`);}};adv();
+}
+
+function viewMatches(v){
+  if(!DB.matchesByRole[selectedRole])selectedRole=DB.roles[0].id;
+  const role=DB.roles.find(r=>r.id===selectedRole), list=DB.matchesByRole[selectedRole]||[];
+  v.innerHTML=`
+    <div class="page-head"><h1>Matches</h1><p>Candidates Treelance sourced & prequalified on WhatsApp for this role.</p></div>
+    <div class="card card-p" style="margin-bottom:18px">
+      <div class="sec-title">How Treelance works</div>
+      <div class="flow">
+        <div class="step"><div class="n">1</div><h4>Sources</h4><p>Treelance finds candidates from your pool of ${fmtN(POOL.total)} — even while you sleep.</p></div>
+        <div class="step"><div class="n">2</div><h4>Prequalifies on WhatsApp</h4><p>A Treelance consultant interviews them on WhatsApp to confirm fit, availability & rate.</p></div>
+        <div class="step"><div class="n">3</div><h4>Notifies you</h4><p>Only real, keen matches are proposed to ${CFG.clientName} for your decision.</p></div>
+        <div class="step"><div class="n">4</div><h4>You approve → intro</h4><p>You approve, and Treelance introduces the candidate by email to set up a chat.</p></div>
+      </div></div>
+    <div class="card card-p between" style="margin-bottom:18px;flex-wrap:wrap;gap:14px">
+      <div class="row" style="gap:10px"><span class="muted" style="font-size:12.5px;font-weight:600">Role</span>
+        <select onchange="selectedRole=this.value;render()" style="padding:9px 12px;border:1px solid var(--c-border);border-radius:10px;font-size:13.5px;font-weight:600;background:var(--c-surface)">
+          ${DB.roles.map(r=>`<option value="${r.id}" ${r.id===selectedRole?'selected':''}>${r.title}</option>`).join('')}</select></div>
+      <div class="row" style="gap:8px">${pill(role.status)}<span class="tag">${role.loc}</span><span class="tag">${list.length} matches</span></div></div>
+    <div id="match-list">${list.map((c,i)=>matchCard(c,i)).join('')}</div>`;
+  setTimeout(()=>document.querySelectorAll('#match-list .bar i').forEach(b=>b.style.width=b.dataset.w),60);
+}
+function scoreColor(s){return s>=80?'var(--green)':s>=65?'var(--c-primary)':s>=50?'var(--orange)':'var(--red)';}
+function ring(score){const c=scoreColor(score),deg=score*3.6;
+  return `<div class="score-ring" style="border-radius:50%;background:conic-gradient(${c} ${deg}deg,var(--c-border-light) ${deg}deg)">
+    <div style="position:absolute;inset:5px;background:var(--c-surface);border-radius:50%"></div>
+    <span class="num" style="color:${c};position:relative">${score}</span></div>`;}
+function statusPill(s){
+  if(s==='introduced')return `<span class="pill pill-open">${svg(I.check,12)} Introduced</span>`;
+  if(s==='proposed')return `<span class="pill pill-paused" title="Treelance proposed this candidate — awaiting your approval to introduce">Awaiting your approval</span>`;
+  return `<span class="pill pill-blue" title="Treelance has interviewed this candidate on WhatsApp">Prequalified</span>`;}
+function matchCard(c,i){
+  return `<div class="match" id="m${i}">
+    <div class="match-head" onclick="toggleMatch(${i})">${ring(c.overall)}
+      <div style="flex:1;min-width:0"><div class="cand-name">${c.name}</div>
+        <div class="cand-title">${c.title} · ${c.location} · ${c.nationality}</div></div>
+      <div class="bars">${barRow("Skills & certs",c.skill)}${barRow("Experience",c.exp)}</div>
+      ${statusPill(c.status)}<span style="color:var(--c-text-muted)">${svg(I.chevron,18)}</span></div>
+    <div class="match-body hidden" id="mb${i}">
+      <div class="detail-grid">
+        <div><div class="dl"><span class="k">Availability</span>${c.avail}</div>
+          <div class="dl"><span class="k">Experience</span>${c.years} years</div>
+          <div class="dl"><span class="k">Certifications</span>${c.certs.map(s=>`<span class="tag" style="margin:2px 3px 0 0">${s}</span>`).join('')}</div></div>
+        <div><div class="dl"><span class="k">Nationality / work auth</span>${c.nationality}</div>
+          <div class="dl"><span class="k">Source</span>${c.source}</div></div>
+      </div>
+      <div class="wa-note"><div class="h">${svg(I.wa,15)} Treelance WhatsApp prequal · ${c.waDate}</div>${c.waNote}</div>
+      <div class="row" style="margin-top:16px;gap:10px;flex-wrap:wrap">
+        ${c.status==='introduced'
+          ? `<button class="btn btn-soft" onclick="previewEmailFor('${c.name.replace(/'/g,'')}')">${svg(I.intro,16)} View intro email</button>`
+          : `<button class="btn btn-primary" onclick="approveIntro(${i})">${svg(I.check,16)} Approve introduction</button>
+             <button class="btn btn-ghost" onclick="toast('Declined — Treelance won\\'t introduce this candidate.')">Decline</button>`}
+        <button class="btn btn-ghost" onclick="genDossier('${c.name.replace(/'/g,'')}')">${svg(I.doc,16)} Generate dossier</button>
+      </div></div></div>`;
+}
+function barRow(label,v){return `<div class="bar-row"><div class="bl"><span class="muted">${label}</span><b style="color:${scoreColor(v)}">${v}%</b></div>
+  <div class="bar"><i data-w="${v}%" style="width:0;background:${scoreColor(v)}"></i></div></div>`;}
+function toggleMatch(i){const b=document.getElementById('mb'+i);b.classList.toggle('hidden');if(!b.classList.contains('hidden'))b.classList.add('fade-in');}
+
+function emailHtml(name,role){
+  const first=name.split(' ')[0];
+  return `<div class="email">
+    <div class="eh">
+      <div class="erow"><b>From</b> ${CFG.clientName} via Treelance &lt;hello@treelance.co&gt;</div>
+      <div class="erow"><b>To</b> ${name}</div>
+      <div class="erow"><b>Subject</b> Opportunity at ${CFG.clientName} — quick WhatsApp chat?</div></div>
+    <div class="eb">
+      <p>Hi ${first},</p>
+      <p>We're reaching out on behalf of <b>${CFG.clientName}</b>, who are hiring a <b>${role.title}</b> (${role.loc}).</p>
+      <p>Your profile stood out. Would you be open to a quick 10-minute chat on WhatsApp with a Treelance consultant this week to hear more about the role and confirm a few details?</p>
+      <p><span class="btn btn-wa" style="pointer-events:none">${svg(I.wa,15)} Chat on WhatsApp</span></p>
+      <p style="color:var(--c-text-sec);font-size:12px">Sent by Treelance on behalf of ${CFG.clientName}. Reply STOP to opt out.</p></div></div>`;
+}
+function approveIntro(i){
+  const c=DB.matchesByRole[selectedRole][i], role=DB.roles.find(r=>r.id===selectedRole);
+  modal(`<div class="modal-head"><h2>${svg(I.check,20)} Approve introduction</h2><button class="icon-btn" onclick="closeModal()">${svg(I.x,18)}</button></div>
+    <div class="modal-body">
+      <p class="muted" style="margin-bottom:14px">Here's what happens when you approve <b>${c.name}</b> for <b>${role.title}</b>:</p>
+      <div class="flow" style="margin-bottom:16px">
+        <div class="step"><div class="n">1</div><h4>Treelance emails the candidate</h4><p>On behalf of ${CFG.clientName}, proposing a quick WhatsApp chat.</p></div>
+        <div class="step"><div class="n">2</div><h4>Candidate accepts</h4><p>They confirm interest and book a slot with a Treelance consultant.</p></div>
+        <div class="step"><div class="n">3</div><h4>You're notified</h4><p>The introduction lands in your Introductions tab with the full thread.</p></div></div>
+      <div class="sec-title">Email Treelance will send</div>
+      ${emailHtml(c.name,role)}
+    </div>
+    <div class="modal-foot"><button class="btn btn-ghost" onclick="closeModal()">Cancel</button>
+      <button class="btn btn-primary" onclick="confirmIntro(${i})">${svg(I.intro,16)} Send introduction</button></div>`,true);
+}
+function confirmIntro(i){
+  const c=DB.matchesByRole[selectedRole][i], role=DB.roles.find(r=>r.id===selectedRole);
+  c.status='introduced';
+  DB.intros.unshift({cand:c,role,date:"2026-06-16"});
+  closeModal();toast(`Introduction sent for ${c.name}`);render();
+}
+
+function viewIntros(v){
+  v.innerHTML=`
+    <div class="page-head"><h1>Introductions</h1>
+      <p>Candidates introduced by email on behalf of ${CFG.clientName}, proposing a WhatsApp chat with Treelance.</p></div>
+    ${DB.intros.length?`<div class="card list">${DB.intros.map((it,i)=>`
+      <div class="li"><div class="avatar" style="background:color-mix(in srgb,var(--c-primary) 14%,#fff);color:var(--c-primary-dark)">${initials(it.cand.name)}</div>
+        <div style="flex:1;min-width:0"><div class="ttl">${it.cand.name}</div>
+          <div class="meta">${it.role.title} · ${it.cand.location}</div></div>
+        <div style="text-align:right"><div class="meta" style="font-weight:600;color:var(--c-text)">Introduced</div>
+          <div class="meta">${svg(I.intro,11)} ${fmtDateLong(it.date)}</div></div>
+        <button class="btn btn-soft" onclick="previewEmail(${i})">${svg(I.intro,15)} Preview email</button></div>`).join('')}</div>`
+      :`<div class="card card-p" style="text-align:center;color:var(--c-text-sec)">No introductions yet — approve a match to introduce a candidate.</div>`}`;
+}
+function previewEmail(i){const it=DB.intros[i];showEmail(it.cand.name,it.role,it.date);}
+function previewEmailFor(name){
+  for(const it of DB.intros) if(it.cand.name.replace(/'/g,'')===name) return showEmail(it.cand.name,it.role,it.date);
+  const role=DB.roles.find(r=>r.id===selectedRole);showEmail(name,role,"2026-06-16");
+}
+function showEmail(name,role,date){
+  modal(`<div class="modal-head"><h2>${svg(I.intro,20)} Introduction email</h2><button class="icon-btn" onclick="closeModal()">${svg(I.x,18)}</button></div>
+    <div class="modal-body"><p class="muted" style="font-size:12.5px;margin-bottom:12px">Sent ${fmtDateLong(date)} by ${tlImg(13)} on behalf of ${CFG.clientName}</p>
+      ${emailHtml(name,role)}</div>
+    <div class="modal-foot"><button class="btn btn-ghost" onclick="closeModal()">Close</button>
+      <button class="btn btn-wa" onclick="toast('Opening WhatsApp thread (demo)')">${svg(I.wa,15)} Open WhatsApp thread</button></div>`,true);
+}
+
+function viewReports(v){
+  v.innerHTML=`
+    <div class="page-head"><h1>Reports · Live database</h1>
+      <p>A live read of ${CFG.clientName}'s talent pool on Treelance Infrastructure.</p></div>
+    <div class="grid stats" style="margin-bottom:22px">
+      ${stat(fmtN(POOL.total),"Candidates in pool",I.db)}
+      ${stat(fmtN(POOL.availableNow),"Available now",I.check)}
+      ${stat(fmtN(POOL.talked30d),"Talked to Treelance (30d)",I.wa)}
+      ${stat(DB.roles.filter(r=>r.status==='open').length,"Open roles",I.job)}
+    </div>
+    <div class="grid" style="grid-template-columns:1fr 1fr;gap:16px;align-items:start">
+      <div class="card card-p"><div class="sec-title">Availability</div>${distBlock(POOL.availability)}</div>
+      <div class="card card-p"><div class="sec-title">Profile composition</div>${distBlock(POOL.disciplines)}</div>
+    </div>`;
+  animateDist(v);
+}
+
+function viewAnalytics(v){
+  v.innerHTML=`
+    <div class="page-head"><h1>Talent Taxonomy</h1>
+      <p>How your ${fmtN(POOL.total)} candidates are structured. A clean taxonomy is what makes matching accurate — and keeps hiring legally compliant on work authorization. <b>We help you build your own taxonomy</b>, tailored to ${CFG.clientName}'s disciplines.</p></div>
+    <div class="card card-p" style="margin-bottom:16px"><div class="row" style="gap:20px;flex-wrap:wrap">
+      ${gauge(82)}
+      <div style="flex:1;min-width:240px"><div style="font-weight:700;font-size:15px;margin-bottom:4px">Taxonomy completeness · 82%</div>
+        <p class="muted" style="font-size:13px">Treelance builds your taxonomy <b>with you</b> — discipline, seniority, certifications and work authorization — then maintains it, so every search returns the right people and every shortlist is defensible. ${fmtN(pc(.18))} profiles still need work-authorization tagging.</p>
+        <button class="btn btn-soft" style="margin-top:12px" onclick="toast('Treelance will help build & enrich your taxonomy (demo)')">${tlImg(13)} Build my taxonomy</button></div>
+    </div></div>
+    <div class="grid" style="grid-template-columns:1fr 1fr;gap:16px;align-items:start">
+      <div class="card card-p"><div class="sec-title">By discipline</div>${distBlock(POOL.disciplines)}</div>
+      <div class="card card-p"><div class="sec-title">By seniority</div>${distBlock(POOL.seniority)}</div>
+      <div class="card card-p"><div class="sec-title">Work authorization <span class="tag" style="margin-left:6px">legal</span></div>${distBlock(POOL.workauth)}</div>
+      <div class="card card-p"><div class="sec-title">Certification coverage</div>${distBlock(POOL.certs)}</div>
+    </div>`;
+  animateDist(v);
+}
+
+/* ---- shared ---- */
+function distBlock(rows){
+  const mx=Math.max(...rows.map(r=>r[1]));
+  return `<div class="dist">${rows.map(([l,p])=>`<div class="drow">
+    <div class="dl2"><span>${l}</span><b>${fmtN(pc(p))} · ${Math.round(p*100)}%</b></div>
+    <div class="dbar"><i data-w="${Math.round(p/mx*100)}%" style="width:0"></i></div></div>`).join('')}</div>`;
+}
+function animateDist(v){setTimeout(()=>v.querySelectorAll('.dbar i').forEach(b=>b.style.width=b.dataset.w),60);}
+function gauge(pct){const c='var(--c-primary)';
+  return `<div class="gauge" style="background:conic-gradient(${c} ${pct*3.6}deg,var(--c-border-light) ${pct*3.6}deg)">
+    <div class="inner"><div class="g">${pct}%</div><small>structured</small></div></div>`;}
+function stat(v,l,icon,trend){return `<div class="stat"><div class="ic">${svg(icon,18)}</div>
+  <div class="v">${v}</div><div class="l">${l}</div>${trend?`<div class="trend">${trend}</div>`:''}</div>`;}
+function pill(s){const m={open:'pill-open',paused:'pill-paused',closed:'pill-closed'};return `<span class="pill ${m[s]||'pill-closed'}">${s}</span>`;}
+function fmtDate(s){return new Date(s).toLocaleDateString('en-US',{month:'short',day:'numeric'});}
+function fmtDateLong(s){return new Date(s).toLocaleDateString('en-US',{day:'numeric',month:'short',year:'numeric'});}
+function val(id){return document.getElementById(id)?.value.trim();}
+
+function genDossier(name){
+  modal(`<div class="modal-head"><h2>Generate dossier</h2><button class="icon-btn" onclick="closeModal()">${svg(I.x,18)}</button></div>
+    <div class="modal-body"><div class="row" style="gap:12px;margin-bottom:16px">
+      <div class="dz-ic" style="margin:0;width:46px;height:46px">${svg(I.doc,22)}</div>
+      <div><div style="font-weight:700">${name}</div><div class="muted" style="font-size:12.5px">Client-ready candidate dossier for ${CFG.clientName}</div></div></div>
+      <div id="dossier-steps"></div></div>`,true);
+  const steps=["Pulling profile from Treelance","Tailoring to the role","Formatting branded document"];
+  const box=document.getElementById('dossier-steps');
+  box.innerHTML=steps.map((s,i)=>`<div id="ds${i}" class="row" style="padding:8px 0;color:var(--c-text-muted)"><span id="dsi${i}" style="width:20px">○</span>${s}</div>`).join('');
+  let i=0;const t=()=>{
+    if(i>0){document.getElementById('dsi'+(i-1)).innerHTML='<span style="color:var(--green)">'+svg(I.check,15)+'</span>';document.getElementById('ds'+(i-1)).style.color='var(--c-text)';}
+    if(i<steps.length){document.getElementById('dsi'+i).innerHTML='<span class="spin" style="color:var(--c-primary)"></span>';document.getElementById('ds'+i).style.color='var(--c-text)';i++;setTimeout(t,650);}
+    else{document.getElementById('dossier-steps').innerHTML+=`<div class="fade-in" style="margin-top:14px;padding:14px;border-radius:10px;background:color-mix(in srgb,var(--green) 10%,#fff);color:var(--green);font-weight:600">${svg(I.check,16)} Dossier ready — Dossier_${name.replace(/\s+/g,'')}.docx</div>
+      <button class="btn btn-primary btn-block" style="margin-top:14px" onclick="closeModal();toast('Dossier downloaded (demo)')">Download dossier</button>`;}};t();
+}
+function talkTreelance(){
+  modal(`<div class="modal-head"><h2>${tlImg(22)} Talk to Treelance</h2><button class="icon-btn" onclick="closeModal()">${svg(I.x,18)}</button></div>
+    <div class="modal-body"><p class="muted" style="margin-bottom:14px">Your AI recruiter knows your whole pool. Ask anything:</p>
+      <div style="display:flex;flex-direction:column;gap:8px">
+        ${["Who are my top process engineers available now in Malaysia?","Which roles have candidates awaiting my approval?","How many BOSIET-certified offshore crew are in my pool?","Draft a WhatsApp message for my best Bintulu match."]
+          .map(q=>`<button class="btn btn-ghost" style="justify-content:flex-start;text-align:left" onclick="toast('Treelance is thinking… (demo)');closeModal()">${q}</button>`).join('')}</div></div>`,true);
+}
+
+function modal(html,closable){document.getElementById('modal-root').innerHTML=`<div class="overlay" ${closable?'onclick="if(event.target===this)closeModal()"':''}><div class="modal">${html}</div></div>`;linkifyBrand(document.getElementById('modal-root'));}
+function closeModal(){document.getElementById('modal-root').innerHTML='';}
+let toastT;function toast(msg){const t=document.getElementById('toast');t.innerHTML=svg(I.check,16)+'<span>'+msg+'</span>';t.classList.add('show');clearTimeout(toastT);toastT=setTimeout(()=>t.classList.remove('show'),2800);}
+
+function toggleSidebar(){const sb=document.getElementById('sidebar');if(window.innerWidth<=920)sb.classList.toggle('mobile-open');else sb.classList.toggle('collapsed');}
+function enterApp(){document.getElementById('landing').classList.add('hidden');document.getElementById('app').classList.remove('hidden');renderNav();render();}
+
+applyBrand();
+</script>
+</body>
+</html>

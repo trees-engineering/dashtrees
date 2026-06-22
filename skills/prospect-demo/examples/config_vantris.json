@@ -1,0 +1,45 @@
+{
+  "clientName": "Vantris Energy",
+  "clientUrl": "https://vantrisenergy.com",
+  "contactName": "Talent Team",
+  "logo": "logo_vantris.png",
+  "theme": { "primary": "#2f2b6e", "primaryDark": "#232050", "primaryLight": "#5a55a8", "accent": "#16b3d6" },
+  "font": { "family": "Raleway", "googleUrl": "https://fonts.googleapis.com/css2?family=Raleway:wght@400;500;700;800&display=swap" },
+  "output": "Demo_Vantris.html",
+  "projectName": "demovantristreelance",
+  "deploy": true,
+  "data": {
+    "pool": { "total": 18420, "talked30d": 2960 },
+    "defaultSource": "share",
+    "first": ["Ahmad","Nurul","Wei Jie","Siti","Arif","Mei Ling","Faizal","Hafiz","Aisyah","Farah","Hakim","Rajesh","Priya","Carlos","Ana","João","James","Khalid","Putra","Lim"],
+    "last": ["bin Abdullah","Tan","Lim","Ismail","Hassan","Rahman","Lee","Nair","Yusof","Idris","Pillai","Menon","Silva","Costa","Pereira","Al-Mansoori","O'Connor","Walsh","Pratama","Chin"],
+    "titles": ["Subsea Engineer","EPC Project Engineer","Drilling Supervisor","Offshore Construction Superintendent","Hook-up & Commissioning Engineer","Topside Maintenance Technician","Pipeline Engineer","Naval Architect","HSE Officer","Welding Inspector (CSWIP)","ROV Pilot Technician","Rigger / Offshore Crew"],
+    "disc": {"Subsea Engineer":"Subsea","EPC Project Engineer":"EPC / Construction","Drilling Supervisor":"Drilling & Completion","Offshore Construction Superintendent":"Offshore Construction","Hook-up & Commissioning Engineer":"Hook-up & Commissioning","Topside Maintenance Technician":"O&M / Maintenance","Pipeline Engineer":"EPC / Construction","Naval Architect":"Engineering","HSE Officer":"HSE","Welding Inspector (CSWIP)":"Inspection / QA-QC","ROV Pilot Technician":"Subsea","Rigger / Offshore Crew":"Offshore Construction"},
+    "locs": ["Kuala Lumpur, MY","Labuan, MY","Miri, MY","Singapore","Abu Dhabi, AE","Macaé, BR","Perth, AU","Luanda, AO","Mumbai, IN","Doha, QA"],
+    "nats": ["Malaysian","Malaysian","Indonesian","Indian","Filipino","Brazilian","Emirati","British","Australian"],
+    "certs": ["BOSIET","HUET","OPITO","CSWIP 3.1","CSWIP 3.2","NDT Level II","DP Induction","NEBOSH IGC","Rigging","Confined Space"],
+    "skills": ["Subsea","EPC","FEED","Pipelay","Hook-up","Commissioning","AVEVA E3D","SACS","Offshore Construction","Drilling","ROV Ops","Welding"],
+    "avail": ["Available now","Within 1 month","Within 2 months","On project"],
+    "sources": ["SharePoint","Company portal","WhatsApp group","Referral"],
+    "waDates": ["16 Jun 2026","12 Jun 2026","06 Jun 2026","30 May 2026"],
+    "waNotes": [
+      "Confirmed available for next EPCIC mobilisation. Valid BOSIET + HUET, offshore-ready.",
+      "Rolling off a hook-up scope in 3 weeks. Open to tender-assist rig work. CSWIP current.",
+      "Subsea/ROV background, worked North Malay Basin. Mobile to Middle East & Brazil.",
+      "Available immediately, looking for an offshore construction rotation. Day rate aligned."
+    ],
+    "notes": ["Deep EPCIC / offshore construction background.","Multiple tender-assist rig campaigns.","Subsea hook-up & commissioning experience.","Global mobility across APAC & Middle East."],
+    "roles": [
+      {"id":"r1","title":"Subsea Engineer — EPCIC Project","loc":"Kuala Lumpur, MY","status":"open","contract":"Contract · 18 mo","created":"2026-06-12","matches":9},
+      {"id":"r2","title":"Drilling Supervisor — Tender-Assist Rig","loc":"Labuan, MY","status":"open","contract":"Contract · 12 mo","created":"2026-06-06","matches":7},
+      {"id":"r3","title":"Hook-up & Commissioning Lead — Offshore","loc":"Abu Dhabi, AE","status":"paused","contract":"Contract · 9 mo","created":"2026-05-24","matches":6}
+    ],
+    "taxonomy": {
+      "disciplines": [["EPC / Construction",0.24],["Offshore Construction",0.18],["Drilling & Completion",0.15],["Subsea",0.13],["O&M / Maintenance",0.11],["Hook-up & Commissioning",0.09],["HSE",0.06],["Inspection / QA-QC",0.04]],
+      "availability": [["Available now",0.16],["Within 1 month",0.23],["Within 2 months",0.20],["On project / placed",0.41]],
+      "workauth": [["Malaysian",0.41],["Other ASEAN (Indo/Phil)",0.17],["India",0.12],["Middle East",0.11],["Latin America (Brazil)",0.10],["Expat — permit required",0.09]],
+      "seniority": [["Junior (0–3y)",0.20],["Mid (4–7y)",0.33],["Senior (8–14y)",0.32],["Lead / Principal (15y+)",0.15]],
+      "certs": [["BOSIET / HUET",0.44],["CSWIP / NDT",0.24],["OPITO survival",0.31],["DP / Marine",0.13],["NEBOSH / IOSH",0.18]]
+    }
+  }
+}

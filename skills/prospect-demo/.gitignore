@@ -1,0 +1,4 @@
+# Throwaway preview build used by the local Launch/Vercel preview
+examples/index.html
+.DS_Store
+node_modules/
